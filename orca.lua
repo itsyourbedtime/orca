@@ -224,25 +224,38 @@ ops.ports = {
   ['D'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['F'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output_op'}},
   ['H'] = {{0, 1 , 'output'}},
-  ['J'] = {{0, -1, 'input'}, {0, 1, 'output'}},
+  ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
   ['L'] = {{-1, 0, 'input'}, {-2, 0, 'input'}},
   ['I'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output'}},
   ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1 , 'input_op'}},
   ['M'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output'}},
   ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}},
   ['T'] = {{-1,0, 'input'},  {-2, 0, 'input'},  {1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['R'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output'}},
+  ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
   ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
   ['W'] = {},
   ['S'] = {},
   ['E'] = {},
   ['N'] = {},
   ['Z'] = {},
-  ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output'}}
+  ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output_op'}}
 
 }
 
 ops.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
+ops.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+
+function ops:input(x,y, default)
+  local value = tostring(field.cell[y][x])
+  if value == '0' then 
+    return 0
+  elseif value ~= nil or value ~= 'null' then 
+    return tab.key(ops.chars, value)
+  else
+    return default
+  end
+end 
+
 
 function ops.is_OP(x,y)
   x = util.clamp(x,1,XSIZE)
@@ -475,12 +488,13 @@ ops.A = function (self,x,y,frame)
   self.name = 'A'
   self.y = y
   self.x = x
-  local b = tonumber(field.cell[y][x + 1]) or 0
-  local a = tonumber(field.cell[y][x - 1]) or 0
+  local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
+  local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0))  or 0
+  
   if self:active() then
     self:spawn(ops.ports[self.name])
-    if (a ~= nil and b ~= nil) then
-      field.cell[y+1][x] = string.sub(math.ceil(a + b),1,1)
+    if (a ~= 0 or b ~= 0) then
+      field.cell[y+1][x] = ops.chars[util.clamp(math.ceil((a+b)),0,#ops.chars)]
     else
       field.cell[y+1][x] = 0
     end
@@ -750,6 +764,9 @@ ops.P = function (self, x, y, frame)
     end
   end
 end
+
+
+
 ops.T = function (self, x, y, frame)
   self.name = 'T'
   self.y = y
@@ -789,11 +806,12 @@ ops.L = function (self, x, y, frame)
   self.name = 'L'
   self.y = y
   self.x = x
-
-  local length = tonumber(field.cell[y][x - 1]) == nil and 0 or tonumber(field.cell[y][x - 1])
-  local rate = (tonumber(field.cell[y][x - 2])  == nil or tonumber(field.cell[y][x - 2])  == 0 ) and 1 or tonumber(field.cell[y][x - 2])
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
+  local rate = (tonumber(ops:input(x - 2, y, 0) ) == nil or tonumber(ops:input(x - 2, y, 0) ) == 0) and 1 or tonumber(ops:input(x - 2, y, 0) )
+  
+  --local rate = (tonumber(field.cell[y][x - 2])  == nil or tonumber(field.cell[y][x - 2])  == 0 ) and 1 or tonumber(field.cell[y][x - 2])
   local offset = 1
-  length = length == 0 and 1 or length
+  length = length == 0 and 1 or util.clamp(length,1,XSIZE)
   local l_start = x + offset
   local l_end = x + length
   if self:active() then
@@ -817,8 +835,8 @@ ops.L = function (self, x, y, frame)
     self:shift(offset, length)
   end
   -- cleanups
-  if length < 9 then
-    for i=length+1, 9 do
+  if length < #ops.chars then
+    for i= length == 0 and length or length+1, #ops.chars do
         field.cell.params[y][(x + i)].dot = false
         field.cell.params[y][(x + i)].op = true
     end
@@ -830,14 +848,14 @@ ops.R = function (self, x,y,frame)
   self.y = y
   self.x = x
   local a, b
-  a = tonumber(field.cell[y][x + 1]) or 1
-  b = tonumber(field.cell[y][x + 2]) or 9
+  a = ops:input(x - 1, y, 1) 
+  b = ops:input(x + 1, y, 9)
+  a = tonumber(a) or 1
+  b = tonumber(b) or 9
   if b < a then a,b = b,a end
   if self:active() then
     self:spawn(ops.ports[self.name])
-    val = math.random((a or 1),(b or 9))
-    if val > 10 then string.char(val) end
-    field.cell[y+1][x] = math.random((a or 1),(b or 9))
+    field.cell[y+1][x] = ops.chars[math.random((a or 1),(b or 9))]
   else
   end
 end
