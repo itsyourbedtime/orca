@@ -36,7 +36,7 @@ local field_offset_x = 0
 local bounds_x = 25
 local bounds_y = 8
 local sc_ops = 0
-local max_sc_ops = 4
+local max_sc_ops = 6
 local frame = 1
 local ops = {}
 local field = {}
@@ -324,7 +324,7 @@ function ops:cleanup()
     field.cell.params[self.y + b][self.x + a].placeholder = nil
   elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == ':' or field.cell[self.y][self.x] == '/') then
     local plhd = tonumber(field.cell[self.y][self.x + 1]) ~= 0 and  tonumber(field.cell[self.y][self.x + 1])  or 1
-    if field.cell[self.y][self.x] == '/' then sc_ops = sc_ops - 1 softcut.play(field.cell[self.y][self.x + 1],0) end
+    if field.cell[self.y][self.x] == '/' then sc_ops = util.clamp(sc_ops - 1,1,max_sc_ops) softcut.play(field.cell[self.y][self.x + 1]~= 'null' and field.cell[self.y][self.x + 1] or sc_ops,0) end
   end 
 end
 
@@ -909,7 +909,7 @@ ops['/'] = function (self, x,y,frame)
   self:spawn(ops.ports[self.name])
   local num = sc_ops + 1
 -- bang resets playhead to pos 
-  local playhead = util.clamp(tonumber(field.cell[y][x + 1]) ~= 0 and  tonumber(field.cell[y][x + 1])  or 1,1,max_sc_ops) -- playhead 1-4
+  local playhead = util.clamp(tonumber(field.cell[y][x + 1]) ~= 0 and  tonumber(field.cell[y][x + 1])  or sc_ops,1,max_sc_ops) -- playhead 1-4
   local rec = tonumber(field.cell[y][x + 2]) or 0 -- rec 0 - off 1 - 9 on + rec_level
   local play = tonumber(field.cell[y][x + 3]) or 0 -- play 0 - stop  1 - 5 / fwd  6 - 9 rev
   local level = tonumber(field.cell[y][x + 4]) or 9 -- playback level
