@@ -323,7 +323,6 @@ function ops:cleanup()
     field.cell.params[self.y + b][self.x + a].cursor = false
     field.cell.params[self.y + b][self.x + a].placeholder = nil
   elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == ':' or field.cell[self.y][self.x] == '/') then
-    local plhd = tonumber(field.cell[self.y][self.x + 1]) ~= 0 and  tonumber(field.cell[self.y][self.x + 1])  or 1
     if field.cell[self.y][self.x] == '/' then sc_ops = util.clamp(sc_ops - 1,1,max_sc_ops) softcut.play(field.cell[self.y][self.x + 1]~= 'null' and field.cell[self.y][self.x + 1] or sc_ops,0) end
   end 
 end
@@ -788,8 +787,6 @@ ops.L = function (self, x, y, frame)
         field.cell.params[y][(x + i)].lit = false
       end
     end
-  else
-    field.cell.params[y][x].lit = false
   end
   if frame % rate == 0 and length ~= 0 then
     self:shift(offset, length)
@@ -810,8 +807,8 @@ ops.R = function (self, x,y,frame)
   local a, b
   a = ops:input(x - 1, y, 1) 
   b = ops:input(x + 1, y, 9)
-  a = tonumber(a) or 1
-  b = tonumber(b) or 9
+  a = util.clamp(tonumber(a) or 1,0,#ops.chars)
+  b = util.clamp(tonumber(b) or 9,1,#ops.chars)
   if b < a then a,b = b,a end
   if self:active() then
     self:spawn(ops.ports[self.name])
@@ -998,7 +995,7 @@ function ops:frame_count()
     for x = 1,XSIZE do
       if ops.is_op(x,y) and not ops.is_bang(x,y) then
         ops[string.upper(field.cell[y][x])](self, x,y, frame)
-      elseif (ops.list[string.upper(field.cell[y][x])] == 'W' or  ops.list[string.upper(field.cell[y][x])] == 'N') then
+      elseif ((ops.list[string.upper(field.cell[y][x])] == 'W' and field.cell.params[y][x].op )or  (ops.list[string.upper(field.cell[y][x])] == 'N' and field.cell.params[y][x].op )) then
         ops[string.upper(field.cell[y][x])](self, x,y, frame)
       end
     end
@@ -1008,11 +1005,11 @@ function ops:frame_count()
     local v = (YSIZE + 1) - y
     for x = 1,XSIZE do
       local l = (XSIZE + 1) - x
-      if ops.list[string.upper(field.cell[y][l])] == 'E' then
+      if ops.list[string.upper(field.cell[y][l])] == 'E' and field.cell.params[y][l].op then
         ops[string.upper(field.cell[y][l])](self, l,y, frame)
-      elseif ops.list[string.upper(field.cell[v][l])] == 'S' then
+      elseif ops.list[string.upper(field.cell[v][l])] == 'S' and field.cell.params[y][l].op then
         ops[string.upper(field.cell[v][l])](self,l, v, frame)
-      elseif ops.list[string.upper(field.cell[v][l])] == 'Z' then
+      elseif ops.list[string.upper(field.cell[v][l])] == 'Z' and field.cell.params[y][l].op then
         ops[string.upper(field.cell[v][l])](self,l, v, frame)
       end
     end
