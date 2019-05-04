@@ -14,9 +14,11 @@ local keycodes = include("hid-demo/lib/keycodes")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
-
+local music = require 'musicutil'
+local mode = #music.SCALES
+local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
 local BeatClock = require 'beatclock'
-local midi_out_device
+local midi_out_device 
 
 local clk = BeatClock.new()
 local clk_midi = midi.connect()
@@ -44,11 +46,11 @@ local bounds_x = 25
 local bounds_y = 8
 local sc_ops = 0
 local max_sc_ops = 4
+local ops = {}
 local field = {}
 field.cell = {}
 field.cell.params = {}
 field.active = {}
-
 
 local function all_notes_off(ch)
     for _, a in pairs(active_notes) do
@@ -56,46 +58,6 @@ local function all_notes_off(ch)
     end
   active_notes = {}
 end
-
-local ops = {}
-
-
---- WIP
-function ops:id()
-  return tostring(self.x .. ":" .. self.y)
-end
-function ops:move_active(a,b,x,y)
-  local c = a + x
-  local d = b + y
-  ops:rm(a,b)
-  ops:place(c,d)
-end
-function ops:POLL(x,y)
-  self.x = x
-  self.y = y
-  table.insert(field.active, {self:id(), self.x, self.y})
-end
-function ops:RM(x,y)
-  self.x = x
-  self.y = y
-  for i= 1,#field.active do
-    if field.active[i] ~= nil then
-      if tab.contains(field.active[i], self:id()) then
-        table.remove(field.active, i)
-      end
-    end
-  end
-end
-function ops:EXEC()
-  for i=1,#field.active do
-    --if field[i] ~= nil then
-    local x = field.active[i][2]
-    local y = field.active[i][3]
-    if ops.is_OP(x,y) then
-      ops[string.upper(field.cell[y][x])](self, x,y, frame) end
-    end
-end
----------
 
 ops.load_project = function(pth)
   saved = tab.load(pth)
@@ -114,7 +76,6 @@ ops.save_project = function(txt)
     print("save cancel")
   end
 end
-
 
 ops.list = {
   ['*'] = '*',
@@ -218,17 +179,17 @@ ops.ports = {
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
   ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
   ['\\'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['A'] = {{1, 0, 'input'},{-1, 0, 'input'},{0, 1 , 'output'}},
+  ['A'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['B'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['C'] = {{1, 0, 'input'}, {-1, 0, 'input'},{0, 1 , 'output'}},
+  ['C'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['D'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['F'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['H'] = {{0, 1 , 'output'}},
+  ['F'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
+  ['H'] = {{0, 1, 'output'}},
   ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
   ['L'] = {{-1, 0, 'input'}, {-2, 0, 'input'}},
-  ['I'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output'}},
+  ['I'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1 , 'input_op'}},
-  ['M'] = {{1, 0, 'input'}, {2, 0, 'input'}, {0, 1 , 'output'}},
+  ['M'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
   ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}},
   ['T'] = {{-1,0, 'input'},  {-2, 0, 'input'},  {1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
@@ -241,9 +202,93 @@ ops.ports = {
   ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output_op'}}
 
 }
+ops.transpose_table = {
+  ['A'] = 'A0',
+  ['a'] = 'a0',
+  ['B'] = 'B0',
+  ['C'] = 'C0',
+  ['c'] = 'c0',
+  ['D'] = 'D0',
+  ['d'] = 'd0',
+  ['E'] = 'E0',
+  ['F'] = 'F0',
+  ['f'] = 'f0',
+  ['G'] = 'G0',
+  ['g'] = 'g0',
+  ['H'] = 'A0',
+  ['h'] = 'a0',
+  ['I'] = 'B0',
+  ['J'] = 'C1',
+  ['j'] = 'c1',
+  ['K'] = 'D1',
+  ['k'] = 'd1',
+  ['L'] = 'E1',
+  ['M'] = 'F1',
+  ['m'] = 'f1',
+  ['N'] = 'G1',
+  ['n'] = 'g1',
+  ['O'] = 'A1',
+  ['o'] = 'a1',
+  ['P'] = 'B1',
+  ['Q'] = 'C2',
+  ['q'] = 'c2',
+  ['R'] = 'D2',
+  ['r'] = 'd2',
+  ['S'] = 'E2',
+  ['T'] = 'F2',
+  ['t'] = 'f2',
+  ['U'] = 'G2',
+  ['u'] = 'g2',
+  ['V'] = 'A2',
+  ['v'] = 'a2',
+  ['W'] = 'B2',
+  ['X'] = 'C3',
+  ['x'] = 'c3',
+  ['Y'] = 'D3',
+  ['y'] = 'd3',
+  ['Z'] = 'E3',
+  -- Catch e
+  ['e'] = 'e0',
+  ['l'] = 'e1',
+  ['s'] = 'e2',
+  ['z'] = 'e3',
+  -- Catch b
+  ['b'] = 'b0',
+  ['i'] = 'b0',
+  ['p'] = 'b1',
+  ['w'] = 'b2',
+  ['0'] = 'C3',
+  ['1'] = 'D3',
+  ['2'] = 'E3',
+  ['3'] = 'F3',
+  ['4'] = 'G3',
+  ['5'] = 'A3',
+  ['6'] = 'B3',
+  ['7'] = 'C4',
+  ['8'] = 'D4',
+  ['9'] = 'E4',
+}
 
 ops.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
+
 ops.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+ops.chars[0] = '0'
+
+
+function ops.normalize(n)
+  return n == 'e' and 'F' or n == 'b' and 'C' or n
+end
+
+function ops.transpose(n, o)
+  if n == nil or n == 'null' then n = 'C' else n = tostring(n) end 
+  if o == nil or o == 'null' then o = 0 end
+  local note = ops.normalize(string.sub(ops.transpose_table[n], 1, 1))
+  local octave = util.clamp(ops.normalize(string.sub(ops.transpose_table[n], 2)) + o,0,8)
+  local value = tab.key(ops.notes, note)
+  local id = util.clamp((octave * 12) + value, 0, 127)
+  local real = id < 89 and tab.key(ops.transpose_table, id - 45) or nil -- ??
+  return {id, value, note, octave, real}
+end
 
 function ops:input(x,y, default)
   local value = tostring(field.cell[y][x])
@@ -252,12 +297,11 @@ function ops:input(x,y, default)
   elseif value ~= nil or value ~= 'null' then 
     return tab.key(ops.chars, value)
   else
-    return default
+    return false
   end
 end 
 
-
-function ops.is_OP(x,y)
+function ops.is_op(x,y)
   x = util.clamp(x,1,XSIZE)
   y = util.clamp(y,1,YSIZE)
   if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
@@ -271,7 +315,7 @@ function ops.is_OP(x,y)
   end
 end
 
-function ops.is_BANG(x,y)
+function ops.is_bang(x,y)
   if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
     if (ops.bangs[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
       return true
@@ -282,13 +326,15 @@ function ops.is_BANG(x,y)
 end
 
 function ops.banged(x,y)
-  if field.cell[y][x - 1] == '*' or  ops.is_BANG(x - 1, y) then
+  if field.cell[y][x - 1] == '*' or  ops.is_bang(x - 1, y) then
     return true
-  elseif field.cell[y][x + 1] == '*' or ops.is_BANG(x + 1, y) then
+  elseif field.cell[y][x + 1] == '*' or ops.is_bang(x + 1, y) then
     return true
-  elseif field.cell[y - 1][x] == '*' or ops.is_BANG(x, y - 1) then 
+  elseif field.cell[y - 1][x] == '*' or ops.is_bang(x, y - 1) then 
     return true
-  elseif field.cell[y + 1][x] == '*' or ops.is_BANG(x, y + 1) then 
+  elseif field.cell[y + 1][x] == '*' or ops.is_bang(x, y + 1) then 
+    return true
+  else
     return false
   end
 end
@@ -312,7 +358,6 @@ function ops:shift(s, e)
   table.remove(field.cell[self.y], self.x + s)
   table.insert(field.cell[self.y], self.x + e, data)
 end
-
 
 function ops:cleanup()
   self:clean_ports(ops.ports[string.upper(field.cell[self.y][self.x])])
@@ -359,7 +404,7 @@ end
 function ops:erase(x,y)
   self.x = x
   self.y = y
-  if ops.is_OP(self.x,self.y) then self:cleanup() end
+  if ops.is_op(self.x,self.y) then self:cleanup() end
   --ops:rm(self.x,self.y)
   self:replace('null')
 end
@@ -394,9 +439,9 @@ function ops:move(x,y)
         or
         collider == tonumber(collider)
         or
-        collider ~= ops.is_OP(a,b)
+        collider ~= ops.is_op(a,b)
         or
-        ops.is_BANG(a,b)
+        ops.is_bang(a,b)
         )
       then
         if field.cell[self.y][self.x] == 'Z' then
@@ -481,7 +526,7 @@ ops["*"] = function(self, x,y,f)
   self.x = x 
   self.y = y 
   if field.cell.params[y][x].act == true then self:erase(x,y) end
-  --if (not ops.is_OP(x - 1, y) or not ops.is_OP(x + 1, y) or not ops.is_OP(x, y - 1) or not ops.is_OP(x, y + 1)) then self:erase(x,y) end
+  --if (not ops.is_op(x - 1, y) or not ops.is_op(x + 1, y) or not ops.is_op(x, y - 1) or not ops.is_op(x, y + 1)) then self:erase(x,y) end
 end
 
 ops.A = function (self,x,y,frame)
@@ -490,15 +535,17 @@ ops.A = function (self,x,y,frame)
   self.x = x
   local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
   local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0))  or 0
+  local sum
+  if (a ~= 0 or b ~= 0) then sum  = ops.chars[util.clamp(math.ceil((a+b)),0,#ops.chars)]
+  else sum = 0 end
   
   if self:active() then
     self:spawn(ops.ports[self.name])
-    if (a ~= 0 or b ~= 0) then
-      field.cell[y+1][x] = ops.chars[util.clamp(math.ceil((a+b)),0,#ops.chars)]
-    else
-      field.cell[y+1][x] = 0
-    end
+      field.cell[y+1][x] = sum
   elseif not self:active() then
+    if ops.banged(x,y) then
+      field.cell[y+1][x] = sum
+    end
   end
 end
 
@@ -506,14 +553,22 @@ ops.B = function (self, x,y, frame)
   self.name = 'B'
   self.y = y
   self.x = x
-  local to = tonumber(field.cell[y][x + 1]) or 1
-  local rate = tonumber(field.cell[y][x - 1])
-  local key = math.floor(frame / (rate or 1)) % (to * 2)
+  local to = tonumber(ops:input(x + 1, y)) or 1
+  local rate = tonumber(ops:input(x - 1, y)) or 1
+  if to == 0 or to == nil then to = 1 end
+  if rate == 0 or rate == nil then rate = 1 end
+
+  local key = math.floor(frame / rate) % (to * 2)
   local val = key <= to and key or to - (key - to)
+  
+  
   if self:active() then
     self:spawn(ops.ports[self.name])
-    field.cell[y + 1][x] = val
+    field.cell[y + 1][x] = ops.chars[val]
   elseif not self:active() then
+    if ops.banged(x,y) then
+      field.cell[y + 1][x] = ops.chars[val]
+    end
   end
 end
 
@@ -521,25 +576,20 @@ ops.C  = function (self, x, y, frame)
   self.name = 'C'
   self.y = y
   self.x = x
-  local modulus = tonumber(field.cell[y][x + 1]) -- only int
-  if modulus == 0 then modulus = 1 end
-  local rate = tonumber(field.cell[y][x - 1]) -- only int
+  local modulus = tonumber(ops:input(x + 1, y)) or 9
+  local rate = tonumber(ops:input(x - 1, y)) or 1
+  if modulus == 0 or modulus == nil then modulus = 1 end
+  if rate == 0 or rate == nil then rate = 1 end
+  
+  local val = (math.floor(frame / rate) % modulus) + 1
+  
   if self:active() then
     self:spawn(ops.ports[self.name])
-    frame = util.clamp(math.ceil((frame / (rate or 1)) % (modulus or 9)) + 1,1,9)
-    field.cell[y+1][x] = util.round(frame)
+    field.cell[y+1][x] = ops.chars[val]
   elseif not self:active() then
-    -- bang
-    if field.cell[y][x + 1] == ('*') or ops.is_BANG(x+1,y) then
+    if ops.banged(x,y) then
       self:spawn(ops.ports[self.name])
-      if ops.is_OP(y-1,x+1) then
-        frame = util.clamp(math.ceil((frame / (rate or 1)) % (9)) + 1,1,9)
-        field.cell[y+1][x] = util.round(frame)
-      else
-        frame = util.clamp(math.ceil((frame / (rate or 1)) % (9)) + 1,1,9)
-        field.cell[y+1][x] = util.round(frame)
-      end
-    elseif ops.banged(x,y) then
+      field.cell[y+1][x] = ops.chars[val]
     end
   end
 end
@@ -548,8 +598,8 @@ ops.D  = function (self, x, y, frame)
   self.name = 'D'
   self.y = y
   self.x = x
-  local modulus = tonumber(field.cell[y][x + 1]) -- only int
-  local rate = tonumber(field.cell[y][x - 1]) -- only int
+  local modulus = tonumber(ops:input(x + 1, y)) -- only int
+  local rate = tonumber(ops:input(x - 1, y)) -- only int
   if modulus == 0 then modulus = 1 end
   local val = (frame % (modulus or 9)) * (rate or 1)
   local out = (val == 0 or modulus == 1) and '*' or 'null'
@@ -557,10 +607,9 @@ ops.D  = function (self, x, y, frame)
     self:spawn(ops.ports[self.name])
     field.cell[y+1][x] = out
   elseif not self:active() then
-    if field.cell[y][x + 1] == ('*') or ops.is_BANG(x+1,y) then
-    self:spawn(ops.ports[self.name])
+    if ops.banged(x,y) then
+      self:spawn(ops.ports[self.name])
       field.cell[y+1][x] = out
-    elseif ops.banged(x,y) then
     end
   end
 end
@@ -570,15 +619,15 @@ ops.F = function(self, x,y)
   self.y = y
   self.x = x
   local b = tonumber(field.cell[y][x + 1])
-  local a = tonumber(field.cell[y][x + 2])
+  local a = tonumber(field.cell[y][x - 1])
+  local val = a == b and '*' or 'null'
   if self:active() then
     self:spawn(ops.ports[self.name])
-    if a == b then
-      field.cell[y+1][x] = '*'
-    else
-      field.cell[y+1][x] = 'null'
-    end
+    field.cell[y+1][x] = val
   elseif not self:active() then
+    if ops.banged(x,y) then
+      field.cell[y+1][x] = val
+    end
   end
 end
 
@@ -595,8 +644,7 @@ ops.H = function(self,x,y)
       field.cell.params[y + 2][x].act = true
     end
   elseif not self:active() then
-    if field.cell[y][x + 1] == '*' then
-      self:spawn(ops.ports[self.name])
+    if ops.banged(x,y) then
       field.cell.params[y + 1][x].act = false
       if ((field.cell[y + 1][x] == 'H' or field.cell[y + 1][x] ==  'h') and field.cell.params[y + 1][x].op) then
         field.cell.params[y + 2][x].act = true
@@ -616,12 +664,8 @@ ops.J = function(self, x,y)
     self:spawn(ops.ports[self.name])
     field.cell[y + 1][x] = a
   elseif not self:active() then
-    if field.cell[y][x + 1] == '*' or ops.is_BANG(x + 1,y)  then
+    if ops.banged(x,y) then
       field.cell[y + 1][x] = a
-      field.cell[y][x + 1] = 'null'
-    elseif field.cell[y][x - 1] == '*' or ops.is_BANG(x - 1,y) then
-      field.cell[y + 1][x] = a
-      field.cell[y][x - 1] = 'null'
     end
   end
 end
@@ -631,13 +675,17 @@ ops.I = function (self, x, y, frame)
   self.y = y
   self.x = x
   local a, b
-  a = tonumber(field.cell[y][x + 1]) or 1
-  b = tonumber(field.cell[y][x + 2]) or 9
+  a = ops:input(x - 1, y, 0) 
+  b = ops:input(x + 1, y, 9)
+  a = tonumber(a) or 0
+  b = tonumber(b) ~= tonumber(a) and tonumber(b) or tonumber(a) + 1
+  
   if b < a then a,b = b,a end
   val = util.clamp((frame  % math.ceil(b)) + 1,a,b)
+  
   if self:active() then
     self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = val
+    field.cell[y+1][x] = ops.chars[val]
   else
   end
 end
@@ -648,7 +696,10 @@ ops.W = function(self, x, y)
   self.y = y
   if self:active() then
     ops:move(-1,0)
-  else
+  elseif not self:active() then
+    if ops.banged(x,y) then
+      ops:move(-1,0)
+    end
   end
 end
 
@@ -658,7 +709,10 @@ ops.E = function (self, x, y)
   self.y = y
   if self:active() then
     ops:move(1,0)
-  else
+  elseif not self:active() then
+    if ops.banged(x,y) then
+      ops:move(1,0)
+    end
   end
 end
 
@@ -668,6 +722,10 @@ ops.N = function (self, x, y)
   self.y = y
   if self:active() then
     ops:move(0,-1)
+  elseif not self:active() then
+    if ops.banged(x,y) then
+      ops:move(0,-1)
+    end
   end
 end
 
@@ -678,7 +736,7 @@ ops.S = function(self, x, y)
   if self:active() then
     ops:move(0,1)
   elseif not self:active() then
-    if (field.cell[y - 1][x] == '*' or field.cell[y][x - 1] == '*' or field.cell[y - 1][x + 1] == '*' ) then
+    if ops.banged(x,y) then
       ops:move(0,1)
     end
   end
@@ -717,11 +775,11 @@ ops.M  = function (self, x, y)
   self.y = y
   self.x = x
 
-  local l = tonumber(field.cell[y][x + 1]) or 1 -- only int
-  local m = tonumber(field.cell[y][x + 2]) or 1-- only int
+  local l = tonumber(ops:input(x - 1, y, 1)) or 1 -- only int
+  local m = tonumber(ops:input(x + 1, y, 1)) or 1-- only int
   if self:active() then
     self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = l % (m ~= 0 and m or 1)
+    field.cell[y+1][x] = string.sub(l % (m ~= 0 and m or 1), -1)
   elseif not self:active() then
   end
 end
@@ -730,10 +788,10 @@ ops.P = function (self, x, y, frame)
   self.name = 'P'
   self.y = y
   self.x = x
-
- local length = tonumber(field.cell[y][x - 1]) or 1
- local pos = util.clamp(tonumber(field.cell[y][x - 2]) or 1,1,length)
- local val = field.cell[y][x + 1]
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
+  local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
+  local val = field.cell[y][x + 1]
+  length = util.clamp(length, 1, XSIZE)
 
   -- set non OP param for p len
 
@@ -756,7 +814,7 @@ ops.P = function (self, x, y, frame)
   end
 
   -- length cleanups
-  for i= length, 9 do
+  for i= length, #ops.chars do
     if field.cell.params[y + 1][(x + i)].dot then
       field.cell.params[y + 1][(x + i)].dot = false
       field.cell.params[y + 1][(x + i) ].op = true
@@ -765,15 +823,14 @@ ops.P = function (self, x, y, frame)
   end
 end
 
-
-
 ops.T = function (self, x, y, frame)
   self.name = 'T'
   self.y = y
   self.x = x
 
- local length = tonumber(field.cell[y][x - 1]) ~= 0 and tonumber(field.cell[y][x - 1]) or 1
- local pos = util.clamp(tonumber(field.cell[y][x - 2]) ~= 0 and tonumber(field.cell[y][x - 2]) or 1, 1, length)
+ local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
+ length = util.clamp(length, 1, XSIZE)
+ local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
  local val = field.cell[self.y][self.x + util.clamp(pos,1,length)]
 
   -- set non OP param for p len
@@ -795,7 +852,7 @@ ops.T = function (self, x, y, frame)
     field.cell[y+1][x] = val or '.'
   end
   -- cleanups
-  for i= length+1, 9 do
+  for i= length+1, #ops.chars do
       field.cell.params[y][(x + i)].dot = false
       field.cell.params[y][(x + i)].op = true
       field.cell.params[y][(x + i)].cursor = false
@@ -808,10 +865,9 @@ ops.L = function (self, x, y, frame)
   self.x = x
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
   local rate = (tonumber(ops:input(x - 2, y, 0) ) == nil or tonumber(ops:input(x - 2, y, 0) ) == 0) and 1 or tonumber(ops:input(x - 2, y, 0) )
-  
   --local rate = (tonumber(field.cell[y][x - 2])  == nil or tonumber(field.cell[y][x - 2])  == 0 ) and 1 or tonumber(field.cell[y][x - 2])
   local offset = 1
-  length = length == 0 and 1 or util.clamp(length,1,XSIZE)
+  length = util.clamp(length,0,XSIZE)
   local l_start = x + offset
   local l_end = x + length
   if self:active() then
@@ -905,9 +961,9 @@ ops.Y = function(self, x,y)
     self:spawn(ops.ports[self.name])
     field.cell[y][x + 1] = a
   elseif not self:active() then
-    if field.cell[y+1][x] == '*' or ops.is_BANG(x,y+1)  then
+    if field.cell[y+1][x] == '*' or ops.is_bang(x,y+1)  then
       field.cell[y][x+1] = a
-    elseif field.cell[y-1][x] == '*' or ops.is_BANG(x,y-1) then
+    elseif field.cell[y-1][x] == '*' or ops.is_bang(x,y-1) then
       field.cell[y][x+1] = a
     end
   end
@@ -991,45 +1047,55 @@ ops[':'] = function (self, x,y,frame)
   self.y = y
   self.x = x
   self:spawn(ops.ports[self.name])
-
-  local channel = tonumber(field.cell[y][x + 1]) or 1
-  local octave = tonumber(field.cell[y][x + 2]) or 3
-  local note = tonumber(field.cell[y][x + 3]) or 0
-  local vel = tonumber(field.cell[y][x + 4]) or 1
-  local length = tonumber(field.cell[y][x + 5]) or 1
-  local noteval = octave * 10 + note
+  local note = 'C'
+  local channel = util.clamp(tonumber(ops:input(x + 1, y)) ~= nil and tonumber(ops:input(x + 1, y)) or 0,0,16)
+  local octave =  util.clamp(tonumber(ops:input(x + 2, y)) ~= nil and tonumber(ops:input(x + 2, y)) or 0,0,8)
+  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 0,0,16)
+  local length =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
+  if octave == nil or octave == 'null' then octave = 0 end
   
+  local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
+  local oct = transposed[4]
+  local n = math.floor(transposed[1])
+  local velocity = math.floor((vel / 16) * 127)
+
   if ops.banged(x,y) then
     all_notes_off(channel)
     field.cell.params[y][x].lit_out = false
-    midi_out_device:note_on(noteval, vel * 11, midi_out_channel)
-    table.insert(active_notes, noteval)
+    midi_out_device:note_on(n, velocity, channel)
+    table.insert(active_notes, n)
     notes_off_metro:start((60 / clk.bpm / clk.steps_per_beat / 4) * length, 1)
   else
     field.cell.params[y][x].lit_out = true
   end
 end
 
-
 ops['\\'] = function (self, x,y,frame)
   self.name = '\\'
   self.y = y
   self.x = x
+      
 
   local rate = tonumber(field.cell[y][x - 1]) or 1
-  local scale = tonumber(field.cell[y][x + 1]) or 1
+  local scale = tonumber(field.cell[y][x + 1]) or 60
+  
+  
+  local mode = util.clamp(scale, 1, #music.SCALES)
+  local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,#ops.chars)
+  --tab.print(scales)
+  --print(music.SCALES[mode].name)
   if self:active() then
     self:spawn(ops.ports[self.name])
     if frame % rate == 0 then
+      
       field.cell[y+1][x] = ops.notes[math.random(#ops.notes)]
     end
   else
   end
 end
 
-
 function ops.push(x,y)
-  if ops.is_OP(x,y) and not ops.is_BANG(x,y) then
+  if ops.is_op(x,y) and not ops.is_bang(x,y) then
     ops[string.upper(field.cell[y][x])](self, x,y, frame)
   end
 end
@@ -1039,7 +1105,7 @@ function ops:frame_count()
   -- main loop
   for y = 1,YSIZE do
     for x = 1,XSIZE do
-      if ops.is_OP(x,y) and not ops.is_BANG(x,y) then
+      if ops.is_op(x,y) and not ops.is_bang(x,y) then
         ops[string.upper(field.cell[y][x])](self, x,y, frame)
       elseif (ops.list[string.upper(field.cell[y][x])] == 'W' or  ops.list[string.upper(field.cell[y][x])] == 'N') then
         ops[string.upper(field.cell[y][x])](self, x,y, frame)
@@ -1126,7 +1192,7 @@ function init()
     Ack.add_channel_params(channel)
   end
   params:add_separator()
-  midi_out_device = midi.connect()
+  midi_out_device = midi.connect(1)
   midi_out_device.event = function() end
   params:add{type = "number", id = "midi_out_device", name = "midi out device",
   min = 1, max = 4, default = 1,
@@ -1209,11 +1275,11 @@ function keyb.event(typ, code, val)
   else
     if val == 1 then
       keyinput = get_key(code, val, shift)
-      if ops.is_OP(x_index,y_index) then
+      if ops.is_op(x_index,y_index) then
         ops:erase(x_index,y_index)
       elseif ops.list[string.upper(keyinput)] == 'H' or ops.list[string.upper(keyinput)] == 'h' then
-      elseif ops.is_OP(x_index, y_index - 1) then
-      elseif ops.is_OP(x_index,y_index + 1) then
+      elseif ops.is_op(x_index, y_index - 1) then
+      elseif ops.is_op(x_index,y_index + 1) then
         if ops.list[string.upper(keyinput)] == keyinput then
           -- remove southward op if new one have  outputs
         for i = 1,#ops.ports[string.upper(keyinput)] do
@@ -1224,7 +1290,7 @@ function keyb.event(typ, code, val)
           end
         end
         end 
-      elseif (ops.is_OP(x_index,y_index - 1) and tonumber(field.cell[y_index][x_index])) then
+      elseif (ops.is_op(x_index,y_index - 1) and tonumber(field.cell[y_index][x_index])) then
       end
       if keyinput == '/' then 
         if sc_ops == max_sc_ops then  
@@ -1264,8 +1330,8 @@ end
 local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
-  for y=1,YSIZE do
-    for x = 1,XSIZE do
+  for y=1,bounds_y do
+    for x = 1,bounds_x do
       if field.cell.params[y][x].lit then
         draw_op_frame(x,y)
       end
@@ -1277,7 +1343,7 @@ local function draw_grid()
       end
       -- levels
       if field.cell[y][x] ~= 'null' then
-        if ops.is_OP(x,y) then
+        if ops.is_op(x,y) then
           screen.level(15)
         elseif field.cell.params[y][x].lit then
           screen.level(12)
