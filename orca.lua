@@ -9,43 +9,35 @@
 engine.name = 'Ack'
 local Ack = require "ack/lib/ack"
 local keyb = hid.connect()
---local ops = include('orca/lib/ops')
-local keycodes = include("hid-demo/lib/keycodes")
+local keycodes = include("orca/lib/keycodes")
+local transpose_table = include("orca/lib/transpose")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local music = require 'musicutil'
+local BeatClock = require 'beatclock'
 local mode = #music.SCALES
 local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
-local BeatClock = require 'beatclock'
 local midi_out_device 
-
 local clk = BeatClock.new()
 local clk_midi = midi.connect()
-clk_midi.event = function(data)
-clk:process_midi(data)
-end
+clk_midi.event = function(data) clk:process_midi(data) end
 local notes_off_metro = metro.init()
 local active_notes = {}
-
-
-
-local wordarray ={}
 local keyinput = ""
-local keyoutput = ""
-local XSIZE = 25 -- 25
-local YSIZE = 8  -- 8
+local XSIZE = 25 
+local YSIZE = 8  
 local x_index = 1
 local y_index = 1
 local bar = false
 local help = false
-local frame = 1
 local field_offset_y = 0
 local field_offset_x = 0
 local bounds_x = 25
 local bounds_y = 8
 local sc_ops = 0
 local max_sc_ops = 4
+local frame = 1
 local ops = {}
 local field = {}
 field.cell = {}
@@ -146,10 +138,10 @@ ops.names =  {
 
 ops.info = {
   ['*'] = 'Bangs neighboring operators.',
-  [':'] = 'Midi',
-  ["'"] = 'Engine',
-  ['/'] = 'Softcut',
-  ['\\'] = 'R Note',
+  [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
+  ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
+  ['/'] = 'Softcut 1-plhead 2-rec 3-play 4-level 5-pos',
+  ['\\'] = 'Outputs random note within octave',
   ['A'] = 'Outputs the sum of inputs.',
   ['B'] = 'Bounces between two values based on the runtime frame.',
   ['C'] = 'Outputs a constant value based on the runtime frame.',
@@ -164,7 +156,7 @@ ops.info = {
   ['O'] = 'Reads a distant operator with offset.',
   ['M'] = 'Outputs the modulo of input.',
   ['W'] = 'Moves westward, or bangs.',
-  ['T'] = 'T',
+  ['T'] = 'Table',
   ['N'] = 'Moves northward, or bangs.',
   ['S'] = 'Moves southward, or bangs.',
   ['P'] = 'Writes an eastward operator with offset.',
@@ -202,75 +194,7 @@ ops.ports = {
   ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output_op'}}
 
 }
-ops.transpose_table = {
-  ['A'] = 'A0',
-  ['a'] = 'a0',
-  ['B'] = 'B0',
-  ['C'] = 'C0',
-  ['c'] = 'c0',
-  ['D'] = 'D0',
-  ['d'] = 'd0',
-  ['E'] = 'E0',
-  ['F'] = 'F0',
-  ['f'] = 'f0',
-  ['G'] = 'G0',
-  ['g'] = 'g0',
-  ['H'] = 'A0',
-  ['h'] = 'a0',
-  ['I'] = 'B0',
-  ['J'] = 'C1',
-  ['j'] = 'c1',
-  ['K'] = 'D1',
-  ['k'] = 'd1',
-  ['L'] = 'E1',
-  ['M'] = 'F1',
-  ['m'] = 'f1',
-  ['N'] = 'G1',
-  ['n'] = 'g1',
-  ['O'] = 'A1',
-  ['o'] = 'a1',
-  ['P'] = 'B1',
-  ['Q'] = 'C2',
-  ['q'] = 'c2',
-  ['R'] = 'D2',
-  ['r'] = 'd2',
-  ['S'] = 'E2',
-  ['T'] = 'F2',
-  ['t'] = 'f2',
-  ['U'] = 'G2',
-  ['u'] = 'g2',
-  ['V'] = 'A2',
-  ['v'] = 'a2',
-  ['W'] = 'B2',
-  ['X'] = 'C3',
-  ['x'] = 'c3',
-  ['Y'] = 'D3',
-  ['y'] = 'd3',
-  ['Z'] = 'E3',
-  -- Catch e
-  ['e'] = 'e0',
-  ['l'] = 'e1',
-  ['s'] = 'e2',
-  ['z'] = 'e3',
-  -- Catch b
-  ['b'] = 'b0',
-  ['i'] = 'b0',
-  ['p'] = 'b1',
-  ['w'] = 'b2',
-  ['0'] = 'C3',
-  ['1'] = 'D3',
-  ['2'] = 'E3',
-  ['3'] = 'F3',
-  ['4'] = 'G3',
-  ['5'] = 'A3',
-  ['6'] = 'B3',
-  ['7'] = 'C4',
-  ['8'] = 'D4',
-  ['9'] = 'E4',
-}
-
 ops.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
-
 ops.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 ops.chars[0] = '0'
 
@@ -282,11 +206,11 @@ end
 function ops.transpose(n, o)
   if n == nil or n == 'null' then n = 'C' else n = tostring(n) end 
   if o == nil or o == 'null' then o = 0 end
-  local note = ops.normalize(string.sub(ops.transpose_table[n], 1, 1))
-  local octave = util.clamp(ops.normalize(string.sub(ops.transpose_table[n], 2)) + o,0,8)
+  local note = ops.normalize(string.sub(transpose_table[n], 1, 1))
+  local octave = util.clamp(ops.normalize(string.sub(transpose_table[n], 2)) + o,0,8)
   local value = tab.key(ops.notes, note)
   local id = util.clamp((octave * 12) + value, 0, 127)
-  local real = id < 89 and tab.key(ops.transpose_table, id - 45) or nil -- ??
+  local real = id < 89 and tab.key(transpose_table, id - 45) or nil -- ??
   return {id, value, note, octave, real}
 end
 
@@ -355,8 +279,11 @@ end
 
 function ops:shift(s, e)
   local data = field.cell[self.y][self.x + s]
+  local params_data = field.cell.params[self.y][self.x + s]
   table.remove(field.cell[self.y], self.x + s)
+  table.remove(field.cell.params[self.y], self.x + s)
   table.insert(field.cell[self.y], self.x + e, data)
+  table.insert(field.cell.params[self.y], self.x + e, params_data)
 end
 
 function ops:cleanup()
@@ -405,7 +332,6 @@ function ops:erase(x,y)
   self.x = x
   self.y = y
   if ops.is_op(self.x,self.y) then self:cleanup() end
-  --ops:rm(self.x,self.y)
   self:replace('null')
 end
 
@@ -526,7 +452,6 @@ ops["*"] = function(self, x,y,f)
   self.x = x 
   self.y = y 
   if field.cell.params[y][x].act == true then self:erase(x,y) end
-  --if (not ops.is_op(x - 1, y) or not ops.is_op(x + 1, y) or not ops.is_op(x, y - 1) or not ops.is_op(x, y + 1)) then self:erase(x,y) end
 end
 
 ops.A = function (self,x,y,frame)
@@ -538,7 +463,6 @@ ops.A = function (self,x,y,frame)
   local sum
   if (a ~= 0 or b ~= 0) then sum  = ops.chars[util.clamp(math.ceil((a+b)),0,#ops.chars)]
   else sum = 0 end
-  
   if self:active() then
     self:spawn(ops.ports[self.name])
       field.cell[y+1][x] = sum
@@ -557,11 +481,8 @@ ops.B = function (self, x,y, frame)
   local rate = tonumber(ops:input(x - 1, y)) or 1
   if to == 0 or to == nil then to = 1 end
   if rate == 0 or rate == nil then rate = 1 end
-
   local key = math.floor(frame / rate) % (to * 2)
   local val = key <= to and key or to - (key - to)
-  
-  
   if self:active() then
     self:spawn(ops.ports[self.name])
     field.cell[y + 1][x] = ops.chars[val]
@@ -580,9 +501,7 @@ ops.C  = function (self, x, y, frame)
   local rate = tonumber(ops:input(x - 1, y)) or 1
   if modulus == 0 or modulus == nil then modulus = 1 end
   if rate == 0 or rate == nil then rate = 1 end
-  
   local val = (math.floor(frame / rate) % modulus) + 1
-  
   if self:active() then
     self:spawn(ops.ports[self.name])
     field.cell[y+1][x] = ops.chars[val]
@@ -679,14 +598,11 @@ ops.I = function (self, x, y, frame)
   b = ops:input(x + 1, y, 9)
   a = tonumber(a) or 0
   b = tonumber(b) ~= tonumber(a) and tonumber(b) or tonumber(a) + 1
-  
   if b < a then a,b = b,a end
   val = util.clamp((frame  % math.ceil(b)) + 1,a,b)
-  
   if self:active() then
     self:spawn(ops.ports[self.name])
     field.cell[y+1][x] = ops.chars[val]
-  else
   end
 end
 
@@ -746,12 +662,10 @@ ops.O = function (self, x, y)
   self.name = 'O'
   self.y = y
   self.x = x
-
   local a = (tonumber(field.cell[y][x - 2]) == 0 or tonumber(field.cell[y][x - 2]) == nil) and 1 or tonumber(field.cell[y][x - 2]) -- x
   local b = tonumber(field.cell[y][x - 1]) or 0 -- y
   local offsety = b + y
   local offsetx = a + x
-
   if self:active() then
     field.cell[y + 1][x] = field.cell[offsety][offsetx]
     for i= x - 1, x + 9 do
@@ -774,7 +688,6 @@ ops.M  = function (self, x, y)
   self.name = 'M'
   self.y = y
   self.x = x
-
   local l = tonumber(ops:input(x - 1, y, 1)) or 1 -- only int
   local m = tonumber(ops:input(x + 1, y, 1)) or 1-- only int
   if self:active() then
@@ -792,16 +705,12 @@ ops.P = function (self, x, y, frame)
   local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
   local val = field.cell[y][x + 1]
   length = util.clamp(length, 1, XSIZE)
-
-  -- set non OP param for p len
-
   if self:active() then
     self:spawn(ops.ports[self.name])
     for i = 1,length do
       field.cell.params[y + 1][(x + i) - 1 ].dot = true
       field.cell.params[y + 1][(x + i) - 1 ].op = false
     end
-
     -- highliht pos
     for l= 1, length do
       if ((pos or 1)  % (length + 1)) == l then
@@ -812,8 +721,7 @@ ops.P = function (self, x, y, frame)
     end
     field.cell[y+1][(x + ((pos or 1)  % (length+1))) - 1] = val
   end
-
-  -- length cleanups
+  -- cleanups
   for i= length, #ops.chars do
     if field.cell.params[y + 1][(x + i)].dot then
       field.cell.params[y + 1][(x + i)].dot = false
@@ -827,13 +735,10 @@ ops.T = function (self, x, y, frame)
   self.name = 'T'
   self.y = y
   self.x = x
-
- local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
- length = util.clamp(length, 1, XSIZE)
- local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
- local val = field.cell[self.y][self.x + util.clamp(pos,1,length)]
-
-  -- set non OP param for p len
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
+  length = util.clamp(length, 1, XSIZE)
+  local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)  
+  local val = field.cell[self.y][self.x + util.clamp(pos,1,length)]
   if self:active() then
     field.cell.params[y+1][x].lit_out  = true
     self:spawn(ops.ports[self.name])
@@ -853,9 +758,9 @@ ops.T = function (self, x, y, frame)
   end
   -- cleanups
   for i= length+1, #ops.chars do
-      field.cell.params[y][(x + i)].dot = false
-      field.cell.params[y][(x + i)].op = true
-      field.cell.params[y][(x + i)].cursor = false
+    field.cell.params[y][(x + i)].dot = false
+    field.cell.params[y][(x + i)].op = true
+    field.cell.params[y][(x + i)].cursor = false
   end
 end
 
@@ -865,7 +770,6 @@ ops.L = function (self, x, y, frame)
   self.x = x
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
   local rate = (tonumber(ops:input(x - 2, y, 0) ) == nil or tonumber(ops:input(x - 2, y, 0) ) == 0) and 1 or tonumber(ops:input(x - 2, y, 0) )
-  --local rate = (tonumber(field.cell[y][x - 2])  == nil or tonumber(field.cell[y][x - 2])  == 0 ) and 1 or tonumber(field.cell[y][x - 2])
   local offset = 1
   length = util.clamp(length,0,XSIZE)
   local l_start = x + offset
@@ -912,7 +816,6 @@ ops.R = function (self, x,y,frame)
   if self:active() then
     self:spawn(ops.ports[self.name])
     field.cell[y+1][x] = ops.chars[math.random((a or 1),(b or 9))]
-  else
   end
 end
 
@@ -920,7 +823,6 @@ ops.X = function(self, x,y)
   self.name = 'X'
   self.y = y
   self.x = x
-
   local a = tonumber(field.cell[y][x - 2]) or 0 -- x
   local b = util.clamp(tonumber(field.cell[y][x - 1]) or 1, 1, 9) -- y
   local offsety = b + y
@@ -984,13 +886,11 @@ ops["'"] = function (self, x,y,frame)
   self.y = y
   self.x = x
   self:spawn(ops.ports[self.name])
-
   local sample = tonumber(field.cell[y][x + 1]) or 0
   local octave = tonumber(field.cell[y][x + 2]) or 0
   local note = tonumber(field.cell[y][x + 3]) or 0
   local level = tonumber(field.cell[y][x + 4]) or 9
   local start = tonumber(field.cell[y][x + 5]) or 0
-  
   if ops.banged(x,y) then
     field.cell.params[y][x].lit_out = false
     engine.sampleStart(sample, start / 9)
@@ -1009,7 +909,7 @@ ops['/'] = function (self, x,y,frame)
   self:spawn(ops.ports[self.name])
   local num = sc_ops + 1
 -- bang resets playhead to pos 
-  local playhead = tonumber(field.cell[y][x + 1]) ~= 0 and  tonumber(field.cell[y][x + 1])  or 1 -- rec 0 - off 1 - 9 on + rec_level
+  local playhead = util.clamp(tonumber(field.cell[y][x + 1]) ~= 0 and  tonumber(field.cell[y][x + 1])  or 1,1,max_sc_ops) -- playhead 1-4
   local rec = tonumber(field.cell[y][x + 2]) or 0 -- rec 0 - off 1 - 9 on + rec_level
   local play = tonumber(field.cell[y][x + 3]) or 0 -- play 0 - stop  1 - 5 / fwd  6 - 9 rev
   local level = tonumber(field.cell[y][x + 4]) or 9 -- playback level
@@ -1053,12 +953,10 @@ ops[':'] = function (self, x,y,frame)
   local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 0,0,16)
   local length =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
   if octave == nil or octave == 'null' then octave = 0 end
-  
   local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
   local oct = transposed[4]
   local n = math.floor(transposed[1])
   local velocity = math.floor((vel / 16) * 127)
-
   if ops.banged(x,y) then
     all_notes_off(channel)
     field.cell.params[y][x].lit_out = false
@@ -1074,23 +972,16 @@ ops['\\'] = function (self, x,y,frame)
   self.name = '\\'
   self.y = y
   self.x = x
-      
-
   local rate = tonumber(field.cell[y][x - 1]) or 1
   local scale = tonumber(field.cell[y][x + 1]) or 60
-  
-  
   local mode = util.clamp(scale, 1, #music.SCALES)
   local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,#ops.chars)
-  --tab.print(scales)
   --print(music.SCALES[mode].name)
   if self:active() then
     self:spawn(ops.ports[self.name])
     if frame % rate == 0 then
-      
       field.cell[y+1][x] = ops.notes[math.random(#ops.notes)]
     end
-  else
   end
 end
 
@@ -1137,13 +1028,10 @@ function init()
       table.insert(field.cell.params[y], {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil})
     end
   end
-  
   params:add_trigger('save_p', "save project" )
   params:set_action('save_p', function(x) textentry.enter(ops.save_project, 'untitled' ) end)
-
   params:add_file('load_p', "load project",'/home/we/dust/data/orca/')
   params:set_action('load_p', function(x) ops.load_project(x) end)
-
   softcut.reset()
   audio.level_cut(1)
   audio.level_adc_cut(1)
@@ -1157,27 +1045,22 @@ function init()
     softcut.rate(i, 1)
     softcut.loop_start(i, 0)
     softcut.loop_end(i, 10)
-    
     softcut.loop(i, 1)
     softcut.rec(i, 0)
-    
     softcut.fade_time(i,0.01)
     softcut.level_slew_time(i,0)
     softcut.rate_slew_time(i,0.01)
-
     softcut.rec_level(i, 1)
     softcut.pre_level(i, 1)
     softcut.position(i, 0)
     softcut.buffer(i,1)
     softcut.enable(i, 1)
-
     softcut.filter_dry(i, 1);
     softcut.filter_fc(i, 0);
     softcut.filter_lp(i, 0);
     softcut.filter_bp(i, 0);
     softcut.filter_rq(i, 0);
   end
-
   redraw_metro = metro.init(function(stage) redraw() end, 1/60)
   redraw_metro:start()
   clk.on_step = function() ops:frame_count() end
@@ -1282,13 +1165,13 @@ function keyb.event(typ, code, val)
       elseif ops.is_op(x_index,y_index + 1) then
         if ops.list[string.upper(keyinput)] == keyinput then
           -- remove southward op if new one have  outputs
-        for i = 1,#ops.ports[string.upper(keyinput)] do
-          if ops.ports[string.upper(keyinput)][i][2] == 1 then
-            ops:erase(x_index,y_index + 1)
-          else
-            ops:erase(x_index,y_index)
+          for i = 1,#ops.ports[string.upper(keyinput)] do
+            if ops.ports[string.upper(keyinput)][i][2] == 1 then
+              ops:erase(x_index,y_index + 1)
+            else
+              ops:erase(x_index,y_index)
+            end
           end
-        end
         end 
       elseif (ops.is_op(x_index,y_index - 1) and tonumber(field.cell[y_index][x_index])) then
       end
@@ -1304,8 +1187,6 @@ function keyb.event(typ, code, val)
     end
   end
 end
-
-      
 
 local function draw_op_frame(x,y)
   screen.level(4)
@@ -1429,10 +1310,16 @@ local function draw_bar()
   screen.move(2,63)
   screen.font_face(25)
   screen.font_size(6)
-  screen.text('FRAME:'  .. frame)
+  screen.text(frame .. 'f')
   screen.stroke()
-  screen.move(44,63)
-  screen.text(field.cell[y_index][x_index] and ops.names[string.upper(field.cell[y_index][x_index])] or 'null')
+  screen.move(40,63)
+  screen.text_center(field.cell[y_index][x_index] and ops.names[string.upper(field.cell[y_index][x_index])] or 'empty')
+  screen.stroke()
+  screen.move(75,63)
+  screen.text(params:get("bpm") .. (frame % 4 == 0 and ' *' or ''))
+  screen.stroke()
+  screen.move(123,63)
+  screen.text_right(x_index .. ',' .. y_index)
   screen.stroke()
 end
 
@@ -1446,13 +1333,13 @@ local function draw_help()
     screen.fill()
     if bar then
       screen.level(15)
-      screen.move(50,53)
+      screen.move(36,53)
       screen.line_rel(4,4)
-      screen.move(58,53)
+      screen.move(44,53)
       screen.line_rel(-4,4)
       screen.stroke()
       screen.level(0)
-      screen.move(51,54)
+      screen.move(37,54)
       screen.line_rel(6,0)
       screen.stroke()
     end
