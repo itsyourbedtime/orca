@@ -324,8 +324,8 @@ function ops:cleanup()
     field.cell.params[self.y + b][self.x + a].placeholder = nil
   elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == ':' or field.cell[self.y][self.x] == '/') then
     local plhd = tonumber(field.cell[self.y][self.x + 1]) ~= 0 and  tonumber(field.cell[self.y][self.x + 1])  or 1
-    if field.cell[self.y][self.x] == '/' then sc_ops = sc_ops - 1 softcut.play(plhd,0) end
-  end
+    if field.cell[self.y][self.x] == '/' then sc_ops = sc_ops - 1 softcut.play(field.cell[self.y][self.x + 1],0) end
+  end 
 end
 
 function ops:erase(x,y)
@@ -1150,7 +1150,9 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
     if clk.playing then
       clk:stop()
-      softcut.play(1,0)
+      for i=1,max_sc_ops do
+        softcut.play(i,0)
+      end
     else
       frame = 0
       clk:start()
