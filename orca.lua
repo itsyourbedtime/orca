@@ -58,9 +58,9 @@ field.active = {}
 local vars = {}
 local menu = false
 local menu_index = 1
-local menu_entries = {{'New project', function() init() menu = false end}, 
-              {'Load project', function() fileselect.enter(_path.audio, ops:load_project()) end}, 
-              {'Save project', function() textentry.enter(ops.save_project, 'untitled' ) end}
+local menu_entries = {{'New', function() init() menu = false end}, 
+              {'Load', function() fileselect.enter(norns.state.data, ops.load_project) end}, 
+              {'Save', function() textentry.enter(ops.save_project, 'untitled' ) end}
 }
 
 
@@ -81,6 +81,7 @@ ops.load_project = function(pth)
     local name = tab.split(pth, '/')
     name = tab.split(name[#name], '.')[1]
     softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #ops.chars, 1, 1)
+    params:read(norns.state.data .. name ..".pset")
     print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
   else
     print("no data")
@@ -90,7 +91,8 @@ end
 ops.save_project = function(txt)
   if txt then
     tab.save(field, norns.state.data .. txt ..".orca")
-    softcut.buffer_write_mono(norns.state.data..txt.."_buffer.aif",0,#ops.chars, 1)
+    softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#ops.chars, 1)
+    params:write(norns.state.data .. txt .. ".pset")
     print ('saved ' .. norns.state.data .. txt .. '_buffer.aif')
   else
     print("save cancel")
@@ -113,7 +115,7 @@ ops.list =  {
   ['H'] = 'H',
   ["I"] = 'I',
   ["J"] = 'J',
-  --['K']
+  ['K'] = 'K',
   ["L"] = 'L',
   ["M"] = 'M',
   ["N"] = 'N',
@@ -155,7 +157,7 @@ ops.names =  {
   ['H'] = 'halt',
   ["I"] = 'increment',
   ["J"] = 'jumper',
-  --['K']
+  ['K'] = 'konkat',
   ["L"] = 'loop',
   ["M"] = 'modulo',
   ["N"] = 'north',
@@ -221,15 +223,16 @@ ops.ports = {
   ['F'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['H'] = {{0, 1, 'output'}},
   ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
+  ['K'] = {{-1, 0, 'input'}},
   ['L'] = {{-1, 0, 'input'}, {-2, 0, 'input'}},
   ['I'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1 , 'input_op'}},
   ['M'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
   ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}},
   ['T'] = {{-1,0, 'input'},  {-2, 0, 'input'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
-  ['R'] = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
+  ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
-  ['V'] = {{-1,0, 'input_op'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
+  ['V'] = {{-1,0, 'input_op'},  {1, 0, 'input_op'}},
   ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output_op'}},
   ['W'] = {},
   ['S'] = {},
@@ -331,13 +334,15 @@ function ops:shift(s, e)
 end
 
 function ops:cleanup()
-  self:clean_ports(ops.ports[string.upper(field.cell[self.y][self.x])])
+  if ops.is_op(self.x, self.y) then self:clean_ports(ops.ports[string.upper(field.cell[self.y][self.x])]) end
   field.cell.params[self.y][self.x] = {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil}
   if field.cell.params[self.y+1][self.x].cursor == true then field.cell.params[self.y+1][self.x].cursor = false end
   if field.cell.params[self.y][self.x + 1].op == false then field.cell.params[self.y][self.x + 1].op = true end
+  if field.cell.params[self.y + 1][self.x].lit_out == true then field.cell.params[self.y + 1][self.x].lit_out = false end
+
   -- specific ops cleanup
   if (field.cell[self.y][self.x] == 'P' or field.cell[self.y][self.x] == 'p') then
-    local seqlen = tonumber(field.cell[self.y][self.x -1]) or 1
+    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
     for i=0, seqlen do
       field.cell.params[self.y + 1][self.x + i].op = true
       field.cell.params[self.y + 1][self.x + i].lit = false
@@ -345,15 +350,21 @@ function ops:cleanup()
       field.cell.params[self.y + 1][self.x + i].dot = false
     end
   elseif (field.cell[self.y][self.x] == 'T' or field.cell[self.y][self.x] == 't') then
-    local seqlen = tonumber(field.cell[self.y][self.x -1]) or 1
+    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
     field.cell.params[self.y+1][self.x].lit_out  = false
     for i=1, seqlen do
       field.cell.params[self.y][self.x + i].op = true
       field.cell.params[self.y][self.x + i].cursor = false
       field.cell.params[self.y][self.x + i].dot = false
     end
+  elseif (field.cell[self.y][self.x] == 'K' or field.cell[self.y][self.x] == 'k') then
+    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
+    for i=1,seqlen do
+      field.cell.params[self.y][self.x + i].dot = false
+      field.cell.params[self.y][(self.x + i)].op = true
+    end
   elseif (field.cell[self.y][self.x] == 'L' or field.cell[self.y][self.x] == 'l') then
-    local seqlen = tonumber(field.cell[self.y][self.x -1]) or 1
+    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
     for i=1,seqlen do
       field.cell.params[self.y][self.x + i].dot = false
       field.cell.params[self.y][(self.x + i)].op = true
@@ -376,7 +387,7 @@ end
 function ops:erase(x,y)
   self.x = x
   self.y = y
-  if ops.is_op(self.x,self.y) then self:cleanup() end
+  if self:active() then self:cleanup() end
   self:replace('null')
 end
 
@@ -435,23 +446,25 @@ end
 
 function ops:clean_ports(t)
   for i=1,#t do
-    for l=1,#t[i]-2 do
-      local x = self.x + t[i][l]
-      local y = self.y + t[i][l+1]
-      field.cell.params[self.y][self.x].lit = false
-      if field.cell[y][x] ~= nil then
-        if t[i][l + 2] == 'output' then
-          field.cell.params[y][x].lit_out = false
-          field.cell.params[y][x].dot_port = false
-        elseif t[i][l + 2] == 'input' then
-          field.cell.params[y][x].dot_port = false
-        elseif t[i][l + 2] == 'input_op' then
-          field.cell.params[y][x].op = true
-          field.cell.params[y][x].dot_port = false
-        elseif t[i][l + 2] == 'output_op' then
-          field.cell.params[y][x].op = true
-          field.cell.params[y][x].dot_port = false
-          field.cell.params[y][x].lit_out = false
+    if t[i] ~= nil then
+      for l=1,#t[i]-2 do
+        local x = self.x + t[i][l]
+        local y = self.y + t[i][l+1]
+        field.cell.params[self.y][self.x].lit = false
+        if field.cell[y][x] ~= nil then
+          if t[i][l + 2] == 'output' then
+            field.cell.params[y][x].lit_out = false
+            field.cell.params[y][x].dot_port = false
+          elseif t[i][l + 2] == 'input' then
+            field.cell.params[y][x].dot_port = false
+          elseif t[i][l + 2] == 'input_op' then
+            field.cell.params[y][x].op = true
+            field.cell.params[y][x].dot_port = false
+          elseif t[i][l + 2] == 'output_op' then
+            field.cell.params[y][x].op = true
+            field.cell.params[y][x].dot_port = false
+            field.cell.params[y][x].lit_out = false
+          end
         end
       end
     end
@@ -500,21 +513,32 @@ ops["*"] = function(self, x,y,f)
 end
 
 ops.V = function (self,x,y,frame)
-  self.name = 'A'
+  self.name = 'V'
   self.y = y
   self.x = x
   local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0)) or 0
   local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
-  print(a,b)
   if self:active() then
-    field.cell.params[y][x].lit = true
+    self:spawn(ops.ports[self.name])
+--[[    field.cell.params[y][x].lit = true
+    field.cell.params[y][x - 1].op = false 
+    field.cell.params[y + 1][x - 1].lit_out = false 
+    field.cell.params[y][x - 1].lit = false 
+    field.cell.params[y][x + 1].op = false 
+    field.cell.params[y + 1][x + 1].lit_out = false 
+    field.cell.params[y][x + 1].lit = false 
+]]
     if (b ~= 0 and vars[b] ~= nil and a == 0) then
       if vars[b] ~= nil then
        field.cell.params[y + 1][x].lit_out = true
+       field.cell.params[y + 1][x].op = false 
        field.cell[y + 1][x] = vars[b] 
       end 
     elseif self:active() and b ~= 0 and  a ~= 0  then
       vars[a] = field.cell[y][x + 1]
+    else 
+      field.cell[y + 1][x] = 'null'
+      field.cell.params[y + 1][x].lit_out = false
     end
   elseif not self:active() then
     if ops.banged(x,y) then
@@ -832,6 +856,45 @@ ops.T = function (self, x, y, frame)
   end
 end
 
+ops.K = function (self, x, y, frame)
+  self.name = 'K'
+  self.y = y
+  self.x = x
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
+  local offset = 1
+  length = util.clamp(length,0,XSIZE)
+  local l_start = x + offset
+  local l_end = x + length
+  if self:active() then
+    self:spawn(ops.ports[self.name])
+    if length - offset  == 0 then
+      for i=2,length do
+        field.cell.params[y][x + i].op = true
+      end
+    else
+      for i = 1,length do
+        local var = ops:input(x+i,y)
+        field.cell.params[y][(x + i)].dot = true
+        field.cell.params[y][(x + i)].op = false
+        field.cell.params[y+1][(x + i)].lit_out = false
+        field.cell.params[y][(x + i)].lit = false
+        if vars[var] ~= nil then
+          field.cell[y+1][(x + i)] = vars[var]
+          field.cell.params[y+1][(x + i)].op = false
+          field.cell.params[y+1][(x + i)].lit_out = false
+          field.cell.params[y+1][(x + i)].lit = false
+        end
+      end
+    end
+  end
+  -- cleanups
+  if length < #ops.chars then
+    for i= length == 0 and length or length+1, #ops.chars do
+        field.cell.params[y][(x + i)].dot = false
+        field.cell.params[y][(x + i)].op = true
+    end
+  end
+end
 ops.L = function (self, x, y, frame)
   self.name = 'L'
   self.y = y
@@ -845,7 +908,7 @@ ops.L = function (self, x, y, frame)
   if self:active() then
     self:spawn(ops.ports[self.name])
     if length - offset  == 0 then
-      for i=2,10 do
+      for i=2,length do
         field.cell.params[y][x + i].op = true
       end
     else
@@ -878,6 +941,7 @@ ops.R = function (self, x,y,frame)
   b = ops:input(x + 1, y, 9)
   a = util.clamp(tonumber(a) or 1,0,#ops.chars)
   b = util.clamp(tonumber(b) or 9,1,#ops.chars)
+  if b == 27 and a == 27 then a = math.random(#ops.chars) b = math.random(#ops.chars) end -- rand 
   if b < a then a,b = b,a end
   if self:active() then
     self:spawn(ops.ports[self.name])
@@ -1055,15 +1119,14 @@ ops['\\'] = function (self, x,y,frame)
   self.name = '\\'
   self.y = y
   self.x = x
-  local rate = tonumber(field.cell[y][x - 1]) or 1
-  local scale = tonumber(field.cell[y][x + 1]) or 60
+  local rate = tonumber(ops:input(x - 1, y)) == 0 and 1 or tonumber(ops:input(x - 1, y)) or 1
+  local scale = tonumber(ops:input(x + 1, y)) == 0 and 60 or tonumber(ops:input(x + 1, y)) or 60
   local mode = util.clamp(scale, 1, #music.SCALES)
-  local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,#ops.chars)
-  --print(music.SCALES[mode].name)
+  local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,12)
   if self:active() then
     self:spawn(ops.ports[self.name])
     if frame % rate == 0 then
-      field.cell[y+1][x] = ops.notes[math.random(#ops.notes)]
+      field.cell[y+1][x] =  ops.notes[util.clamp(scales[math.random(#scales)] - 60, 1, 12)]
     end
   end
 end
@@ -1151,7 +1214,6 @@ function init()
   params:add_separator()
 
 
-  Timber.set_bpm(BeatClock.bpm)
   Timber.add_params()
   for i = 0, NUM_SAMPLES - 1 do
     local extra_params = {
@@ -1226,7 +1288,6 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
     if menu then
         menu_entries[menu_index][2]()
-        print(1)
       end
   elseif (code == hid.codes.KEY_LEFTALT and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTALT and val == 1) then
@@ -1438,7 +1499,7 @@ local function draw_menu()
   screen.clear()
   for i=1,#menu_entries do
     screen.level(menu_index == i and 9 or 4)
-    screen.move(5, i * 8)
+    screen.move(5, (i * 10) + 20)
     screen.text(menu_entries[i][1])
     screen.stroke()
   end
