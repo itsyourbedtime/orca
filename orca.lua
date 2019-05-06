@@ -1026,25 +1026,22 @@ ops["'"] = function (self, x,y,frame)
   self.y = y
   self.x = x
   self:spawn(ops.ports[self.name])
-
   local sample = util.clamp(tonumber(ops:input(x + 1, y)) ~= nil and tonumber(ops:input(x + 1, y)) or 0,0,#ops.chars)
   local octave =  util.clamp(tonumber(ops:input(x + 2, y)) ~= nil and tonumber(ops:input(x + 2, y)) or 0,0,8)
-  local lev =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 33,0,#ops.chars)
+  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 33,0,#ops.chars)
   local start =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
   if octave == nil or octave == 'null' then octave = 0 end
   local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
   local oct = transposed[4]
   local n = math.floor(transposed[1])
-  local level = math.floor((lev / #ops.chars) * 100)
-
-  params:set("start_frame_" .. sample, start  * 100000)
-  engine.startFrame(sample, params:get("start_frame_" .. sample))
-
+  local velocity = math.floor((vel / #ops.chars) * 127)
+  local length = params:get("end_frame_" .. sample)
+  local start_pos = util.clamp(((start / #ops.chars)*2) * length, 0, length)
+  params:set("start_frame_" .. sample,start_pos )
   if ops.banged(x,y) then
     field.cell.params[y][x].lit_out = false
     engine.noteOff(sample)
-    engine.amp(sample, (lev == 0 or lev <= 9)  and level or -level)
-    engine.noteOn(sample, sample, music.note_num_to_freq(n), 127)
+    engine.noteOn(sample, sample, music.note_num_to_freq(n), velocity)
   else
     field.cell.params[y][x].lit_out = true
     if frame % ( #ops.chars  * 4 )== 0 then engine.noteOff(sample) end
@@ -1064,11 +1061,9 @@ ops['/'] = function (self, x,y,frame)
   local l =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 0,0,#ops.chars) -- level 1-z
   local r =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,#ops.chars) -- rate  1-z
   local p =  util.clamp(tonumber(ops:input(x + 6, y)) ~= nil and tonumber(ops:input(x + 6, y)) or 0,0,#ops.chars) -- pos  1-z 
-  
   local pos = util.round((p / #ops.chars) * #ops.chars, 0.1)
   local level = util.round((l / #ops.chars) * 1, 0.1)
   local rate = util.round((r / #ops.chars) * 2, 0.1)
-  
   if rec >= 1 then 
     softcut.rec_level(playhead, rec/9) 
     field.cell.params[y][x].lit_out = true 
