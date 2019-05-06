@@ -1171,7 +1171,7 @@ function init()
   params:add_trigger('save_p', "save project" )
   params:set_action('save_p', function(x) textentry.enter(ops.save_project, 'untitled' ) end)
   params:add_file('load_p', "load project")
-  params:set_action('load_p', function(x) ops.load_project(norns.state.data) end)
+  params:set_action('load_p', function(x) ops.load_project(x) end)
   params:add_trigger('reset', "reset" )
   params:set_action('reset', function(x) init() end)
 
