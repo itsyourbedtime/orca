@@ -11,7 +11,6 @@ function unrequire(name)
   _G[name] = nil
 end
 
-
 unrequire("timber/lib/timber_engine")
 engine.name = "Timber"
 Timber = require "timber/lib/timber_engine"
@@ -29,8 +28,6 @@ local mode = #music.SCALES
 local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
 local midi_out_device 
 local clk = BeatClock.new()
-local clk_midi = midi.connect()
-clk_midi.event = function(data) clk:process_midi(data) end
 local notes_off_metro = metro.init()
 local active_notes = {}
 local keyinput = ""
@@ -40,6 +37,7 @@ local x_index = 1
 local y_index = 1
 local bar = false
 local help = false
+local field_grid = 1
 local field_offset_y = 0
 local field_offset_x = 0
 local bounds_x = 25
@@ -78,7 +76,7 @@ ops.load_project = function(pth)
     if saved ~= nil then
       print("data found")
       field = saved
-      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)    --tab.split(pth, '/')
+      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6) 
       softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #ops.chars, 1, 1)
       params:read(norns.state.data .. name ..".pset")
       print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
@@ -1297,6 +1295,10 @@ function keyb.event(typ, code, val)
   elseif (code == 41 and val == 1) then
     help = not help
   -- bypass crashes  -- 2do F1-F12 (59-68, 87,88)
+  elseif (code == 26 and val == 1) then
+    field_grid = util.clamp(field_grid - 1, 1, 8)
+  elseif (code == 27 and val == 1) then
+    field_grid = util.clamp(field_grid + 1, 1, 8)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
   elseif (code == hid.codes.KEY_ESC and val == 1) then
     if not load_menu then main_menu = not main_menu end
@@ -1397,6 +1399,7 @@ local function draw_op_cursor(x,y)
   screen.fill()
 end
 
+
 local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
@@ -1457,7 +1460,7 @@ local function draw_grid()
         elseif field.cell.params[y][x].placeholder ~= nil then
           screen.text(field.cell.params[y][x].placeholder)
         else
-          screen.text('.')
+          screen.text( (x % field_grid == 0 and y % util.clamp(field_grid - 1,1,8) == 0) and  '.' or '')
         end
       else
         screen.text(field.cell[y][x])
