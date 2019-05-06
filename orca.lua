@@ -10,16 +10,13 @@ function unrequire(name)
   package.loaded[name] = nil
   _G[name] = nil
 end
+
+
 unrequire("timber/lib/timber_engine")
-
- Timber = require "timber/lib/timber_engine"
-local music = require "musicutil"
-
 engine.name = "Timber"
-
-
+Timber = require "timber/lib/timber_engine"
+local music = require "musicutil"
 local NUM_SAMPLES = 35
-
 local keyb = hid.connect()
 local keycodes = include("orca/lib/keycodes")
 local transpose_table = include("orca/lib/transpose")
@@ -37,8 +34,8 @@ clk_midi.event = function(data) clk:process_midi(data) end
 local notes_off_metro = metro.init()
 local active_notes = {}
 local keyinput = ""
-local XSIZE = 25 
-local YSIZE = 8  
+local XSIZE = 101 
+local YSIZE = 33  
 local x_index = 1
 local y_index = 1
 local bar = false
@@ -56,10 +53,12 @@ field.cell = {}
 field.cell.params = {}
 field.active = {}
 local vars = {}
-local menu = false
+local main_menu = false
+local load_menu = false
+local projects = {}
 local menu_index = 1
-local menu_entries = {{'New', function() init() menu = false end}, 
-              {'Load', function() fileselect.enter(norns.state.data, ops.load_project) end}, 
+local menu_entries = {{'New', function() init() main_menu = false menu_index = 1 end}, 
+              {'Load', function() main_menu = false load_menu = true end}, 
               {'Save', function() textentry.enter(ops.save_project, 'untitled' ) end}
 }
 
@@ -74,17 +73,20 @@ local function all_notes_off(ch)
 end
 
 ops.load_project = function(pth)
-  saved = tab.load(pth)
-  if saved ~= nil then
-    print("data found")
-    field = saved
-    local name = tab.split(pth, '/')
-    name = tab.split(name[#name], '.')[1]
-    softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #ops.chars, 1, 1)
-    params:read(norns.state.data .. name ..".pset")
-    print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
-  else
-    print("no data")
+  if string.find(pth, 'orca') ~= nil then
+    saved = tab.load(pth)
+    if saved ~= nil then
+      print("data found")
+      field = saved
+      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)    --tab.split(pth, '/')
+      softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #ops.chars, 1, 1)
+      params:read(norns.state.data .. name ..".pset")
+      print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
+      load_menu = false
+      main_menu = false
+    else
+      print("no data")
+    end
   end
 end
 
@@ -229,7 +231,7 @@ ops.ports = {
   ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1 , 'input_op'}},
   ['M'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
   ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}},
-  ['T'] = {{-1,0, 'input'},  {-2, 0, 'input'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
+  ['T'] = {{-1,0, 'input_op'},  {-2, 0, 'input_op'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
   ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
   ['V'] = {{-1,0, 'input_op'},  {1, 0, 'input_op'}},
@@ -362,6 +364,8 @@ function ops:cleanup()
     for i=1,seqlen do
       field.cell.params[self.y][self.x + i].dot = false
       field.cell.params[self.y][(self.x + i)].op = true
+      field.cell.params[self.y][(self.x + i)].act = true
+      field.cell.params[self.y + 1][(self.x + i)].act = true
     end
   elseif (field.cell[self.y][self.x] == 'L' or field.cell[self.y][self.x] == 'l') then
     local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
@@ -444,12 +448,12 @@ function ops:move(x,y)
   end
 end
 
-function ops:clean_ports(t)
+function ops:clean_ports(t, x1, y1)
   for i=1,#t do
     if t[i] ~= nil then
       for l=1,#t[i]-2 do
-        local x = self.x + t[i][l]
-        local y = self.y + t[i][l+1]
+        local x = x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l] 
+        local y = y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1] 
         field.cell.params[self.y][self.x].lit = false
         if field.cell[y][x] ~= nil then
           if t[i][l + 2] == 'output' then
@@ -476,6 +480,7 @@ function ops:spawn(t)
     for l= 1, #t[i] - 2 do
       local x = self.x + t[i][l]
       local y = self.y + t[i][l+1]
+      local existing = field.cell[y][x] == ops.list[field.cell[y][x]] and field.cell[y][x] or nil
       local port_type = t[i][l + 2]
 
       -- draw frame
@@ -492,9 +497,14 @@ function ops:spawn(t)
           field.cell.params[y][x].dot_port = true
         elseif port_type == 'input' then
           field.cell.params[y][x].dot_port = true
+          
         elseif port_type == 'input_op' then
           field.cell.params[y][x].op = false
           field.cell.params[y][x].dot_port = true
+          if existing ~= nil then
+            ops:clean_ports(existing, x,y)
+          else
+          end
         elseif port_type == 'output_op' then
           field.cell.params[y][x].lit_out = true
           field.cell.params[y][x].op = false
@@ -520,24 +530,14 @@ ops.V = function (self,x,y,frame)
   local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
   if self:active() then
     self:spawn(ops.ports[self.name])
---[[    field.cell.params[y][x].lit = true
-    field.cell.params[y][x - 1].op = false 
-    field.cell.params[y + 1][x - 1].lit_out = false 
-    field.cell.params[y][x - 1].lit = false 
-    field.cell.params[y][x + 1].op = false 
-    field.cell.params[y + 1][x + 1].lit_out = false 
-    field.cell.params[y][x + 1].lit = false 
-]]
     if (b ~= 0 and vars[b] ~= nil and a == 0) then
       if vars[b] ~= nil then
        field.cell.params[y + 1][x].lit_out = true
-       field.cell.params[y + 1][x].op = false 
        field.cell[y + 1][x] = vars[b] 
       end 
     elseif self:active() and b ~= 0 and  a ~= 0  then
       vars[a] = field.cell[y][x + 1]
     else 
-      field.cell[y + 1][x] = 'null'
       field.cell.params[y + 1][x].lit_out = false
     end
   elseif not self:active() then
@@ -745,7 +745,7 @@ ops.S = function(self, x, y)
     ops:move(0,1)
   elseif not self:active() then
     if ops.banged(x,y) then
-      ops:move(0,1)
+      --ops:move(0,1)
     end
   end
 end
@@ -875,23 +875,30 @@ ops.K = function (self, x, y, frame)
       for i = 1,length do
         local var = ops:input(x+i,y)
         field.cell.params[y][(x + i)].dot = true
+        field.cell.params[y+1][(x + i)].dot_port = false
         field.cell.params[y][(x + i)].op = false
+        field.cell.params[y][(x + i)].act = false
         field.cell.params[y+1][(x + i)].lit_out = false
         field.cell.params[y][(x + i)].lit = false
         if vars[var] ~= nil then
-          field.cell[y+1][(x + i)] = vars[var]
           field.cell.params[y+1][(x + i)].op = false
+          field.cell.params[y + 1][(x + i)].act = false
           field.cell.params[y+1][(x + i)].lit_out = false
+          field.cell.params[y+2][(x + i)].lit_out = false
           field.cell.params[y+1][(x + i)].lit = false
+          field.cell[y+1][(x + i)] = vars[var]
         end
       end
+      field.cell.params[y+1][x].dot_port = false
+      field.cell.params[y+1][length + 1].dot_port = false
     end
   end
   -- cleanups
   if length < #ops.chars then
     for i= length == 0 and length or length+1, #ops.chars do
-        field.cell.params[y][(x + i)].dot = false
-        field.cell.params[y][(x + i)].op = true
+        field.cell.params[y][util.clamp((x + i),1,XSIZE)].dot = false
+        field.cell.params[y][util.clamp((x + i),1,XSIZE)].op = true
+        field.cell.params[y+1][util.clamp((x + i),1,XSIZE)].act = true
     end
   end
 end
@@ -953,22 +960,22 @@ ops.X = function(self, x,y)
   self.name = 'X'
   self.y = y
   self.x = x
-  local a = tonumber(field.cell[y][x - 2]) or 0 -- x
-  local b = util.clamp(tonumber(field.cell[y][x - 1]) or 1, 1, 9) -- y
+  local a = tonumber(ops:input(x - 2, y)) or 0 -- x
+  local b = util.clamp(ops:input(x - 1, y) or 1, 1, #ops.chars) -- y
   local offsety = b + y
   local offsetx = a + x
   if self:active() then
     self:spawn(ops.ports[self.name])
     if frame % 1 == 0 then
       if field.cell[y][x+1] ~= 'null' then
-        field.cell[util.clamp(offsety,1, 9)][offsetx] = field.cell[y][x+1]
-        field.cell.params[util.clamp(offsety,1, 9)][offsetx].placeholder = field.cell[y][x+1]
-        field.cell.params[util.clamp(offsety,1, 9)][offsetx].dot_cursor = false
+        field.cell[util.clamp(offsety,1, #ops.chars)][offsetx] = field.cell[y][x+1]
+        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].placeholder = field.cell[y][x+1]
+        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = false
       elseif field.cell[y][x+1] == 'null' then
-        field.cell.params[util.clamp(offsety,1, 9)][offsetx].dot_cursor = true
+        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = true
       end
-      for i= y,y+9 do
-        for l = x, x+9 do
+      for i= y,y+#ops.chars do
+        for l = x, x+#ops.chars do
           if (i == y and l == x) then
           elseif (i == offsety and l == offsetx) then
             field.cell.params[i][l].cursor = true
@@ -1145,9 +1152,9 @@ function ops:frame_count()
   end
   -- E, S, Z ops hack
   for y = 1,YSIZE do
-    local v = (YSIZE + 1) - y
+    local v = util.clamp((YSIZE + 3)  - y, 1, YSIZE)
     for x = 1,XSIZE do
-      local l = (XSIZE + 1) - x
+      local l = util.clamp((XSIZE - 1) - x, 1, XSIZE)
       if ops.list[string.upper(field.cell[y][l])] == 'E' and field.cell.params[y][l].op then
         ops[string.upper(field.cell[y][l])](self, l,y, frame)
       elseif ops.list[string.upper(field.cell[v][l])] == 'S' and field.cell.params[y][l].op then
@@ -1264,20 +1271,32 @@ function keyb.event(typ, code, val)
     ops:erase(x_index,y_index)
   elseif (code == hid.codes.KEY_LEFT) and (val == 1) then
     x_index = util.clamp(x_index -1,1,XSIZE)
+    if x_index < bounds_x + (field_offset_x - 24)  then 
+      field_offset_x =  util.clamp(field_offset_x - 1,0,XSIZE - field_offset_x) 
+    end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1) then
     x_index = util.clamp(x_index + 1,1,XSIZE)
+    if x_index > field_offset_x + 25  then 
+      field_offset_x =  util.clamp(field_offset_x + 1,0,XSIZE - bounds_x) 
+    end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1) then
-    if menu then 
-      menu_index = util.clamp(menu_index + 1 ,1,#menu_entries)
+    if (main_menu or load_menu) then 
+      menu_index = util.clamp(menu_index + 1 ,1,main_menu and #menu_entries or #projects)
     else
       y_index = util.clamp(y_index + 1,1,YSIZE)
+      if y_index  > field_offset_y + (bar and 7 or 8)   then 
+        field_offset_y =  util.clamp(field_offset_y + 1,0,YSIZE - bounds_y) 
+      end
     end
   elseif (code == hid.codes.KEY_UP) and (val == 1) then
-    if menu then 
-      menu_index = util.clamp(menu_index - 1 ,1,#menu_entries)
+    if (main_menu or load_menu) then 
+      menu_index = util.clamp(menu_index - 1 ,1,main_menu and #menu_entries or #projects)
     else
       y_index = util.clamp(y_index - 1 ,1,YSIZE)
+    if y_index < bounds_y + (field_offset_y - 7)  then 
+      field_offset_y = util.clamp(field_offset_y - 1,0,YSIZE - bounds_y)
     end
+  end
   elseif (code == hid.codes.KEY_TAB and val == 1) then
     bar = not bar
   elseif (code == 41 and val == 1) then
@@ -1285,10 +1304,16 @@ function keyb.event(typ, code, val)
   -- bypass crashes  -- 2do F1-F12 (59-68, 87,88)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
   elseif (code == hid.codes.KEY_ESC and val == 1) then
-    menu = not menu
+    if not load_menu then main_menu = not main_menu end
+    if load_menu then  main_menu = true load_menu = false menu_index = 2 end
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
-    if menu then
+    if main_menu then
         menu_entries[menu_index][2]()
+        menu_index = 1
+    elseif load_menu then
+      print(menu_index)
+        local project_path = norns.state.data .. projects[menu_index] .. '.orca'
+        ops.load_project(project_path)
       end
   elseif (code == hid.codes.KEY_LEFTALT and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTALT and val == 1) then
@@ -1380,16 +1405,18 @@ end
 local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
-  for y=1 + field_offset_y ,bounds_y + field_offset_y do
-    for x = 1 + field_offset_x ,bounds_x + field_offset_x do
+  for y= 1, bounds_y do
+    for x = 1,bounds_x do
+      local y = y + field_offset_y
+      local x = x + field_offset_x
       if field.cell.params[y][x].lit then
-        draw_op_frame(x,y)
+        draw_op_frame(x - field_offset_x,y - field_offset_y)
       end
       if field.cell.params[y][x].cursor then
-        draw_op_cursor(x,y)
+        draw_op_cursor(x - field_offset_x,y - field_offset_y)
       end
       if field.cell.params[y][x].lit_out then
-        draw_op_out(x,y)
+        draw_op_out(x - field_offset_x,y - field_offset_y)
       end
       -- levels
       if field.cell[y][x] ~= 'null' then
@@ -1423,7 +1450,7 @@ local function draw_grid()
           screen.level(1)
         end
       end
-      screen.move((x * 5) - 4 , (y * 8) - (field.cell[y][x] and 2 or 3))
+      screen.move(((x - field_offset_x) * 5) - 4 , ((y - field_offset_y )* 8) - (field.cell[y][x] and 2 or 3))
       --
       if field.cell[y][x] == 'null' or field.cell[y][x] == nil then
         if field.cell.params[y][x].dot_port then
@@ -1446,8 +1473,8 @@ local function draw_grid()
 end
 
 local function draw_cursor(x,y)
-  x_pos = (x * 5) - 5
-  y_pos = (y * 8) - 8
+  x_pos = ((x * 5) - 5) 
+  y_pos = ((y * 8) - 8)
   if field.cell[y][x] == 'null' then
   screen.level(2)
   screen.rect(x_pos,y_pos,5,8)
@@ -1506,8 +1533,31 @@ local function draw_menu()
   end
 end
 
-local function draw_engine_menu() 
 
+local function list_projects() 
+  local l = util.scandir(norns.state.data)
+  local projects = {}
+  for i = 1,#l do
+    local name = tab.split(l[i], '.')
+    if name[2] == 'orca' then
+      table.insert(projects, name[1])
+    end
+  end
+  return projects
+end
+
+
+local function draw_projects_list()
+  screen.clear()
+  screen.font_face(0)
+  screen.font_size(8)
+  projects = list_projects()
+  for i=1,#projects do
+    screen.level(menu_index == i and 9 or 4)
+    screen.move(5, (i * 10) + 20)
+    screen.text(projects[i])
+    screen.stroke()
+  end
 end
 
 local function draw_help()
@@ -1554,11 +1604,13 @@ end
 
 function redraw()
   screen.clear()
-  if menu then
+  if main_menu then
     draw_menu()
+  elseif load_menu then
+    draw_projects_list()
   else
     draw_grid()
-    draw_cursor(x_index, y_index)
+    draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
     if bar then draw_bar() else  end
     if help then draw_help() else end
   end
