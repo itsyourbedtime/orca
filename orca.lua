@@ -1223,6 +1223,7 @@ function init()
     }
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
+    params:set("play_mode_" .. i, 4) -- set all to 1-shot 
   end
 
 
