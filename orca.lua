@@ -60,9 +60,6 @@ local menu_entries = {{'New', function() init() main_menu = false menu_index = 1
               {'Save', function() textentry.enter(ops.save_project, 'untitled' ) end}
 }
 
-
-
-
 local function all_notes_off(ch)
     for _, a in pairs(active_notes) do
       midi_out_device:note_off(a, nil, ch)
@@ -132,7 +129,6 @@ ops.list =  {
   ['Y'] = 'Y',
   ["Z"] = 'Z'
 }
-
 ops.bangs ={
   ["E"] = 'E',
   ["W"] = 'W',
@@ -140,7 +136,6 @@ ops.bangs ={
   ["N"] = 'N',
   ['Z'] = 'Z'
 }
-
 ops.names =  {
   ["*"] = 'bang',
   [':'] = 'midi',
@@ -175,7 +170,6 @@ ops.names =  {
   ["Z"] = 'zoom'
 
 }
-
 ops.info = {
   ['*'] = 'Bangs neighboring operators.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
@@ -210,7 +204,6 @@ ops.info = {
   ['Y'] = 'Outputs the westward operator',
   ['Z'] = 'Moves easwardly, respawns west on collision',
 }
-
 ops.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
@@ -273,8 +266,8 @@ function ops:input(x,y, default)
 end 
 
 function ops.is_op(x,y)
-  x = util.clamp(x,1,XSIZE)
-  y = util.clamp(y,1,YSIZE)
+  x = util.clamp(x,0,XSIZE)
+  y = util.clamp(y,0,YSIZE)
   if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
     if (ops.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
       if ops.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].act == true then
@@ -389,12 +382,67 @@ end
 function ops:erase(x,y)
   self.x = x
   self.y = y
-  if self:active() then self:cleanup() end
+  if self:active() then 
+    self:cleanup() 
+  end
+  ops:remove_from_queue(self.x,self.y)  
   self:replace('null')
 end
 
 function ops:explode()
   self:replace('*')
+  self:erase(self.x,self.y) 
+end
+
+function ops:id(x, y)
+  return tostring(x .. ":" .. y)
+end
+
+function ops:add_to_queue(x,y)
+  x = util.clamp(x,1,XSIZE + 1)
+  y = util.clamp(y,1,YSIZE + 1)
+  field.active[ops:id(x,y)] = {x, y, field.cell[y][x]}
+end
+
+function ops.removeKey(t, k)
+	local i = 0
+	local keys, values = {},{}
+	for k,v in pairs(t) do
+		i = i + 1
+		keys[i] = k
+		values[i] = v
+	end
+	while i>0 do
+		if keys[i] == k then
+			table.remove(keys, i)
+			table.remove(values, i)
+			break
+		end
+		i = i - 1
+	end
+	local a = {}
+	for i = 1,#keys do
+		a[keys[i]] = values[i]
+	end
+	return a
+end
+
+function ops:remove_from_queue(x,y)
+  self.x = x
+  self.y = y
+  field.active = ops.removeKey(field.active, ops:id(self.x,self.y))
+end
+
+function ops:exec_queue()
+  frame = (frame + 1) % 999
+  for k,v in pairs(field.active) do
+    local x = field.active[k][1]
+    local y = field.active[k][2]
+    local op = field.active[k][3]
+    if op ~= 'null' and ops.is_op(x,y) then
+      ops[string.upper(op)](self, x, y, frame) 
+    end
+  end
 end
 
 function ops:move(x,y)
@@ -405,15 +453,16 @@ function ops:move(x,y)
   if collider ~= 'null'  then
     if field.cell[a][b] ~= nil then
       if collider == '*' then
-        field.cell[a][b] = field.cell[self.y][self.x]
+        ops:move_cell(b,a)
         if field.cell[self.y][self.x] == 'Z' then
           field.cell[a][1] = field.cell[self.y][self.x]
-          self:explode() 
+          ops:move_cell(1,a)
+          self:explode()
         end
         self:erase(self.x,self.y)
+
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false) then
-        field.cell[a][b] = field.cell[self.y][self.x]
-        self:erase(self.x,self.y)
+        ops:move_cell(b,a)
       elseif (
         (collider == '.' and field.cell.params[a][b].op == true)
         or
@@ -430,20 +479,26 @@ function ops:move(x,y)
       then
         if field.cell[self.y][self.x] == 'Z' then
           field.cell[a][1] = field.cell[self.y][self.x]
+          ops:move_cell(1,a)
         end
         self:explode()
       -- L fix
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false ) then
-        field.cell[a][b] = field.cell[self.y][self.x]
+        ops:move_cell(b,a)
         self:erase(self.x,self.y)
       end
     else
-      self:erase(self.x,self.y)
+     -- self:erase(self.x,self.y)
     end
   else
-    -- move actually
-    field.cell[a][b], field.cell[self.y][self.x] = field.cell[self.y][self.x], field.cell[a][b]
+    ops:move_cell(b,a)
   end
+end
+
+function ops:move_cell(x,y)
+  field.cell[y][x] = field.cell[self.y][self.x]
+  self:erase(self.x,self.y)
+  ops:add_to_queue(x,y)
 end
 
 function ops:clean_ports(t, x1, y1)
@@ -517,7 +572,7 @@ end
 ops["*"] = function(self, x,y,f)
   self.x = x 
   self.y = y 
-  if field.cell.params[y][x].act == true then self:erase(x,y) end
+  self:erase(x,y) 
 end
 
 ops.V = function (self,x,y,frame)
@@ -964,9 +1019,10 @@ ops.X = function(self, x,y)
   local offsetx = a + x
   if self:active() then
     self:spawn(ops.ports[self.name])
-    if frame % 1 == 0 then
+    --if frame % 1 == 0 then
       if field.cell[y][x+1] ~= 'null' then
         field.cell[util.clamp(offsety,1, #ops.chars)][offsetx] = field.cell[y][x+1]
+         ops:add_to_queue(offsetx,util.clamp(offsety,1, #ops.chars))
         field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].placeholder = field.cell[y][x+1]
         field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = false
       elseif field.cell[y][x+1] == 'null' then
@@ -986,7 +1042,7 @@ ops.X = function(self, x,y)
         end
       end
     end
-  end
+  --end
 end
 
 ops.Y = function(self, x,y)
@@ -1132,31 +1188,7 @@ ops['\\'] = function (self, x,y,frame)
 end
 
 function ops:frame_count()
-  frame = (frame + 1) % 999
-  -- main loop
-  for y = 1,YSIZE do
-    for x = 1,XSIZE do
-      if ops.is_op(x,y) and not ops.is_bang(x,y) then
-        ops[string.upper(field.cell[y][x])](self, x,y, frame)
-      elseif ((ops.list[string.upper(field.cell[y][x])] == 'W' and field.cell.params[y][x].op )or  (ops.list[string.upper(field.cell[y][x])] == 'N' and field.cell.params[y][x].op )) then
-        ops[string.upper(field.cell[y][x])](self, x,y, frame)
-      end
-    end
-  end
-  -- E, S, Z ops hack
-  for y = 1,YSIZE do
-    local v = util.clamp((YSIZE + 3)  - y, 1, YSIZE)
-    for x = 1,XSIZE do
-      local l = util.clamp((XSIZE - 1) - x, 1, XSIZE)
-      if ops.list[string.upper(field.cell[y][l])] == 'E' and field.cell.params[y][l].op then
-        ops[string.upper(field.cell[y][l])](self, l,y, frame)
-      elseif ops.list[string.upper(field.cell[v][l])] == 'S' and field.cell.params[y][l].op then
-        ops[string.upper(field.cell[v][l])](self,l, v, frame)
-      elseif ops.list[string.upper(field.cell[v][l])] == 'Z' and field.cell.params[y][l].op then
-        ops[string.upper(field.cell[v][l])](self,l, v, frame)
-      end
-    end
-  end
+  ops:exec_queue()
 end
 
 function init()
@@ -1204,9 +1236,9 @@ function init()
     softcut.filter_bp(i, 0);
     softcut.filter_rq(i, 0);
   end
-  redraw_metro = metro.init(function(stage) redraw() end, 1/60)
+  redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
-  clk.on_step = function() ops:frame_count() end
+  clk.on_step = function() ops:exec_queue() end
   clk:add_clock_params()
   params:set("bpm", 120)
   clk:start()
@@ -1254,6 +1286,20 @@ local function get_key(code, val, shift)
   end
 end
 
+local function update_offset()
+    if x_index < bounds_x + (field_offset_x - 24)  then 
+      field_offset_x =  util.clamp(field_offset_x - 1,0,XSIZE - field_offset_x) 
+    elseif x_index > field_offset_x + 25  then 
+      field_offset_x =  util.clamp(field_offset_x + 1,0,XSIZE - bounds_x) 
+    end
+    if y_index  > field_offset_y + (bar and 7 or 8)   then 
+        field_offset_y =  util.clamp(field_offset_y + 1,0,YSIZE - bounds_y) 
+      elseif y_index < bounds_y + (field_offset_y - 7)  then 
+      field_offset_y = util.clamp(field_offset_y - 1,0,YSIZE - bounds_y)
+    end
+end
+
+
 function keyb.event(typ, code, val)
     --print("hid.event ", typ, code, val)
   if ((code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 1 or val == 2)) then
@@ -1264,31 +1310,23 @@ function keyb.event(typ, code, val)
     ops:erase(x_index,y_index)
   elseif (code == hid.codes.KEY_LEFT) and (val == 1) then
     x_index = util.clamp(x_index -1,1,XSIZE)
-    if x_index < bounds_x + (field_offset_x - 24)  then 
-      field_offset_x =  util.clamp(field_offset_x - 1,0,XSIZE - field_offset_x) 
-    end
+    update_offset()
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1) then
     x_index = util.clamp(x_index + 1,1,XSIZE)
-    if x_index > field_offset_x + 25  then 
-      field_offset_x =  util.clamp(field_offset_x + 1,0,XSIZE - bounds_x) 
-    end
+    update_offset()
   elseif (code == hid.codes.KEY_DOWN) and (val == 1) then
     if (main_menu or load_menu) then 
       menu_index = util.clamp(menu_index + 1 ,1,main_menu and #menu_entries or #projects)
     else
       y_index = util.clamp(y_index + 1,1,YSIZE)
-      if y_index  > field_offset_y + (bar and 7 or 8)   then 
-        field_offset_y =  util.clamp(field_offset_y + 1,0,YSIZE - bounds_y) 
-      end
+      update_offset()
     end
   elseif (code == hid.codes.KEY_UP) and (val == 1) then
     if (main_menu or load_menu) then 
       menu_index = util.clamp(menu_index - 1 ,1,main_menu and #menu_entries or #projects)
     else
       y_index = util.clamp(y_index - 1 ,1,YSIZE)
-    if y_index < bounds_y + (field_offset_y - 7)  then 
-      field_offset_y = util.clamp(field_offset_y - 1,0,YSIZE - bounds_y)
-    end
+      update_offset()
   end
   elseif (code == hid.codes.KEY_TAB and val == 1) then
     bar = not bar
@@ -1371,9 +1409,11 @@ function keyb.event(typ, code, val)
         else
           sc_ops = sc_ops + 1 
           field.cell[y_index][x_index] = keyinput
+          ops:add_to_queue(x_index,y_index)
         end
       else
         field.cell[y_index][x_index] = keyinput
+        ops:add_to_queue(x_index,y_index)
       end
     end
   end
@@ -1597,6 +1637,17 @@ local function draw_help()
       screen.stroke()
     end
   else
+  end
+end
+
+function enc(n,d)
+  if not main_menu or not load_menu then
+    if n == 2 then
+     x_index = util.clamp(x_index + d, 1, XSIZE)
+    elseif n == 3 then
+     y_index = util.clamp(y_index + d, 1, YSIZE)
+    end
+    update_offset()
   end
 end
 
