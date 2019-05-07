@@ -404,28 +404,15 @@ function ops:add_to_queue(x,y)
   field.active[ops:id(x,y)] = {x, y, field.cell[y][x]}
 end
 
-function ops.removeKey(t, k)
-	local i = 0
-	local keys, values = {},{}
-	for k,v in pairs(t) do
-		i = i + 1
-		keys[i] = k
-		values[i] = v
-	end
-	while i>0 do
-		if keys[i] == k then
-			table.remove(keys, i)
-			table.remove(values, i)
-			break
-		end
-		i = i - 1
-	end
-	local a = {}
-	for i = 1,#keys do
-		a[keys[i]] = values[i]
-	end
-	return a
+function ops.removeKey(t, k_to_remove)
+  local new = {}
+  for k, v in pairs(t) do
+    new[k] = v
+  end
+  new[k_to_remove] = nil
+  return new
 end
+
 
 function ops:remove_from_queue(x,y)
   self.x = x
@@ -436,11 +423,13 @@ end
 function ops:exec_queue()
   frame = (frame + 1) % 999
   for k,v in pairs(field.active) do
+    if k ~= nil then
     local x = field.active[k][1]
     local y = field.active[k][2]
     local op = field.active[k][3]
     if op ~= 'null' and ops.is_op(x,y) then
       ops[string.upper(op)](self, x, y, frame) 
+    end
     end
   end
 end
