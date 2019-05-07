@@ -422,7 +422,7 @@ function ops:remove_from_queue(x,y)
 end
 
 function ops:exec_queue()
-  frame = (frame + 1) % 999
+  frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
     if k ~= nil then
     local x = field.active[k][1]
@@ -669,8 +669,8 @@ ops.F = function(self, x,y)
   self.name = 'F'
   self.y = y
   self.x = x
-  local b = tonumber(field.cell[y][x + 1])
-  local a = tonumber(field.cell[y][x - 1])
+  local b = tonumber(ops:input(x + 1, y))
+  local a = tonumber(ops:input(x - 1, y))
   local val = a == b and '*' or 'null'
   if self:active() then
     self:spawn(ops.ports[self.name])
@@ -1105,6 +1105,10 @@ ops['/'] = function (self, x,y,frame)
   local pos = util.round((p / #ops.chars) * #ops.chars, 0.1)
   local level = util.round((l / #ops.chars) * 1, 0.1)
   local rate = util.round((r / #ops.chars) * 2, 0.1)
+  if field.cell[y][x + 2] == '*' then
+    field.cell[y][x + 2] = 'null'
+    softcut.buffer_clear_region(0, #ops.chars)
+  end
   if rec >= 1 then 
     softcut.rec_level(playhead, rec/9) 
     field.cell.params[y][x].lit_out = true 
@@ -1172,10 +1176,6 @@ ops['\\'] = function (self, x,y,frame)
       field.cell[y+1][x] =  ops.notes[util.clamp(scales[math.random(#scales)] - 60, 1, 12)]
     end
   end
-end
-
-function ops:frame_count()
-  ops:exec_queue()
 end
 
 function init()
@@ -1499,9 +1499,11 @@ local function draw_grid()
 end
 
 local function draw_cursor(x,y)
-  x_pos = ((x * 5) - 5) 
-  y_pos = ((y * 8) - 8)
-  if field.cell[y][x] == 'null' then
+  local x_pos = ((x * 5) - 5) 
+  local y_pos = ((y * 8) - 8)
+  local x_index = x + field_offset_x
+  local y_index = y + field_offset_y
+  if field.cell[y_index][x_index] == 'null' then
   screen.level(2)
   screen.rect(x_pos,y_pos,5,8)
   screen.fill()
@@ -1511,7 +1513,7 @@ local function draw_cursor(x,y)
     screen.font_size(8)
     screen.text('@')
     screen.stroke()
-  elseif field.cell[y][x] ~= 'null'  then
+  elseif field.cell[y_index][x_index] ~= 'null'  then
     screen.level(15)
     screen.rect(x_pos,y_pos,5,8)
     screen.fill()
@@ -1519,7 +1521,7 @@ local function draw_cursor(x,y)
     screen.level(1)
     screen.font_face(25)
     screen.font_size(6)
-    screen.text(field.cell[y][x])
+    screen.text(field.cell[y_index][x_index])
     screen.stroke()
   end
 end
@@ -1678,6 +1680,7 @@ function redraw()
     draw_projects_list()
   else
     draw_grid()
+    --draw_cursor(x_index - field_offset_x,y_index - field_offset_)
     draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
     if bar then draw_bar() else  end
     if help then draw_help() else end
