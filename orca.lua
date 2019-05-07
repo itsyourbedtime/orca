@@ -51,6 +51,7 @@ field.cell = {}
 field.cell.params = {}
 field.active = {}
 local vars = {}
+local map = false
 local main_menu = false
 local load_menu = false
 local projects = {}
@@ -444,12 +445,10 @@ function ops:move(x,y)
       if collider == '*' then
         ops:move_cell(b,a)
         if field.cell[self.y][self.x] == 'Z' then
-          field.cell[a][1] = field.cell[self.y][self.x]
           ops:move_cell(1,a)
           self:explode()
         end
         self:erase(self.x,self.y)
-
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false) then
         ops:move_cell(b,a)
       elseif (
@@ -467,7 +466,6 @@ function ops:move(x,y)
         )
       then
         if field.cell[self.y][self.x] == 'Z' then
-          field.cell[a][1] = field.cell[self.y][self.x]
           ops:move_cell(1,a)
         end
         self:explode()
@@ -477,7 +475,7 @@ function ops:move(x,y)
         self:erase(self.x,self.y)
       end
     else
-     -- self:erase(self.x,self.y)
+      self:explode()
     end
   else
     ops:move_cell(b,a)
@@ -1345,6 +1343,7 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_RIGHTCTRL and val == 1) then
   elseif (code == hid.codes.KEY_DELETE and val == 1) then
   elseif (code == hid.codes.KEY_CAPSLOCK and val == 1) then
+     map = not map
   elseif (code == hid.codes.KEY_NUMLOCK and val == 1) then
   elseif (code == hid.codes.KEY_SCROLLLOCK and val == 1) then
   elseif (code == hid.codes.KEY_SYSRQ and val == 1) then
@@ -1629,6 +1628,37 @@ local function draw_help()
   end
 end
 
+local function draw_map()
+    -- window
+  screen.level(15)
+  screen.rect(4,5,120,55)
+  screen.fill()
+  screen.level(0)
+  screen.rect(5,6,118,53)
+  screen.fill()
+    
+  for y = 1, YSIZE do
+    for x = 1, XSIZE do
+      if field.cell[y][x] ~= 'null' then
+      screen.level(1)
+      screen.rect(((x / XSIZE ) * 114) + 5, ((y / YSIZE) * 48) + 7, 3,3 )
+      screen.fill()
+      end
+      if field.cell.params[y][x].lit then
+      screen.level(4)
+      screen.rect(((x / XSIZE ) * 114) + 5, ((y / YSIZE) * 48) + 7, 3,3 )
+      screen.fill()
+      end
+    end
+  end
+  screen.level(2)
+  screen.rect((((util.clamp(x_index,1,78) / XSIZE) ) * 114) + 5, ((util.clamp(y_index,2,28) / YSIZE) * 48) + 5, (bounds_x / XSIZE) * 114 ,(bounds_y / YSIZE) * 48 )
+  screen.stroke()
+  screen.level(15)
+  screen.rect(((x_index / XSIZE ) * 114) + 5, ((y_index / YSIZE) * 48) + 7, 1,1 )
+  screen.fill()
+end
+
 function enc(n,d)
   if not main_menu or not load_menu then
     if n == 2 then
@@ -1651,6 +1681,7 @@ function redraw()
     draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
     if bar then draw_bar() else  end
     if help then draw_help() else end
+    if map then draw_map() else end
   end
   screen.update()
 end
