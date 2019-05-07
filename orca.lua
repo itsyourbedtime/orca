@@ -212,7 +212,7 @@ ops.ports = {
   ['A'] = {{1, 0, 'input_op'}, {-1, 0, 'input_op'}, {0, 1 , 'output_op'}},
   ['B'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['C'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['D'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
+  ['D'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['F'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['H'] = {{0, 1, 'output'}},
   ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
@@ -290,13 +290,13 @@ function ops.is_bang(x,y)
 end
 
 function ops.banged(x,y)
-  if field.cell[y][x - 1] == '*' or  ops.is_bang(x - 1, y) then
+  if field.cell[y][x - 1] == '*' then -- or  ops.is_bang(x - 1, y) then
     return true
-  elseif field.cell[y][x + 1] == '*' or ops.is_bang(x + 1, y) then
+  elseif field.cell[y][x + 1] == '*' then --or ops.is_bang(x + 1, y) then
     return true
-  elseif field.cell[y - 1][x] == '*' or ops.is_bang(x, y - 1) then 
+  elseif field.cell[y - 1][x] == '*' then --or ops.is_bang(x, y - 1) then 
     return true
-  elseif field.cell[y + 1][x] == '*' or ops.is_bang(x, y + 1) then 
+  elseif field.cell[y + 1][x] == '*' then -- or ops.is_bang(x, y + 1) then 
     return true
   else
     return false
@@ -391,7 +391,7 @@ end
 
 function ops:explode()
   self:replace('*')
-  self:erase(self.x,self.y) 
+  self:add_to_queue(self.x,self.y)
 end
 
 function ops:id(x, y)
@@ -561,7 +561,7 @@ end
 ops["*"] = function(self, x,y,f)
   self.x = x 
   self.y = y 
-  self:erase(x,y) 
+  if field.cell.params[self.y][self.x].act == true then self:erase(self.x, self.y) end
 end
 
 ops.V = function (self,x,y,frame)
