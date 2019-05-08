@@ -24,6 +24,7 @@ local fileselect = require "fileselect"
 local textentry = require "textentry"
 local music = require 'musicutil'
 local BeatClock = require 'beatclock'
+euclid = require 'er'
 local mode = #music.SCALES
 local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
 local midi_out_device 
@@ -123,7 +124,7 @@ ops.list =  {
   ["R"] = 'R',
   ["S"] = 'S',
   ['T'] = 'T',
-  -- ['U']
+  ['U'] = 'U',
   ["V"] = 'V',
   ["W"] = 'W',
   ["X"] = 'X',
@@ -135,7 +136,6 @@ ops.bangs ={
   ["W"] = 'W',
   ["S"] = 'S',
   ["N"] = 'N',
-  ['Z'] = 'Z'
 }
 ops.names =  {
   ["*"] = 'bang',
@@ -163,7 +163,7 @@ ops.names =  {
   ["R"] = 'random',
   ["S"] = 'south',
   ['T'] = 'track',
-  -- ['U']
+  ['U'] = 'euclid',
   ["V"] = 'variable',
   ["W"] = 'west',
   ["X"] = 'write',
@@ -198,7 +198,7 @@ ops.info = {
   ['R'] = 'Outputs a random value.',
   ['S'] = 'Moves southward, or bangs.',
   ['T'] = 'Reads an eastward operator with offset',
-  ['U'] = '',
+  ['U'] = 'Bangs based on the Euclidean pattern',
   ['V'] = 'Reads and writes globally available variable',
   ['W'] = 'Moves westward, or bangs.',
   ['X'] = 'Writes a distant operator with offset',
@@ -226,13 +226,14 @@ ops.ports = {
   ['T'] = {{-1,0, 'input_op'},  {-2, 0, 'input_op'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
   ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
+  ['U'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['V'] = {{-1,0, 'input_op'},  {1, 0, 'input_op'}},
   ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output_op'}},
   ['W'] = {},
   ['S'] = {},
   ['E'] = {},
   ['N'] = {},
-  ['Z'] = {},
+  ['Z'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['*'] = {},
 }
 ops.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
@@ -444,10 +445,6 @@ function ops:move(x,y)
     if field.cell[a][b] ~= nil then
       if collider == '*' then
         ops:move_cell(b,a)
-        if field.cell[self.y][self.x] == 'Z' then
-          ops:move_cell(1,a)
-          self:explode()
-        end
         self:erase(self.x,self.y)
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false) then
         ops:move_cell(b,a)
@@ -465,9 +462,6 @@ function ops:move(x,y)
         ops.is_bang(a,b)
         )
       then
-        if field.cell[self.y][self.x] == 'Z' then
-          ops:move_cell(1,a)
-        end
         self:explode()
       -- L fix
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false ) then
@@ -559,32 +553,11 @@ end
 ops["*"] = function(self, x,y,f)
   self.x = x 
   self.y = y 
-  if field.cell.params[self.y][self.x].act == true then self:erase(self.x, self.y) end
-end
-
-ops.V = function (self,x,y,frame)
-  self.name = 'V'
-  self.y = y
-  self.x = x
-  local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0)) or 0
-  local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if (b ~= 0 and vars[b] ~= nil and a == 0) then
-      if vars[b] ~= nil then
-       field.cell.params[y + 1][x].lit_out = true
-       field.cell[y + 1][x] = vars[b] 
-      end 
-    elseif self:active() and b ~= 0 and  a ~= 0  then
-      vars[a] = field.cell[y][x + 1]
-    else 
-      field.cell.params[y + 1][x].lit_out = false
-    end
-  elseif not self:active() then
-    if ops.banged(x,y) then
-    end
+  if self:active() then 
+    self:erase(self.x, self.y) 
   end
 end
+
 
 ops.A = function (self,x,y,frame)
   self.name = 'A'
@@ -649,10 +622,10 @@ ops.D  = function (self, x, y, frame)
   self.name = 'D'
   self.y = y
   self.x = x
-  local modulus = tonumber(ops:input(x + 1, y)) -- only int
-  local rate = tonumber(ops:input(x - 1, y)) -- only int
+  local modulus = tonumber(ops:input(x + 1, y)) or 9 -- only int
+  local rate = tonumber(ops:input(x - 1, y)) or 1 -- only int
   if modulus == 0 then modulus = 1 end
-  local val = (frame % (modulus or 9)) * (rate or 1)
+  local val = (frame % (modulus * rate))
   local out = (val == 0 or modulus == 1) and '*' or 'null'
   if self:active() then
     self:spawn(ops.ports[self.name])
@@ -744,10 +717,8 @@ ops.W = function(self, x, y)
   self.y = y
   if self:active() then
     ops:move(-1,0)
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      ops:move(-1,0)
-    end
+  elseif ops.banged(x,y) then
+    ops:move(-1,0)
   end
 end
 
@@ -757,10 +728,8 @@ ops.E = function (self, x, y)
   self.y = y
   if self:active() then
     ops:move(1,0)
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      ops:move(1,0)
-    end
+  elseif ops.banged(x,y) then
+    ops:move(1,0)
   end
 end
 
@@ -770,10 +739,8 @@ ops.N = function (self, x, y)
   self.y = y
   if self:active() then
     ops:move(0,-1)
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      ops:move(0,-1)
-    end
+  elseif ops.banged(x,y) then
+    ops:move(0,-1)
   end
 end
 
@@ -783,10 +750,8 @@ ops.S = function(self, x, y)
   self.y = y
   if self:active() then
     ops:move(0,1)
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      --ops:move(0,1)
-    end
+  elseif ops.banged(x,y) then
+    ops:move(0,1)
   end
 end
 
@@ -800,7 +765,7 @@ ops.O = function (self, x, y)
   local offsetx = a + x
   if self:active() then
     field.cell[y + 1][x] = field.cell[offsety][offsetx]
-    for i= x - 1, x + 9 do
+    for i= x - 1, y + 9 do
       for l = x - 1, x + 9 do
         if (i == y and l == x) then
         elseif (i == offsety  and l == offsetx) then
@@ -820,12 +785,13 @@ ops.M  = function (self, x, y)
   self.name = 'M'
   self.y = y
   self.x = x
-  local l = tonumber(ops:input(x - 1, y, 1)) or 1 -- only int
-  local m = tonumber(ops:input(x + 1, y, 1)) or 1-- only int
+  local l = tonumber(ops:input(x - 1, y, 1)) or 0-- only int
+  local m = tonumber(ops:input(x + 1, y, 1)) or 0-- only int
   if self:active() then
     self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = string.sub(l % (m ~= 0 and m or 1), -1)
-  elseif not self:active() then
+    field.cell[y + 1][x] = ops.chars[(l * m) % #ops.chars]
+  elseif ops.banged(x,y) then
+    field.cell[y + 1][x] = ops.chars[(l * m) % #ops.chars]
   end
 end
 
@@ -893,6 +859,50 @@ ops.T = function (self, x, y, frame)
     field.cell.params[y][(x + i)].dot = false
     field.cell.params[y][(x + i)].op = true
     field.cell.params[y][(x + i)].cursor = false
+  end
+end
+
+ops.U  = function (self, x, y, frame)
+  self.name = 'U'
+  self.y = y
+  self.x = x
+  local pulses = tonumber(ops:input(x + 1, y)) or 1
+  local steps = tonumber(ops:input(x - 1, y)) or 1
+  local pattern = euclid.gen(pulses, steps)
+  local out = pattern[(frame  % (pulses ~= 0 and pulses or 1)) + 1] and '*' or 'null'
+  if self:active() then
+    self:spawn(ops.ports[self.name])
+    field.cell[y+1][x] = out
+  elseif not self:active() then
+    if ops.banged(x,y) then
+      self:spawn(ops.ports[self.name])
+      field.cell[y+1][x] = out
+    end
+  end
+end
+
+
+ops.V = function (self,x,y,frame)
+  self.name = 'V'
+  self.y = y
+  self.x = x
+  local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0)) or 0
+  local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
+  if self:active() then
+    self:spawn(ops.ports[self.name])
+    if (b ~= 0 and vars[b] ~= nil and a == 0) then
+      if vars[b] ~= nil then
+       field.cell.params[y + 1][x].lit_out = true
+       field.cell[y + 1][x] = vars[b] 
+      end 
+    elseif self:active() and b ~= 0 and  a ~= 0  then
+      vars[a] = field.cell[y][x + 1]
+    else 
+      field.cell.params[y + 1][x].lit_out = false
+    end
+  elseif not self:active() then
+    if ops.banged(x,y) then
+    end
   end
 end
 
@@ -1015,8 +1025,8 @@ ops.X = function(self, x,y)
       elseif field.cell[y][x+1] == 'null' then
         field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = true
       end
-      for i= y,y+#ops.chars do
-        for l = x, x+#ops.chars do
+      for i= y,y + offsety do
+        for l = x, x + offsetx do
           if (i == y and l == x) then
           elseif (i == offsety and l == offsetx) then
             field.cell.params[i][l].cursor = true
@@ -1052,13 +1062,20 @@ ops.Y = function(self, x,y)
   end
 end
 
+
 ops.Z = function (self, x, y)
   self.name = 'Z'
   self.x = x
   self.y = y
+  local rate = tonumber(ops:input(x - 1, y)) or 1
+  local target  = tonumber(ops:input(x + 1, y)) or 1
+  rate = rate == 0 and 1 or rate
+  local val = tonumber(ops:input(x, y + 1)) or 0
+  local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
+  out = ops.chars[val + mod]
   if self:active() then
-    ops:move(1,0)
-  else
+    self:spawn(ops.ports[self.name])
+      field.cell[y + 1][x] = out
   end
 end
 
