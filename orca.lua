@@ -110,7 +110,7 @@ ops.list =  {
   ["D"] = 'D',
   ["E"] = 'E',
   ["F"] = 'F',
-  -- ['G']
+  ['G'] = 'G',
   ['H'] = 'H',
   ["I"] = 'I',
   ["J"] = 'J',
@@ -120,7 +120,7 @@ ops.list =  {
   ["N"] = 'N',
   ['O'] = 'O',
   ["P"] = 'P',
-  -- ['Q']
+  ['Q'] = 'Q',
   ["R"] = 'R',
   ["S"] = 'S',
   ['T'] = 'T',
@@ -149,7 +149,7 @@ ops.names =  {
   ["D"] = 'delay',
   ["E"] = 'east',
   ["F"] = 'if',
-  -- ['G']
+  ['G'] = 'generator',
   ['H'] = 'halt',
   ["I"] = 'increment',
   ["J"] = 'jumper',
@@ -159,7 +159,7 @@ ops.names =  {
   ["N"] = 'north',
   ['O'] = 'offset',
   ["P"] = 'push',
-  -- ['Q']
+  ['Q'] = 'query',
   ["R"] = 'random',
   ["S"] = 'south',
   ['T'] = 'track',
@@ -184,17 +184,17 @@ ops.info = {
   ['D'] = 'Bangs on a fraction of the runtime frame.',
   ['E'] = 'Moves eastward, or bangs.',
   ['F'] = 'Bangs if both inputs are equal.',
-  ['G'] = '',
+  ['G'] = 'Writes distant operators with offset.',
   ['H'] = 'Stops southward operator from operating.',
   ['I'] = 'Increments southward operator.',
   ['J'] = 'Outputs the northward operator.',
   ['K'] = '',
   ['L'] = 'Loops a number of eastward operators.',
-  ['M'] = 'Outputs the modulo of input.',
+  ['M'] = '.',
   ['N'] = 'Moves northward, or bangs.',
   ['O'] = 'Reads a distant operator with offset.',
   ['P'] = 'Writes an eastward operator with offset.',
-  ['Q'] = '',
+  ['Q'] = 'Reads distant operators with offset.',
   ['R'] = 'Outputs a random value.',
   ['S'] = 'Moves southward, or bangs.',
   ['T'] = 'Reads an eastward operator with offset',
@@ -203,7 +203,7 @@ ops.info = {
   ['W'] = 'Moves westward, or bangs.',
   ['X'] = 'Writes a distant operator with offset',
   ['Y'] = 'Outputs the westward operator',
-  ['Z'] = 'Moves easwardly, respawns west on collision',
+  ['Z'] = '',
 }
 ops.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
@@ -215,14 +215,17 @@ ops.ports = {
   ['C'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['D'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['F'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['H'] = {{0, 1, 'output'}},
+  ['G'] = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}},
+  ['H'] = {{0, 1, 'input_op'}},
   ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
   ['K'] = {{-1, 0, 'input'}},
   ['L'] = {{-1, 0, 'input'}, {-2, 0, 'input'}},
   ['I'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1 , 'input_op'}},
+  ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}},
+  ['Q'] = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1, 'output'}},
   ['M'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
-  ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}},
+  ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output_op'}},
+  ['G'] = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}},
   ['T'] = {{-1,0, 'input_op'},  {-2, 0, 'input_op'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
   ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output_op'}},
   ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
@@ -334,7 +337,6 @@ function ops:cleanup()
   if field.cell.params[self.y+1][self.x].cursor == true then field.cell.params[self.y+1][self.x].cursor = false end
   if field.cell.params[self.y][self.x + 1].op == false then field.cell.params[self.y][self.x + 1].op = true end
   if field.cell.params[self.y + 1][self.x].lit_out == true then field.cell.params[self.y + 1][self.x].lit_out = false end
-
   -- specific ops cleanup
   if (field.cell[self.y][self.x] == 'P' or field.cell[self.y][self.x] == 'p') then
     local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
@@ -360,12 +362,16 @@ function ops:cleanup()
       field.cell.params[self.y][(self.x + i)].act = true
       field.cell.params[self.y + 1][(self.x + i)].act = true
     end
-  elseif (field.cell[self.y][self.x] == 'L' or field.cell[self.y][self.x] == 'l') then
+  elseif (field.cell[self.y][self.x] == 'L' or field.cell[self.y][self.x] == 'l') or (field.cell[self.y][self.x] == 'G' or field.cell[self.y][self.x] == 'g') then
     local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
     for i=1,seqlen do
       field.cell.params[self.y][self.x + i].dot = false
       field.cell.params[self.y][(self.x + i)].op = true
     end
+  elseif (field.cell[self.y][self.x] == 'U' or field.cell[self.y][self.x] == 'u') or 
+    (field.cell[self.y][self.x] == 'D' or field.cell[self.y][self.x] == 'd') or 
+    (field.cell[self.y][self.x] == 'F' or field.cell[self.y][self.x] == 'f') then
+    if field.cell[self.y + 1][self.x] == '*' then field.cell[self.y + 1][self.x] = 'null' end
   elseif (field.cell[self.y][self.x] == 'H' or field.cell[self.y][self.x] == 'h') then
     field.cell.params[self.y + 1][self.x].act = true
   elseif (field.cell[self.y][self.x] == 'X' or field.cell[self.y][self.x] == 'x') then
@@ -426,8 +432,8 @@ function ops:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
     if k ~= nil then
-    local x = field.active[k][1]
-    local y = field.active[k][2]
+    local x = util.clamp(field.active[k][1],1,XSIZE)
+    local y = util.clamp(field.active[k][2],1,YSIZE)
     local op = field.active[k][3]
     if op ~= 'null' and ops.is_op(x,y) then
       ops[string.upper(op)](self, x, y, frame) 
@@ -486,8 +492,8 @@ function ops:clean_ports(t, x1, y1)
   for i=1,#t do
     if t[i] ~= nil then
       for l=1,#t[i]-2 do
-        local x = x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l] 
-        local y = y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1] 
+        local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,XSIZE)
+        local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,XSIZE)
         field.cell.params[self.y][self.x].lit = false
         if field.cell[y][x] ~= nil then
           if t[i][l + 2] == 'output' then
@@ -514,8 +520,12 @@ function ops:spawn(t)
     for l= 1, #t[i] - 2 do
       local x = self.x + t[i][l]
       local y = self.y + t[i][l+1]
-      local existing = field.cell[y][x] == ops.list[field.cell[y][x]] and field.cell[y][x] or nil
+      local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
+
+      if existing == ops.list[string.upper(existing)] then
+        ops:clean_ports(ops.ports[existing], x,y)
+      end
 
       -- draw frame
       if field.cell[self.y][self.x] ~= string.lower(field.cell[self.y][self.x]) then
@@ -531,14 +541,10 @@ function ops:spawn(t)
           field.cell.params[y][x].dot_port = true
         elseif port_type == 'input' then
           field.cell.params[y][x].dot_port = true
-          
         elseif port_type == 'input_op' then
           field.cell.params[y][x].op = false
           field.cell.params[y][x].dot_port = true
-          if existing ~= nil then
-            ops:clean_ports(existing, x,y)
-          else
-          end
+          field.cell.params[y][x].lit = false
         elseif port_type == 'output_op' then
           field.cell.params[y][x].lit_out = true
           field.cell.params[y][x].op = false
@@ -661,21 +667,11 @@ ops.H = function(self,x,y)
   self.x = x
   local ports = {{0, 1 , 'output'}}
   local a = field.cell[y - 1][x]
+  local existing = field.cell[y + 1][x] == ops.list[field.cell[y + 1][x]] and field.cell[y + 1][x] or 'nu'
   if self:active() then
     self:spawn(ops.ports[self.name])
-    field.cell.params[y + 1][x].act = false
-    if ((field.cell[y + 1][x] == 'H' or field.cell[y + 1][x] ==  'h') and field.cell.params[y + 1][x].op) then
-      field.cell.params[y + 2][x].act = true
-    end
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      field.cell.params[y + 1][x].act = false
-      if ((field.cell[y + 1][x] == 'H' or field.cell[y + 1][x] ==  'h') and field.cell.params[y + 1][x].op) then
-        field.cell.params[y + 2][x].act = true
-      end
-    else
-      field.cell.params[y + 1][x].act = true
-    end
+  elseif ops.banged(x,y) then
+    self:spawn(ops.ports[self.name])
   end
 end
 
@@ -759,25 +755,41 @@ ops.O = function (self, x, y)
   self.name = 'O'
   self.y = y
   self.x = x
-  local a = (tonumber(field.cell[y][x - 2]) == 0 or tonumber(field.cell[y][x - 2]) == nil) and 1 or tonumber(field.cell[y][x - 2]) -- x
-  local b = tonumber(field.cell[y][x - 1]) or 0 -- y
-  local offsety = b + y
-  local offsetx = a + x
+  self.inputs = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}}
+  local a = tonumber(ops:input(x - 2, y))  or 1 ----(tonumber(ops:input(x -2, y)) == 0 or tonumber(field.cell[y][x - 2]) == nil) and 1 or tonumber(field.cell[y][x - 2]) -- x
+  local b = tonumber(ops:input(x - 1, y))  or 0 -- y
+  local offsety = util.clamp(b + y,1,YSIZE)
+  local offsetx = util.clamp(a + x,1,XSIZE)
   if self:active() then
     field.cell[y + 1][x] = field.cell[offsety][offsetx]
-    for i= x - 1, y + 9 do
-      for l = x - 1, x + 9 do
-        if (i == y and l == x) then
-        elseif (i == offsety  and l == offsetx) then
-          field.cell.params[offsety][offsetx].dot_cursor = true
-          field.cell.params[offsety][offsetx].op = false
-        else
-          field.cell.params[i][l].dot_cursor = false
-          field.cell.params[i][l].op = true
-        end
-      end
-    end
+    self:clean_ports(ops.ports[self.name], self.x, self.y)
+    ops.ports[self.name] = self.inputs
+    ops.ports[self.name][4] = {a, b, 'input'}
     self:spawn(ops.ports[self.name])
+  end
+end
+
+ops.Q = function (self, x, y)
+  self.name = 'Q'
+  self.y = y
+  self.x = x
+  self.inputs = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1 , 'output'}}
+  local a = tonumber(ops:input(x - 3, y)) or 1 -- x
+  local b = tonumber(ops:input(x - 2, y)) or 0 -- y
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
+  local offset = 1
+  length = util.clamp(length,1,XSIZE - length)
+  local offsety = util.clamp(b + y,1,YSIZE)
+  local offsetx = util.clamp(a + x,1,XSIZE)
+  if self:active() then
+    self:spawn(self.inputs)
+    for i = 1, length do
+      field.cell[y + 1][(offsetx  + i) - (length + 1)] = field.cell[offsety][(offsetx + i) -1]
+      self:clean_ports(ops.ports[self.name], self.x, self.y)
+      ops.ports[self.name] = self.inputs
+      ops.ports[self.name][4 + i] = {(a+i)-1, b, 'input'}
+      self:spawn(ops.ports[self.name])
+    end
   end
 end
 
@@ -802,21 +814,15 @@ ops.P = function (self, x, y, frame)
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
   local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
   local val = field.cell[y][x + 1]
-  length = util.clamp(length, 1, XSIZE)
+  length = util.clamp(length, 1, XSIZE - bounds_x)
   if self:active() then
-    self:spawn(ops.ports[self.name])
+    self:clean_ports(ops.ports[self.name], self.x, self.y)
     for i = 1,length do
       field.cell.params[y + 1][(x + i) - 1 ].dot = true
       field.cell.params[y + 1][(x + i) - 1 ].op = false
     end
-    -- highliht pos
-    for l= 1, length do
-      if ((pos or 1)  % (length + 1)) == l then
-        field.cell.params[y + 1][(x + l) - 1].cursor = true
-      else
-        field.cell.params[y + 1][(x + l) - 1].cursor = false
-      end
-    end
+    ops.ports[self.name][4] = {((pos or 1)  % (length+1)) - 1, 1, 'output_op'}
+    self:spawn(ops.ports[self.name])
     field.cell[y+1][(x + ((pos or 1)  % (length+1))) - 1] = val
   end
   -- cleanups
@@ -824,7 +830,6 @@ ops.P = function (self, x, y, frame)
     if field.cell.params[y + 1][(x + i)].dot then
       field.cell.params[y + 1][(x + i)].dot = false
       field.cell.params[y + 1][(x + i) ].op = true
-      field.cell.params[y + 1][(x + i) ].cursor = false
     end
   end
 end
@@ -834,7 +839,7 @@ ops.T = function (self, x, y, frame)
   self.y = y
   self.x = x
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
-  length = util.clamp(length, 1, XSIZE)
+  length = util.clamp(length, 1, XSIZE - bounds_x)
   local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)  
   local val = field.cell[self.y][self.x + util.clamp(pos,1,length)]
   if self:active() then
@@ -845,6 +850,7 @@ ops.T = function (self, x, y, frame)
       field.cell.params[y][(x + i)].op = false
     end
     -- highliht pos
+    
     for l= 1, length do
       if pos == l then
         field.cell.params[y][(x + l)].cursor = true
@@ -868,8 +874,10 @@ ops.U  = function (self, x, y, frame)
   self.x = x
   local pulses = tonumber(ops:input(x + 1, y)) or 1
   local steps = tonumber(ops:input(x - 1, y)) or 1
-  local pattern = euclid.gen(pulses, steps)
-  local out = pattern[(frame  % (pulses ~= 0 and pulses or 1)) + 1] and '*' or 'null'
+  local pattern = euclid.gen(steps, pulses)
+  local pos = (frame  % (pulses ~= 0 and pulses or 1) + 1)
+  local out = pattern[pos] and '*' or 'null'
+  
   if self:active() then
     self:spawn(ops.ports[self.name])
     field.cell[y+1][x] = out
@@ -912,7 +920,7 @@ ops.K = function (self, x, y, frame)
   self.x = x
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
   local offset = 1
-  length = util.clamp(length,0,XSIZE)
+  length = util.clamp(length,0,XSIZE - bounds_x)
   local l_start = x + offset
   local l_end = x + length
   if self:active() then
@@ -959,9 +967,9 @@ ops.L = function (self, x, y, frame)
   local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
   local rate = (tonumber(ops:input(x - 2, y, 0) ) == nil or tonumber(ops:input(x - 2, y, 0) ) == 0) and 1 or tonumber(ops:input(x - 2, y, 0) )
   local offset = 1
-  length = util.clamp(length,0,XSIZE)
-  local l_start = x + offset
-  local l_end = x + length
+  length = util.clamp(length,0,XSIZE - bounds_x)
+  local l_start = util.clamp(x + offset, 1, XSIZE - bounds_x)
+  local l_end = util.clamp(x + length, 1, XSIZE - bounds_x)
   if self:active() then
     self:spawn(ops.ports[self.name])
     if length - offset  == 0 then
@@ -1006,40 +1014,78 @@ ops.R = function (self, x,y,frame)
   end
 end
 
+ops.G = function(self, x,y)
+  self.name = 'G'
+  self.y = y
+  self.x = x
+  local a = tonumber(ops:input(x - 3, y)) or 0 -- x
+  local b = util.clamp(ops:input(x - 2, y) or 1, 1, #ops.chars) -- y
+  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
+  local offset = 1
+  length = util.clamp(length,0,XSIZE - length)
+  local offsety = util.clamp(b + y,1,YSIZE) --  - bounds_y)
+  local offsetx = util.clamp(a + x,1,XSIZE) --  - bounds_x)
+  
+  if self:active() then
+    self:spawn(ops.ports[self.name])
+    
+    if length == 0 then
+      for i=1,length do
+        field.cell.params[y][x + i].op = true
+      end
+    else
+      for i = 1,length do
+        field.cell.params[y][(x + i)].dot = true
+        field.cell.params[y][(x + i)].op = false
+        field.cell.params[y][(x + i)].act = false
+        field.cell.params[y+1][(x + i)].lit_out = false
+        field.cell.params[y][(x + i)].lit = false
+      end
+    end
+    
+    
+    if length > 0 then
+      self:clean_ports(ops.ports[self.name], self.x, self.y)
+      ops.ports[self.name][4] = {a, b, 'output'}
+      self:spawn(ops.ports[self.name])
+    end
+    
+    
+    for i=1,length do
+      local existing = field.cell[self.y][self.x + i] ~= nil and field.cell[self.y][self.x + i] or 'null'
+      if existing == ops.list[string.upper(existing)] then
+        ops:clean_ports(ops.ports[string.upper(existing)],  (offsetx + i) - 1, offsety)
+      end
+      field.cell[util.clamp(offsety,1, #ops.chars)][(offsetx + i) - 1] = field.cell[self.y][self.x + i]
+      ops:add_to_queue((offsetx + i) - 1,util.clamp(offsety,1, #ops.chars))
+    end
+  end
+  
+  -- cleanups 
+  if length < #ops.chars then
+    for i= length == 0 and length or length+1, #ops.chars do
+      field.cell.params[y][(x + i)].dot = false
+      field.cell.params[y][(x + i)].op = true
+    end
+  end
+end
+
 ops.X = function(self, x,y)
   self.name = 'X'
   self.y = y
   self.x = x
   local a = tonumber(ops:input(x - 2, y)) or 0 -- x
-  local b = util.clamp(ops:input(x - 1, y) or 1, 1, #ops.chars) -- y
-  local offsety = b + y
-  local offsetx = a + x
+  local b = tonumber(ops:input(x - 1, y)) or 1 -- y
+  local offsety = util.clamp(b + y,1,YSIZE)
+  local offsetx = util.clamp(a + x,1,XSIZE)
   if self:active() then
+    self:clean_ports(ops.ports[self.name], self.x, self.y)
+    ops.ports[self.name][4] = {a, b, 'output'}
     self:spawn(ops.ports[self.name])
-    --if frame % 1 == 0 then
-      if field.cell[y][x+1] ~= 'null' then
-        field.cell[util.clamp(offsety,1, #ops.chars)][offsetx] = field.cell[y][x+1]
-         ops:add_to_queue(offsetx,util.clamp(offsety,1, #ops.chars))
-        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].placeholder = field.cell[y][x+1]
-        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = false
-      elseif field.cell[y][x+1] == 'null' then
-        field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].dot_cursor = true
-      end
-      for i= y,y + offsety do
-        for l = x, x + offsetx do
-          if (i == y and l == x) then
-          elseif (i == offsety and l == offsetx) then
-            field.cell.params[i][l].cursor = true
-          else
-            field.cell.params[i][l].cursor = false
-            field.cell.params[i][l].dot_cursor = false
-            field.cell.params[i][l].lit = false
-            field.cell.params[i][l].placeholder = nil
-          end
-        end
-      end
-    end
-  --end
+    field.cell[util.clamp(offsety,1, #ops.chars)][offsetx] = field.cell[y][x+1]
+    field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].placeholder = field.cell[y][x+1] ~= '*' and 
+    ops:add_to_queue(offsetx,util.clamp(offsety,1, #ops.chars))
+  end
 end
 
 ops.Y = function(self, x,y)
@@ -1086,20 +1132,21 @@ ops["'"] = function (self, x,y,frame)
   self:spawn(ops.ports[self.name])
   local sample = util.clamp(tonumber(ops:input(x + 1, y)) ~= nil and tonumber(ops:input(x + 1, y)) or 0,0,#ops.chars)
   local octave =  util.clamp(tonumber(ops:input(x + 2, y)) ~= nil and tonumber(ops:input(x + 2, y)) or 0,0,8)
-  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 33,0,#ops.chars)
+  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 5,0,#ops.chars)
   local start =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
   if octave == nil or octave == 'null' then octave = 0 end
   local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
   local oct = transposed[4]
   local n = math.floor(transposed[1])
-  local velocity = math.floor((vel / #ops.chars) * 127)
+  local velocity = math.floor((vel / #ops.chars) * 100)
   local length = params:get("end_frame_" .. sample)
   local start_pos = util.clamp(((start / #ops.chars)*2) * length, 0, length)
   params:set("start_frame_" .. sample,start_pos )
   if ops.banged(x,y) then
     field.cell.params[y][x].lit_out = false
     engine.noteOff(sample)
-    engine.noteOn(sample, sample, music.note_num_to_freq(n), velocity)
+    engine.amp(sample, (-velocity) + 5 )
+    engine.noteOn(sample, sample, music.note_num_to_freq(n), 100)
   else
     field.cell.params[y][x].lit_out = true
     if frame % ( #ops.chars  * 4 )== 0 then engine.noteOff(sample) end
@@ -1226,8 +1273,8 @@ function init()
     softcut.loop_end(i, #ops.chars + 1)
     softcut.loop(i, 0)
     softcut.rec(i, 0)
-    softcut.fade_time(i,0.01)
-    softcut.level_slew_time(i,0)
+    softcut.fade_time(i,0.02)
+    softcut.level_slew_time(i,0.01)
     softcut.rate_slew_time(i,0.01)
     softcut.rec_level(i, 1)
     softcut.pre_level(i, 1)
@@ -1697,7 +1744,6 @@ function redraw()
     draw_projects_list()
   else
     draw_grid()
-    --draw_cursor(x_index - field_offset_x,y_index - field_offset_)
     draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
     if bar then draw_bar() else  end
     if help then draw_help() else end
