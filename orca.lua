@@ -55,7 +55,8 @@ local field = {}
 field.cell = {}
 field.cell.params = {}
 field.active = {}
-local vars = {}
+field.cell.vars = {}
+
 local map = false
 
 local function all_notes_off(ch)

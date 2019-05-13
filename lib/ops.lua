@@ -350,13 +350,13 @@ ops.V = function (self,x,y,frame, grid)
   local b = tonumber(self:input(x + 1, y, 0)) ~= nil and tonumber(self:input(x + 1, y, 0)) or 0
   if self:active() then
     self:spawn(self.ports[self.name])
-    if (b ~= 0 and vars[b] ~= nil and a == 0) then
-      if vars[b] ~= nil then
+    if (grid.vars[b] ~= nil and a == 0) then
+      if grid.vars[b] ~= nil then
        grid.params[y + 1][x].lit_out = true
-       grid[y + 1][x] = vars[b] 
+       grid[y + 1][x] = grid.vars[b] 
       end 
     elseif self:active() and b ~= 0 and  a ~= 0  then
-      vars[a] = grid[y][x + 1]
+      grid.vars[a] = grid[y][x + 1]
     else 
       grid.params[y + 1][x].lit_out = false
     end
@@ -390,13 +390,13 @@ ops.K = function (self, x, y, frame, grid)
         grid.params[y][(x + i)].act = false
         grid.params[y+1][(x + i)].lit_out = false
         grid.params[y][(x + i)].lit = false
-        if vars[var] ~= nil then
+        if grid.vars[var] ~= nil then
           grid.params[y+1][(x + i)].op = false
           grid.params[y + 1][(x + i)].act = false
           grid.params[y+1][(x + i)].lit_out = false
           grid.params[y+2][(x + i)].lit_out = false
           grid.params[y+1][(x + i)].lit = false
-          grid[y+1][(x + i)] = vars[var]
+          grid[y+1][(x + i)] = grid.vars[var]
         end
       end
       grid.params[y+1][x].dot_port = false
