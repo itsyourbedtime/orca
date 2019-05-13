@@ -4,9 +4,15 @@ local XSIZE = 101
 local YSIZE = 33  
 local bounds_x = 25
 local bounds_y = 8
-
+local music = require 'musicutil'
+local euclid = require 'er'
+local mode = #music.SCALES
+local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
+local notes_off_metro = metro.init()
 
 ops._index = ops
+
+
 
 ops["*"] = function(self, x, y, frame, grid)
   self.x = x 
@@ -661,11 +667,11 @@ ops[':'] = function (self, x, y, frame, grid)
   local n = math.floor(transposed[1])
   local velocity = math.floor((vel / 16) * 127)
   if self.banged(x,y) then
-    all_notes_off(channel)
+    self.all_notes_off(channel)
     grid.params[y][x].lit_out = false
-    midi_out_device:note_on(n, velocity, channel)
-    table.insert(active_notes, n)
-    notes_off_metro:start((60 / clk.bpm / clk.steps_per_beat / 4) * length, 1)
+    self.midi_out_device:note_on(n, velocity, channel)
+    table.insert(grid.active_notes, n)
+    notes_off_metro:start((60 / self.clk.bpm / self.clk.steps_per_beat / 4) * length, 1)
   else
     grid.params[y][x].lit_out = true
   end

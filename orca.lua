@@ -23,15 +23,7 @@ local operators = include("orca/lib/ops")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
-local music = require 'musicutil'
 local BeatClock = require 'beatclock'
-local euclid = require 'er'
-local mode = #music.SCALES
-local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
-local midi_out_device 
-local clk = BeatClock.new()
-local notes_off_metro = metro.init()
-local active_notes = {}
 local keyinput = ""
 local XSIZE = 101 
 local YSIZE = 33  
@@ -39,32 +31,39 @@ local x_index = 1
 local y_index = 1
 local bar = false
 local help = false
+local map = false
 local field_grid = 1
 local field_offset_y = 0
 local field_offset_x = 0
 local selected_area_y = 1
 local selected_area_x = 1
-local copy_buffer = {}
-copy_buffer.cell = {}
 local bounds_x = 25
 local bounds_y = 8
 local max_sc_ops = 6
 local frame = 1
 local orca = {}
+orca.clk = BeatClock.new()
 local field = {}
 field.cell = {}
 field.cell.params = {}
 field.active = {}
 field.cell.vars = {}
+field.cell.active_notes = {}
 
-local map = false
 
-local function all_notes_off(ch)
-    for _, a in pairs(active_notes) do
-      midi_out_device:note_off(a, nil, ch)
+local copy_buffer = {}
+copy_buffer.cell = {}
+
+
+
+
+function orca.all_notes_off(ch)
+    for _, a in pairs(field.cell.active_notes) do
+      orca.midi_out_device:note_off(a, nil, ch)
     end
-  active_notes = {}
+  field.cell.active_notes = {}
 end
+
 
 orca.load_project = function(pth)
   if string.find(pth, 'orca') ~= nil then
@@ -638,11 +637,10 @@ function init()
   end
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
-  clk.on_step = function() orca:exec_queue() end
-  clk:add_clock_params()
+  orca.clk.on_step = function() orca:exec_queue() end
+  orca.clk:add_clock_params()
   params:set("bpm", 120)
-  clk:start()
-  notes_off_metro.event = all_notes_off
+  orca.clk:start()
   params:add_separator()
 
 
@@ -661,11 +659,11 @@ function init()
 
 
   params:add_separator()
-  midi_out_device = midi.connect(1)
-  midi_out_device.event = function() end
+  orca.midi_out_device = midi.connect(1)
+  orca.midi_out_device.event = function() end
   params:add{type = "number", id = "midi_out_device", name = "midi out device",
   min = 1, max = 4, default = 1,
-  action = function(value) midi_out_device = midi.connect(value) end}
+  action = function(value) orca.midi_out_device = midi.connect(value) end}
 end
 
 local function get_key(code, val, shift)
@@ -765,15 +763,15 @@ function keyb.event(typ, code, val)
   elseif (code == 119 and val == 1) then
   elseif ((code == 88 or code == 87) and val == 1) then
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
-    if clk.playing then
-      clk:stop()
+    if orca.clk.playing then
+      orca.clk:stop()
       engine.noteKillAll()
       for i=1,max_sc_ops do
         softcut.play(i,0)
       end
     else
       frame = 0
-      clk:start()
+      orca.clk:start()
     end
   else
     if val == 1 then
