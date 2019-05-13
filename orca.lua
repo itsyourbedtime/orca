@@ -601,7 +601,7 @@ function init()
   params:add_separator()
   params:add_control("EXT", "softcut ext level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("EXT", function(x) audio.level_adc_cut(x) end)
-  params:add_control("ENG", "softcut eng level", controlspec.new(0, 1, 'lin', 0, 0, ""))
+  params:add_control("ENG", "softcut eng level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
   params:add_separator()
 
