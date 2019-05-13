@@ -799,7 +799,7 @@ function keyb.event(typ, code, val)
         field.cell[y_index][x_index] = keyinput
         orca:add_to_queue(x_index,y_index)
       end
-    else 
+    elseif ctrl then 
       if code == 45 then -- cut
         orca.cut_area()
       elseif code == 46 then -- copy
