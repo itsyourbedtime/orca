@@ -350,11 +350,8 @@ end
 
 function orca:shift(s, e)
   local data = field.cell[self.y][self.x + s]
-  local params_data = field.cell.params[self.y][self.x + s]
   table.remove(field.cell[self.y], self.x + s)
-  table.remove(field.cell.params[self.y], self.x + s)
   table.insert(field.cell[self.y], self.x + e, data)
-  table.insert(field.cell.params[self.y], self.x + e, params_data)
 end
 
 function orca:cleanup()
@@ -805,6 +802,7 @@ function keyb.event(typ, code, val)
       elseif code == 47 then -- paste
         orca.paste_area()
       end
+
     end
   end
 end
