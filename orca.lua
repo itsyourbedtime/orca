@@ -13,18 +13,19 @@ end
 
 unrequire("timber/lib/timber_engine")
 engine.name = "Timber"
-Timber = require "timber/lib/timber_engine"
+local Timber = require "timber/lib/timber_engine"
 local music = require "musicutil"
 local NUM_SAMPLES = 35
 local keyb = hid.connect()
 local keycodes = include("orca/lib/keycodes")
 local transpose_table = include("orca/lib/transpose")
+local operators = include("orca/lib/ops")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local music = require 'musicutil'
 local BeatClock = require 'beatclock'
-euclid = require 'er'
+local euclid = require 'er'
 local mode = #music.SCALES
 local scale = music.generate_scale_of_length(60,music.SCALES[mode].name,16)
 local midi_out_device 
@@ -41,26 +42,21 @@ local help = false
 local field_grid = 1
 local field_offset_y = 0
 local field_offset_x = 0
+local selected_area_y = 1
+local selected_area_x = 1
+local copy_buffer = {}
+copy_buffer.cell = {}
 local bounds_x = 25
 local bounds_y = 8
-local sc_ops = 0
 local max_sc_ops = 6
 local frame = 1
-local ops = {}
+local orca = {}
 local field = {}
 field.cell = {}
 field.cell.params = {}
 field.active = {}
 local vars = {}
 local map = false
-local main_menu = false
-local load_menu = false
-local projects = {}
-local menu_index = 1
-local menu_entries = {{'New', function() init() main_menu = false menu_index = 1 end}, 
-              {'Load', function() main_menu = false load_menu = true end}, 
-              {'Save', function() textentry.enter(ops.save_project, 'untitled' ) end}
-}
 
 local function all_notes_off(ch)
     for _, a in pairs(active_notes) do
@@ -69,28 +65,26 @@ local function all_notes_off(ch)
   active_notes = {}
 end
 
-ops.load_project = function(pth)
+orca.load_project = function(pth)
   if string.find(pth, 'orca') ~= nil then
     saved = tab.load(pth)
     if saved ~= nil then
       print("data found")
       field = saved
       local name = string.sub(string.gsub(pth, '%w+/',''),2,-6) 
-      softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #ops.chars, 1, 1)
+      softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
       params:read(norns.state.data .. name ..".pset")
       print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
-      load_menu = false
-      main_menu = false
     else
       print("no data")
     end
   end
 end
 
-ops.save_project = function(txt)
+orca.save_project = function(txt)
   if txt then
     tab.save(field, norns.state.data .. txt ..".orca")
-    softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#ops.chars, 1)
+    softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#orca.chars, 1)
     params:write(norns.state.data .. txt .. ".pset")
     print ('saved ' .. norns.state.data .. txt .. '_buffer.aif')
   else
@@ -98,7 +92,39 @@ ops.save_project = function(txt)
   end
 end
 
-ops.list =  {
+
+function orca.copy_area()
+  for y=y_index - 1, y_index + ( selected_area_y - 1) do
+    local y_c = util.clamp(y - y_index,1,YSIZE)
+    copy_buffer.cell[y_c ] = {}
+    for x = x_index - 1, x_index + ( selected_area_x - 1 ) do
+      local x_c = util.clamp(x - x_index,1,XSIZE)
+      copy_buffer.cell[y_c][x_c ] = field.cell[y][x]
+    end
+  end
+end
+
+function orca.cut_area()
+  for y=y_index, y_index + ( selected_area_y - 1) do
+    copy_buffer.cell[y -  y_index ] = {}
+    for x = x_index, x_index + ( selected_area_x - 1 ) do
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
+      orca:erase(x,y)
+    end
+  end
+end
+
+function orca.paste_area()
+  for y=1, #copy_buffer.cell do
+    for x = 1, #copy_buffer.cell[y] do
+      orca:erase(util.clamp(x_index + x,1,XSIZE), util.clamp(y_index + y,1,YSIZE))
+      field.cell[y_index + y][(x_index + x)] = copy_buffer.cell[y][x]
+      orca:add_to_queue(x_index + x, y_index + y)
+    end
+  end
+end
+
+orca.list =  {
   ["*"] = '*',
   [':'] = ':',
   ["'"] = "'",
@@ -131,13 +157,13 @@ ops.list =  {
   ['Y'] = 'Y',
   ["Z"] = 'Z'
 }
-ops.bangs ={
+orca.bangs ={
   ["E"] = 'E',
   ["W"] = 'W',
   ["S"] = 'S',
   ["N"] = 'N',
 }
-ops.names =  {
+orca.names =  {
   ["*"] = 'bang',
   [':'] = 'midi',
   ["'"] = 'engine',
@@ -171,7 +197,7 @@ ops.names =  {
   ["Z"] = 'zoom'
 
 }
-ops.info = {
+orca.info = {
   ['*'] = 'Bangs neighboring operators.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
   ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
@@ -205,7 +231,7 @@ ops.info = {
   ['Y'] = 'Outputs the westward operator',
   ['Z'] = '',
 }
-ops.ports = {
+orca.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
   ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
@@ -239,43 +265,43 @@ ops.ports = {
   ['Z'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['*'] = {},
 }
-ops.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
-ops.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
-ops.chars[0] = '0'
+orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
+orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+orca.chars[0] = '0'
 
 
-function ops.normalize(n)
+function orca.normalize(n)
   return n == 'e' and 'F' or n == 'b' and 'C' or n
 end
 
-function ops.transpose(n, o)
+function orca.transpose(n, o)
   if n == nil or n == 'null' then n = 'C' else n = tostring(n) end 
   if o == nil or o == 'null' then o = 0 end
-  local note = ops.normalize(string.sub(transpose_table[n], 1, 1))
-  local octave = util.clamp(ops.normalize(string.sub(transpose_table[n], 2)) + o,0,8)
-  local value = tab.key(ops.notes, note)
+  local note = orca.normalize(string.sub(transpose_table[n], 1, 1))
+  local octave = util.clamp(orca.normalize(string.sub(transpose_table[n], 2)) + o,0,8)
+  local value = tab.key(orca.notes, note)
   local id = util.clamp((octave * 12) + value, 0, 127)
   local real = id < 89 and tab.key(transpose_table, id - 45) or nil -- ??
   return {id, value, note, octave, real}
 end
 
-function ops:input(x,y, default)
+function orca:input(x,y, default)
   local value = string.lower(tostring(field.cell[y][x]))
   if value == '0' then 
     return 0
   elseif value ~= nil or value ~= 'null' then 
-    return tab.key(ops.chars, value)
+    return tab.key(orca.chars, value)
   else
     return false
   end
 end 
 
-function ops.is_op(x,y)
+function orca.is_op(x,y)
   x = util.clamp(x,0,XSIZE)
   y = util.clamp(y,0,YSIZE)
   if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
-    if (ops.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
-      if ops.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].act == true then
+    if (orca.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
+      if orca.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].act == true then
         return true
       end
     end
@@ -284,9 +310,9 @@ function ops.is_op(x,y)
   end
 end
 
-function ops.is_bang(x,y)
+function orca.is_bang(x,y)
   if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
-    if (ops.bangs[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
+    if (orca.bangs[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
       return true
     end
   else
@@ -294,21 +320,21 @@ function ops.is_bang(x,y)
   end
 end
 
-function ops.banged(x,y)
-  if field.cell[y][x - 1] == '*' then -- or  ops.is_bang(x - 1, y) then
+function orca.banged(x,y)
+  if field.cell[y][x - 1] == '*' then 
     return true
-  elseif field.cell[y][x + 1] == '*' then --or ops.is_bang(x + 1, y) then
+  elseif field.cell[y][x + 1] == '*' then
     return true
-  elseif field.cell[y - 1][x] == '*' then --or ops.is_bang(x, y - 1) then 
+  elseif field.cell[y - 1][x] == '*' then
     return true
-  elseif field.cell[y + 1][x] == '*' then -- or ops.is_bang(x, y + 1) then 
+  elseif field.cell[y + 1][x] == '*' then 
     return true
   else
     return false
   end
 end
 
-function ops:active()
+function orca:active()
   if field.cell.params[self.y][self.x].op == true then
     if field.cell[self.y][self.x] == string.upper(field.cell[self.y][self.x]) then
       return true
@@ -318,11 +344,11 @@ function ops:active()
   end
 end
 
-function ops:replace(i)
+function orca:replace(i)
   field.cell[self.y][self.x] = i
 end
 
-function ops:shift(s, e)
+function orca:shift(s, e)
   local data = field.cell[self.y][self.x + s]
   local params_data = field.cell.params[self.y][self.x + s]
   table.remove(field.cell[self.y], self.x + s)
@@ -331,15 +357,15 @@ function ops:shift(s, e)
   table.insert(field.cell.params[self.y], self.x + e, params_data)
 end
 
-function ops:cleanup()
-  if ops.is_op(self.x, self.y) then self:clean_ports(ops.ports[string.upper(field.cell[self.y][self.x])]) end
+function orca:cleanup()
+  if orca.is_op(self.x, self.y) then self:clean_ports(orca.ports[string.upper(field.cell[self.y][self.x])]) end
   field.cell.params[self.y][self.x] = {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil}
   if field.cell.params[self.y+1][self.x].cursor == true then field.cell.params[self.y+1][self.x].cursor = false end
   if field.cell.params[self.y][self.x + 1].op == false then field.cell.params[self.y][self.x + 1].op = true end
   if field.cell.params[self.y + 1][self.x].lit_out == true then field.cell.params[self.y + 1][self.x].lit_out = false end
   -- specific ops cleanup
   if (field.cell[self.y][self.x] == 'P' or field.cell[self.y][self.x] == 'p') then
-    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
+    local seqlen = tonumber(orca:input(self.x - 1, self.y)) or 1
     for i=0, seqlen do
       field.cell.params[self.y + 1][self.x + i].op = true
       field.cell.params[self.y + 1][self.x + i].lit = false
@@ -347,7 +373,7 @@ function ops:cleanup()
       field.cell.params[self.y + 1][self.x + i].dot = false
     end
   elseif (field.cell[self.y][self.x] == 'T' or field.cell[self.y][self.x] == 't') then
-    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
+    local seqlen = tonumber(orca:input(self.x - 1, self.y)) or 1
     field.cell.params[self.y+1][self.x].lit_out  = false
     for i=1, seqlen do
       field.cell.params[self.y][self.x + i].op = true
@@ -355,7 +381,7 @@ function ops:cleanup()
       field.cell.params[self.y][self.x + i].dot = false
     end
   elseif (field.cell[self.y][self.x] == 'K' or field.cell[self.y][self.x] == 'k') then
-    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
+    local seqlen = tonumber(orca:input(self.x - 1, self.y)) or 1
     for i=1,seqlen do
       field.cell.params[self.y][self.x + i].dot = false
       field.cell.params[self.y][(self.x + i)].op = true
@@ -363,7 +389,7 @@ function ops:cleanup()
       field.cell.params[self.y + 1][(self.x + i)].act = true
     end
   elseif (field.cell[self.y][self.x] == 'L' or field.cell[self.y][self.x] == 'l') or (field.cell[self.y][self.x] == 'G' or field.cell[self.y][self.x] == 'g') then
-    local seqlen = tonumber(ops:input(self.x - 1, self.y)) or 1
+    local seqlen = tonumber(orca:input(self.x - 1, self.y)) or 1
     for i=1,seqlen do
       field.cell.params[self.y][self.x + i].dot = false
       field.cell.params[self.y][(self.x + i)].op = true
@@ -381,38 +407,38 @@ function ops:cleanup()
     field.cell.params[self.y + b][self.x + a].cursor = false
     field.cell.params[self.y + b][self.x + a].placeholder = nil
   elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == ':' or field.cell[self.y][self.x] == '/') then
-    if field.cell[self.y][self.x] == '/' then sc_ops = util.clamp(sc_ops - 1,1,max_sc_ops) softcut.play(field.cell[self.y][self.x + 1]~= 'null' and field.cell[self.y][self.x + 1] or sc_ops,0) end
-    if field.cell[self.y][self.x] == "'" then local sample = ops:input(self.x + 1, self.y) or 0 engine.noteOff(sample) end
+    if field.cell[self.y][self.x] == '/' then softcut.play((field.cell[self.y][self.x + 1] == 0 and 1 or field.cell[self.y][self.x + 1]),0) end
+    if field.cell[self.y][self.x] == "'" then local sample = orca:input(self.x + 1, self.y) or 0 engine.noteOff(sample) end
 
   end 
 end
 
-function ops:erase(x,y)
+function orca:erase(x,y)
   self.x = x
   self.y = y
   if self:active() then 
     self:cleanup() 
   end
-  ops:remove_from_queue(self.x,self.y)  
+  orca:remove_from_queue(self.x,self.y)  
   self:replace('null')
 end
 
-function ops:explode()
+function orca:explode()
   self:replace('*')
   self:add_to_queue(self.x,self.y)
 end
 
-function ops:id(x, y)
+function orca:id(x, y)
   return tostring(x .. ":" .. y)
 end
 
-function ops:add_to_queue(x,y)
+function orca:add_to_queue(x,y)
   x = util.clamp(x,1,XSIZE + 1)
   y = util.clamp(y,1,YSIZE + 1)
-  field.active[ops:id(x,y)] = {x, y, field.cell[y][x]}
+  field.active[orca:id(x,y)] = {x, y, field.cell[y][x]}
 end
 
-function ops.removeKey(t, k_to_remove)
+function orca.removeKey(t, k_to_remove)
   local new = {}
   for k, v in pairs(t) do
     new[k] = v
@@ -422,27 +448,27 @@ function ops.removeKey(t, k_to_remove)
 end
 
 
-function ops:remove_from_queue(x,y)
+function orca:remove_from_queue(x,y)
   self.x = x
   self.y = y
-  field.active = ops.removeKey(field.active, ops:id(self.x,self.y))
+  field.active = orca.removeKey(field.active, orca:id(self.x,self.y))
 end
 
-function ops:exec_queue()
+function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
     if k ~= nil then
     local x = util.clamp(field.active[k][1],1,XSIZE)
     local y = util.clamp(field.active[k][2],1,YSIZE)
     local op = field.active[k][3]
-    if op ~= 'null' and ops.is_op(x,y) then
-      ops[string.upper(op)](self, x, y, frame) 
+    if op == orca.list[string.upper(op)] and orca.is_op(x,y) then
+      operators[op](self, x, y, frame, field.cell) 
     end
     end
   end
 end
 
-function ops:move(x,y)
+function orca:move(x,y)
   a = self.y + y
   b = self.x + x
   local collider = field.cell[a][b]
@@ -450,45 +476,45 @@ function ops:move(x,y)
   if collider ~= 'null'  then
     if field.cell[a][b] ~= nil then
       if collider == '*' then
-        ops:move_cell(b,a)
+        orca:move_cell(b,a)
         self:erase(self.x,self.y)
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false) then
-        ops:move_cell(b,a)
+        orca:move_cell(b,a)
       elseif (
         (collider == '.' and field.cell.params[a][b].op == true)
         or
         collider == field.cell[self.y][self.x]
         or
-        (ops:active() and ops.list[string.upper(field.cell[a][b])])
+        (orca:active() and orca.list[string.upper(field.cell[a][b])])
         or
         collider == tonumber(collider)
         or
-        collider ~= ops.is_op(a,b)
+        collider ~= orca.is_op(a,b)
         or
-        ops.is_bang(a,b)
+        orca.is_bang(a,b)
         )
       then
         self:explode()
       -- L fix
       elseif field.cell.params[a][b].op == false or (collider == '.' and field.cell.params[a][b].op == false ) then
-        ops:move_cell(b,a)
+        orca:move_cell(b,a)
         self:erase(self.x,self.y)
       end
     else
       self:explode()
     end
   else
-    ops:move_cell(b,a)
+    orca:move_cell(b,a)
   end
 end
 
-function ops:move_cell(x,y)
+function orca:move_cell(x,y)
   field.cell[y][x] = field.cell[self.y][self.x]
   self:erase(self.x,self.y)
-  ops:add_to_queue(x,y)
+  orca:add_to_queue(x,y)
 end
 
-function ops:clean_ports(t, x1, y1)
+function orca:clean_ports(t, x1, y1)
   for i=1,#t do
     if t[i] ~= nil then
       for l=1,#t[i]-2 do
@@ -515,7 +541,7 @@ function ops:clean_ports(t, x1, y1)
   end
 end
 
-function ops:spawn(t)
+function orca:spawn(t)
   for i=1,#t do
     for l= 1, #t[i] - 2 do
       local x = self.x + t[i][l]
@@ -523,8 +549,8 @@ function ops:spawn(t)
       local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
 
-      if existing == ops.list[string.upper(existing)] then
-        ops:clean_ports(ops.ports[existing], x,y)
+      if existing == orca.list[string.upper(existing)] then
+        orca:clean_ports(orca.ports[existing], x,y)
       end
 
       -- draw frame
@@ -556,691 +582,6 @@ function ops:spawn(t)
 end
 -----
 
-ops["*"] = function(self, x,y,f)
-  self.x = x 
-  self.y = y 
-  if self:active() then 
-    self:erase(self.x, self.y) 
-  end
-end
-
-
-ops.A = function (self,x,y,frame)
-  self.name = 'A'
-  self.y = y
-  self.x = x
-  local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
-  local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0))  or 0
-  local sum
-  if (a ~= 0 or b ~= 0) then sum  = ops.chars[util.clamp(math.ceil((a+b)),0,#ops.chars)]
-  else sum = 0 end
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-      field.cell[y+1][x] = sum
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      field.cell[y+1][x] = sum
-    end
-  end
-end
-
-ops.B = function (self, x,y, frame)
-  self.name = 'B'
-  self.y = y
-  self.x = x
-  local to = tonumber(ops:input(x + 1, y)) or 1
-  local rate = tonumber(ops:input(x - 1, y)) or 1
-  if to == 0 or to == nil then to = 1 end
-  if rate == 0 or rate == nil then rate = 1 end
-  local key = math.floor(frame / rate) % (to * 2)
-  local val = key <= to and key or to - (key - to)
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y + 1][x] = ops.chars[val]
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      field.cell[y + 1][x] = ops.chars[val]
-    end
-  end
-end
-
-ops.C  = function (self, x, y, frame)
-  self.name = 'C'
-  self.y = y
-  self.x = x
-  local modulus = tonumber(ops:input(x + 1, y)) or 9
-  local rate = tonumber(ops:input(x - 1, y)) or 1
-  if modulus == 0 or modulus == nil then modulus = 1 end
-  if rate == 0 or rate == nil then rate = 1 end
-  local val = (math.floor(frame / rate) % modulus) + 1
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = ops.chars[val]
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      self:spawn(ops.ports[self.name])
-      field.cell[y+1][x] = ops.chars[val]
-    end
-  end
-end
-
-ops.D  = function (self, x, y, frame)
-  self.name = 'D'
-  self.y = y
-  self.x = x
-  local modulus = tonumber(ops:input(x + 1, y)) or 9 -- only int
-  local rate = tonumber(ops:input(x - 1, y)) or 1 -- only int
-  if modulus == 0 then modulus = 1 end
-  local val = (frame % (modulus * rate))
-  local out = (val == 0 or modulus == 1) and '*' or 'null'
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = out
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      self:spawn(ops.ports[self.name])
-      field.cell[y+1][x] = out
-    end
-  end
-end
-
-ops.F = function(self, x,y)
-  self.name = 'F'
-  self.y = y
-  self.x = x
-  local b = tonumber(ops:input(x + 1, y))
-  local a = tonumber(ops:input(x - 1, y))
-  local val = a == b and '*' or 'null'
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = val
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      field.cell[y+1][x] = val
-    end
-  end
-end
-
-ops.H = function(self,x,y)
-  self.name = 'H'
-  self.y = y
-  self.x = x
-  local ports = {{0, 1 , 'output'}}
-  local a = field.cell[y - 1][x]
-  local existing = field.cell[y + 1][x] == ops.list[field.cell[y + 1][x]] and field.cell[y + 1][x] or 'nu'
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-  elseif ops.banged(x,y) then
-    self:spawn(ops.ports[self.name])
-  end
-end
-
-ops.J = function(self, x,y)
-  self.name = 'J'
-  self.y = y
-  self.x = x
-  local a = field.cell[y - 1][x]
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y + 1][x] = a
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      field.cell[y + 1][x] = a
-    end
-  end
-end
-
-ops.I = function (self, x, y, frame)
-  self.name = 'I'
-  self.y = y
-  self.x = x
-  local a, b
-  a = ops:input(x - 1, y, 0) 
-  b = ops:input(x + 1, y, 9)
-  a = tonumber(a) or 0
-  b = tonumber(b) ~= tonumber(a) and tonumber(b) or tonumber(a) + 1
-  if b < a then a,b = b,a end
-  val = util.clamp((frame  % math.ceil(b)) + 1,a,b)
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = ops.chars[val]
-  end
-end
-
-ops.W = function(self, x, y)
-  self.name = 'W'
-  self.x = x
-  self.y = y
-  if self:active() then
-    ops:move(-1,0)
-  elseif ops.banged(x,y) then
-    ops:move(-1,0)
-  end
-end
-
-ops.E = function (self, x, y)
-  self.name = 'E'
-  self.x = x
-  self.y = y
-  if self:active() then
-    ops:move(1,0)
-  elseif ops.banged(x,y) then
-    ops:move(1,0)
-  end
-end
-
-ops.N = function (self, x, y)
-  self.name = 'N'
-  self.x = x
-  self.y = y
-  if self:active() then
-    ops:move(0,-1)
-  elseif ops.banged(x,y) then
-    ops:move(0,-1)
-  end
-end
-
-ops.S = function(self, x, y)
-  self.name = 'S'
-  self.x = x
-  self.y = y
-  if self:active() then
-    ops:move(0,1)
-  elseif ops.banged(x,y) then
-    ops:move(0,1)
-  end
-end
-
-ops.O = function (self, x, y)
-  self.name = 'O'
-  self.y = y
-  self.x = x
-  self.inputs = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}}
-  local a = tonumber(ops:input(x - 2, y))  or 1 ----(tonumber(ops:input(x -2, y)) == 0 or tonumber(field.cell[y][x - 2]) == nil) and 1 or tonumber(field.cell[y][x - 2]) -- x
-  local b = tonumber(ops:input(x - 1, y))  or 0 -- y
-  local offsety = util.clamp(b + y,1,YSIZE)
-  local offsetx = util.clamp(a + x,1,XSIZE)
-  if self:active() then
-    field.cell[y + 1][x] = field.cell[offsety][offsetx]
-    self:clean_ports(ops.ports[self.name], self.x, self.y)
-    ops.ports[self.name] = self.inputs
-    ops.ports[self.name][4] = {a, b, 'input'}
-    self:spawn(ops.ports[self.name])
-  end
-end
-
-ops.Q = function (self, x, y)
-  self.name = 'Q'
-  self.y = y
-  self.x = x
-  self.inputs = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1 , 'output'}}
-  local a = tonumber(ops:input(x - 3, y)) or 1 -- x
-  local b = tonumber(ops:input(x - 2, y)) or 0 -- y
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
-  local offset = 1
-  length = util.clamp(length,1,XSIZE - length)
-  local offsety = util.clamp(b + y,1,YSIZE)
-  local offsetx = util.clamp(a + x,1,XSIZE)
-  if self:active() then
-    self:spawn(self.inputs)
-    for i = 1, length do
-      field.cell[y + 1][(offsetx  + i) - (length + 1)] = field.cell[offsety][(offsetx + i) -1]
-      self:clean_ports(ops.ports[self.name], self.x, self.y)
-      ops.ports[self.name] = self.inputs
-      ops.ports[self.name][4 + i] = {(a+i)-1, b, 'input'}
-      self:spawn(ops.ports[self.name])
-    end
-  end
-end
-
-ops.M  = function (self, x, y)
-  self.name = 'M'
-  self.y = y
-  self.x = x
-  local l = tonumber(ops:input(x - 1, y, 1)) or 0-- only int
-  local m = tonumber(ops:input(x + 1, y, 1)) or 0-- only int
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y + 1][x] = ops.chars[(l * m) % #ops.chars]
-  elseif ops.banged(x,y) then
-    field.cell[y + 1][x] = ops.chars[(l * m) % #ops.chars]
-  end
-end
-
-ops.P = function (self, x, y, frame)
-  self.name = 'P'
-  self.y = y
-  self.x = x
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
-  local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)
-  local val = field.cell[y][x + 1]
-  length = util.clamp(length, 1, XSIZE - bounds_x)
-  if self:active() then
-    self:clean_ports(ops.ports[self.name], self.x, self.y)
-    for i = 1,length do
-      field.cell.params[y + 1][(x + i) - 1 ].dot = true
-      field.cell.params[y + 1][(x + i) - 1 ].op = false
-    end
-    ops.ports[self.name][4] = {((pos or 1)  % (length+1)) - 1, 1, 'output_op'}
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][(x + ((pos or 1)  % (length+1))) - 1] = val
-  end
-  -- cleanups
-  for i= length, #ops.chars do
-    if field.cell.params[y + 1][(x + i)].dot then
-      field.cell.params[y + 1][(x + i)].dot = false
-      field.cell.params[y + 1][(x + i) ].op = true
-    end
-  end
-end
-
-ops.T = function (self, x, y, frame)
-  self.name = 'T'
-  self.y = y
-  self.x = x
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 1) ) or 1
-  length = util.clamp(length, 1, XSIZE - bounds_x)
-  local pos = util.clamp(tonumber(ops:input(x - 2, y, 0)) ~= 0 and tonumber(ops:input(x - 2, y, 0)) or 1, 1, length)  
-  local val = field.cell[self.y][self.x + util.clamp(pos,1,length)]
-  if self:active() then
-    field.cell.params[y+1][x].lit_out  = true
-    self:spawn(ops.ports[self.name])
-    for i = 1,length do
-      field.cell.params[y][(x + i)].dot = true
-      field.cell.params[y][(x + i)].op = false
-    end
-    -- highliht pos
-    
-    for l= 1, length do
-      if pos == l then
-        field.cell.params[y][(x + l)].cursor = true
-      else
-        field.cell.params[y][(x + l)].cursor = false
-      end
-    end
-    field.cell[y+1][x] = val or '.'
-  end
-  -- cleanups
-  for i= length+1, #ops.chars do
-    field.cell.params[y][(x + i)].dot = false
-    field.cell.params[y][(x + i)].op = true
-    field.cell.params[y][(x + i)].cursor = false
-  end
-end
-
-ops.U  = function (self, x, y, frame)
-  self.name = 'U'
-  self.y = y
-  self.x = x
-  local pulses = tonumber(ops:input(x + 1, y)) or 1
-  local steps = tonumber(ops:input(x - 1, y)) or 1
-  local pattern = euclid.gen(steps, pulses)
-  local pos = (frame  % (pulses ~= 0 and pulses or 1) + 1)
-  local out = pattern[pos] and '*' or 'null'
-  
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = out
-  elseif not self:active() then
-    if ops.banged(x,y) then
-      self:spawn(ops.ports[self.name])
-      field.cell[y+1][x] = out
-    end
-  end
-end
-
-
-ops.V = function (self,x,y,frame)
-  self.name = 'V'
-  self.y = y
-  self.x = x
-  local a = tonumber(ops:input(x - 1, y, 0))  ~= nil and tonumber(ops:input(x - 1, y, 0)) or 0
-  local b = tonumber(ops:input(x + 1, y, 0)) ~= nil and tonumber(ops:input(x + 1, y, 0)) or 0
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if (b ~= 0 and vars[b] ~= nil and a == 0) then
-      if vars[b] ~= nil then
-       field.cell.params[y + 1][x].lit_out = true
-       field.cell[y + 1][x] = vars[b] 
-      end 
-    elseif self:active() and b ~= 0 and  a ~= 0  then
-      vars[a] = field.cell[y][x + 1]
-    else 
-      field.cell.params[y + 1][x].lit_out = false
-    end
-  elseif not self:active() then
-    if ops.banged(x,y) then
-    end
-  end
-end
-
-ops.K = function (self, x, y, frame)
-  self.name = 'K'
-  self.y = y
-  self.x = x
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
-  local offset = 1
-  length = util.clamp(length,0,XSIZE - bounds_x)
-  local l_start = x + offset
-  local l_end = x + length
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if length - offset  == 0 then
-      for i=2,length do
-        field.cell.params[y][x + i].op = true
-      end
-    else
-      for i = 1,length do
-        local var = ops:input(x+i,y)
-        field.cell.params[y][(x + i)].dot = true
-        field.cell.params[y+1][(x + i)].dot_port = false
-        field.cell.params[y][(x + i)].op = false
-        field.cell.params[y][(x + i)].act = false
-        field.cell.params[y+1][(x + i)].lit_out = false
-        field.cell.params[y][(x + i)].lit = false
-        if vars[var] ~= nil then
-          field.cell.params[y+1][(x + i)].op = false
-          field.cell.params[y + 1][(x + i)].act = false
-          field.cell.params[y+1][(x + i)].lit_out = false
-          field.cell.params[y+2][(x + i)].lit_out = false
-          field.cell.params[y+1][(x + i)].lit = false
-          field.cell[y+1][(x + i)] = vars[var]
-        end
-      end
-      field.cell.params[y+1][x].dot_port = false
-      field.cell.params[y+1][length + 1].dot_port = false
-    end
-  end
-  -- cleanups
-  if length < #ops.chars then
-    for i= length == 0 and length or length+1, #ops.chars do
-        field.cell.params[y][util.clamp((x + i),1,XSIZE)].dot = false
-        field.cell.params[y][util.clamp((x + i),1,XSIZE)].op = true
-        field.cell.params[y+1][util.clamp((x + i),1,XSIZE)].act = true
-    end
-  end
-end
-ops.L = function (self, x, y, frame)
-  self.name = 'L'
-  self.y = y
-  self.x = x
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
-  local rate = (tonumber(ops:input(x - 2, y, 0) ) == nil or tonumber(ops:input(x - 2, y, 0) ) == 0) and 1 or tonumber(ops:input(x - 2, y, 0) )
-  local offset = 1
-  length = util.clamp(length,0,XSIZE - bounds_x)
-  local l_start = util.clamp(x + offset, 1, XSIZE - bounds_x)
-  local l_end = util.clamp(x + length, 1, XSIZE - bounds_x)
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if length - offset  == 0 then
-      for i=2,length do
-        field.cell.params[y][x + i].op = true
-      end
-    else
-      for i = 1,length do
-        field.cell.params[y][(x + i)].dot = true
-        field.cell.params[y][(x + i)].op = false
-        field.cell.params[y+1][(x + i)].lit_out = false
-        field.cell.params[y][(x + i)].lit = false
-      end
-    end
-  end
-  if frame % rate == 0 and length ~= 0 then
-    self:shift(offset, length)
-  end
-  -- cleanups
-  if length < #ops.chars then
-    for i= length == 0 and length or length+1, #ops.chars do
-        field.cell.params[y][(x + i)].dot = false
-        field.cell.params[y][(x + i)].op = true
-    end
-  end
-end
-
-ops.R = function (self, x,y,frame)
-  self.name = 'R'
-  self.y = y
-  self.x = x
-  local a, b
-  a = ops:input(x - 1, y, 1) 
-  b = ops:input(x + 1, y, 9)
-  a = util.clamp(tonumber(a) or 1,0,#ops.chars)
-  b = util.clamp(tonumber(b) or 9,1,#ops.chars)
-  if b == 27 and a == 27 then a = math.random(#ops.chars) b = math.random(#ops.chars) end -- rand 
-  if b < a then a,b = b,a end
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    field.cell[y+1][x] = ops.chars[math.random((a or 1),(b or 9))]
-  end
-end
-
-ops.G = function(self, x,y)
-  self.name = 'G'
-  self.y = y
-  self.x = x
-  local a = tonumber(ops:input(x - 3, y)) or 0 -- x
-  local b = util.clamp(ops:input(x - 2, y) or 1, 1, #ops.chars) -- y
-  local length = tonumber(ops:input(x - 1, y, 0) ) ~= nil and tonumber(ops:input(x - 1, y, 0) ) or 0
-  local offset = 1
-  length = util.clamp(length,0,XSIZE - length)
-  local offsety = util.clamp(b + y,1,YSIZE) --  - bounds_y)
-  local offsetx = util.clamp(a + x,1,XSIZE) --  - bounds_x)
-  
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    
-    if length == 0 then
-      for i=1,length do
-        field.cell.params[y][x + i].op = true
-      end
-    else
-      for i = 1,length do
-        field.cell.params[y][(x + i)].dot = true
-        field.cell.params[y][(x + i)].op = false
-        field.cell.params[y][(x + i)].act = false
-        field.cell.params[y+1][(x + i)].lit_out = false
-        field.cell.params[y][(x + i)].lit = false
-      end
-    end
-    
-    
-    if length > 0 then
-      self:clean_ports(ops.ports[self.name], self.x, self.y)
-      ops.ports[self.name][4] = {a, b, 'output'}
-      self:spawn(ops.ports[self.name])
-    end
-    
-    
-    for i=1,length do
-      local existing = field.cell[self.y][self.x + i] ~= nil and field.cell[self.y][self.x + i] or 'null'
-      if existing == ops.list[string.upper(existing)] then
-        ops:clean_ports(ops.ports[string.upper(existing)],  (offsetx + i) - 1, offsety)
-      end
-      field.cell[util.clamp(offsety,1, #ops.chars)][(offsetx + i) - 1] = field.cell[self.y][self.x + i]
-      ops:add_to_queue((offsetx + i) - 1,util.clamp(offsety,1, #ops.chars))
-    end
-  end
-  
-  -- cleanups 
-  if length < #ops.chars then
-    for i= length == 0 and length or length+1, #ops.chars do
-      field.cell.params[y][(x + i)].dot = false
-      field.cell.params[y][(x + i)].op = true
-    end
-  end
-end
-
-ops.X = function(self, x,y)
-  self.name = 'X'
-  self.y = y
-  self.x = x
-  local a = tonumber(ops:input(x - 2, y)) or 0 -- x
-  local b = tonumber(ops:input(x - 1, y)) or 1 -- y
-  local offsety = util.clamp(b + y,1,YSIZE)
-  local offsetx = util.clamp(a + x,1,XSIZE)
-  if self:active() then
-    self:clean_ports(ops.ports[self.name], self.x, self.y)
-    ops.ports[self.name][4] = {a, b, 'output'}
-    self:spawn(ops.ports[self.name])
-    field.cell[util.clamp(offsety,1, #ops.chars)][offsetx] = field.cell[y][x+1]
-    field.cell.params[util.clamp(offsety,1, #ops.chars)][offsetx].placeholder = field.cell[y][x+1] ~= '*' and 
-    ops:add_to_queue(offsetx,util.clamp(offsety,1, #ops.chars))
-  end
-end
-
-ops.Y = function(self, x,y)
-  self.name = 'Y'
-  self.y = y
-  self.x = x
-  local a = field.cell[y][x - 1] ~= nil and field.cell[y][x - 1] or 'null'
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if field.cell[y][x + 1] == 'null' or field.cell[y][x + 1] ~= ops.list[string.upper(field.cell[y][x + 1])] then
-      field.cell[y][x + 1] = a
-    else
-    end
-  elseif not self:active() then
-    if field.cell[y+1][x] == '*' or ops.is_bang(x,y+1)  then
-      field.cell[y][x+1] = a
-    elseif field.cell[y-1][x] == '*' or ops.is_bang(x,y-1) then
-      field.cell[y][x+1] = a
-    end
-  end
-end
-
-
-ops.Z = function (self, x, y)
-  self.name = 'Z'
-  self.x = x
-  self.y = y
-  local rate = tonumber(ops:input(x - 1, y)) or 1
-  local target  = tonumber(ops:input(x + 1, y)) or 1
-  rate = rate == 0 and 1 or rate
-  local val = tonumber(ops:input(x, y + 1)) or 0
-  local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
-  out = ops.chars[val + mod]
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-      field.cell[y + 1][x] = out
-  end
-end
-
-ops["'"] = function (self, x,y,frame)
-  self.name = "'"
-  self.y = y
-  self.x = x
-  self:spawn(ops.ports[self.name])
-  local sample = util.clamp(tonumber(ops:input(x + 1, y)) ~= nil and tonumber(ops:input(x + 1, y)) or 0,0,#ops.chars)
-  local octave =  util.clamp(tonumber(ops:input(x + 2, y)) ~= nil and tonumber(ops:input(x + 2, y)) or 0,0,8)
-  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 5,0,#ops.chars)
-  local start =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
-  if octave == nil or octave == 'null' then octave = 0 end
-  local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
-  local oct = transposed[4]
-  local n = math.floor(transposed[1])
-  local velocity = math.floor((vel / #ops.chars) * 100)
-  local length = params:get("end_frame_" .. sample)
-  local start_pos = util.clamp(((start / #ops.chars)*2) * length, 0, length)
-  params:set("start_frame_" .. sample,start_pos )
-  if ops.banged(x,y) then
-    field.cell.params[y][x].lit_out = false
-    engine.noteOff(sample)
-    engine.amp(sample, (-velocity) + 5 )
-    engine.noteOn(sample, sample, music.note_num_to_freq(n), 100)
-  else
-    field.cell.params[y][x].lit_out = true
-    if frame % ( #ops.chars  * 4 )== 0 then engine.noteOff(sample) end
-  end
-end
-
-ops['/'] = function (self, x,y,frame)
-  self.name = '/'
-  self.y = y
-  self.x = x
-  self:spawn(ops.ports[self.name])
-  local num = sc_ops + 1
--- bang resets playhead to pos 
-  local playhead = util.clamp(tonumber(field.cell[y][x + 1]) ~= 0 and  tonumber(field.cell[y][x + 1])  or sc_ops,1,max_sc_ops)
-  local rec = tonumber(field.cell[y][x + 2]) or 0 -- rec 0 - off 1 - 9 on + rec_level
-  local play = tonumber(field.cell[y][x + 3]) or 0 -- play 0 - stop  1 - 5 / fwd  6 - 9 rev
-  local l =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 0,0,#ops.chars) -- level 1-z
-  local r =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,#ops.chars) -- rate  1-z
-  local p =  util.clamp(tonumber(ops:input(x + 6, y)) ~= nil and tonumber(ops:input(x + 6, y)) or 0,0,#ops.chars) -- pos  1-z 
-  local pos = util.round((p / #ops.chars) * #ops.chars, 0.1)
-  local level = util.round((l / #ops.chars) * 1, 0.1)
-  local rate = util.round((r / #ops.chars) * 2, 0.1)
-  if field.cell[y][x + 2] == '*' then
-    field.cell[y][x + 2] = 'null'
-    softcut.buffer_clear_region(0, #ops.chars)
-  end
-  if rec >= 1 then 
-    softcut.rec_level(playhead, rec/9) 
-    field.cell.params[y][x].lit_out = true 
-  else 
-    field.cell.params[y][x].lit_out = false 
-    end
-  if play > 5 then
-    rate = -rate 
-  end
-  if play > 0 then
-    softcut.play(playhead,play)
-    softcut.rec(playhead,rec)
-    softcut.rate(playhead,rate)
-    softcut.level(playhead, level)
-  else
-    softcut.play(playhead,play)
-  end
-  if ops.banged(x,y) then
-    field.cell.params[y][x].lit_out = false
-    if play ~= 0 then
-      softcut.position(playhead,pos)
-    end
-  else 
-    field.cell.params[y][x].lit_out = true
-  end
-end
-
-ops[':'] = function (self, x,y,frame)
-  self.name = ':'
-  self.y = y
-  self.x = x
-  self:spawn(ops.ports[self.name])
-  local note = 'C'
-  local channel = util.clamp(tonumber(ops:input(x + 1, y)) ~= nil and tonumber(ops:input(x + 1, y)) or 0,0,16)
-  local octave =  util.clamp(tonumber(ops:input(x + 2, y)) ~= nil and tonumber(ops:input(x + 2, y)) or 0,0,8)
-  local vel =  util.clamp(tonumber(ops:input(x + 4, y)) ~= nil and tonumber(ops:input(x + 4, y)) or 0,0,16)
-  local length =  util.clamp(tonumber(ops:input(x + 5, y)) ~= nil and tonumber(ops:input(x + 5, y)) or 0,0,16)
-  if octave == nil or octave == 'null' then octave = 0 end
-  local transposed = ops.transpose(ops.chars[ops:input(x + 3, y)], octave )
-  local oct = transposed[4]
-  local n = math.floor(transposed[1])
-  local velocity = math.floor((vel / 16) * 127)
-  if ops.banged(x,y) then
-    all_notes_off(channel)
-    field.cell.params[y][x].lit_out = false
-    midi_out_device:note_on(n, velocity, channel)
-    table.insert(active_notes, n)
-    notes_off_metro:start((60 / clk.bpm / clk.steps_per_beat / 4) * length, 1)
-  else
-    field.cell.params[y][x].lit_out = true
-  end
-end
-
-ops['\\'] = function (self, x,y,frame)
-  self.name = '\\'
-  self.y = y
-  self.x = x
-  local rate = tonumber(ops:input(x - 1, y)) == 0 and 1 or tonumber(ops:input(x - 1, y)) or 1
-  local scale = tonumber(ops:input(x + 1, y)) == 0 and 60 or tonumber(ops:input(x + 1, y)) or 60
-  local mode = util.clamp(scale, 1, #music.SCALES)
-  local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,12)
-  if self:active() then
-    self:spawn(ops.ports[self.name])
-    if frame % rate == 0 then
-      field.cell[y+1][x] =  ops.notes[util.clamp(scales[math.random(#scales)] - 60, 1, 12)]
-    end
-  end
-end
 
 function init()
   for y = 0,YSIZE + YSIZE do
@@ -1252,11 +593,18 @@ function init()
     end
   end
   params:add_trigger('save_p', "save project" )
-  params:set_action('save_p', function(x) textentry.enter(ops.save_project, 'untitled' ) end)
-  params:add_file('load_p', "load project")
-  params:set_action('load_p', function(x) ops.load_project(x) end)
-  params:add_trigger('reset', "reset" )
-  params:set_action('reset', function(x) init() end)
+  params:set_action('save_p', function(x) textentry.enter(orca.save_project, 'untitled' ) end)
+  params:add_trigger('load_p', "load project" )
+  params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
+  params:add_trigger('new', "new" )
+  params:set_action('new', function(x) init() end)
+  params:add_separator()
+  params:add_control("EXT", "softcut ext level", controlspec.new(0, 1, 'lin', 0, 1, ""))
+  params:set_action("EXT", function(x) audio.level_adc_cut(x) end)
+  params:add_control("ENG", "softcut eng level", controlspec.new(0, 1, 'lin', 0, 0, ""))
+  params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
+  params:add_separator()
+
 
   softcut.reset()
   audio.level_cut(1)
@@ -1270,7 +618,7 @@ function init()
     softcut.play(i, 0)
     softcut.rate(i, 1)
     softcut.loop_start(i, 0)
-    softcut.loop_end(i, #ops.chars + 1)
+    softcut.loop_end(i, #orca.chars + 1)
     softcut.loop(i, 0)
     softcut.rec(i, 0)
     softcut.fade_time(i,0.02)
@@ -1289,7 +637,7 @@ function init()
   end
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
-  clk.on_step = function() ops:exec_queue() end
+  clk.on_step = function() orca:exec_queue() end
   clk:add_clock_params()
   params:set("bpm", 120)
   clk:start()
@@ -1352,33 +700,25 @@ end
 
 
 function keyb.event(typ, code, val)
-    --print("hid.event ", typ, code, val)
+   --print("hid.event ", typ, code, val)
   if ((code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 1 or val == 2)) then
     shift  = true;
   elseif (code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 0) then
     shift = false;
   elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
-    ops:erase(x_index,y_index)
+    orca:erase(x_index,y_index)
   elseif (code == hid.codes.KEY_LEFT) and (val == 1) then
-    x_index = util.clamp(x_index -1,1,XSIZE)
+    if shift then selected_area_x = util.clamp(selected_area_x - 1,1,XSIZE) else x_index = util.clamp(x_index -1,1,XSIZE) end
     update_offset()
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1) then
-    x_index = util.clamp(x_index + 1,1,XSIZE)
+    if shift then selected_area_x = util.clamp(selected_area_x + 1,1,XSIZE) else x_index = util.clamp(x_index + 1,1,XSIZE) end
     update_offset()
   elseif (code == hid.codes.KEY_DOWN) and (val == 1) then
-    if (main_menu or load_menu) then 
-      menu_index = util.clamp(menu_index + 1 ,1,main_menu and #menu_entries or #projects)
-    else
-      y_index = util.clamp(y_index + 1,1,YSIZE)
-      update_offset()
-    end
+    if shift then selected_area_y = util.clamp(selected_area_y + 1,1,YSIZE) else y_index = util.clamp(y_index + 1,1,YSIZE) end
+    update_offset()
   elseif (code == hid.codes.KEY_UP) and (val == 1) then
-    if (main_menu or load_menu) then 
-      menu_index = util.clamp(menu_index - 1 ,1,main_menu and #menu_entries or #projects)
-    else
-      y_index = util.clamp(y_index - 1 ,1,YSIZE)
-      update_offset()
-  end
+    if shift then selected_area_y = util.clamp(selected_area_y - 1,1,YSIZE) else y_index = util.clamp(y_index - 1 ,1,YSIZE) end
+    update_offset()
   elseif (code == hid.codes.KEY_TAB and val == 1) then
     bar = not bar
   elseif (code == 41 and val == 1) then
@@ -1390,21 +730,20 @@ function keyb.event(typ, code, val)
     field_grid = util.clamp(field_grid + 1, 1, 8)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
   elseif (code == hid.codes.KEY_ESC and val == 1) then
-    if not load_menu then main_menu = not main_menu end
-    if load_menu then  main_menu = true load_menu = false menu_index = 2 end
+    selected_area_y = 1
+    selected_area_x = 1
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
-    if main_menu then
-        menu_entries[menu_index][2]()
-        menu_index = 1
-    elseif load_menu then
-      print(menu_index)
-        local project_path = norns.state.data .. projects[menu_index] .. '.orca'
-        ops.load_project(project_path)
-      end
+
   elseif (code == hid.codes.KEY_LEFTALT and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTALT and val == 1) then
-  elseif (code == hid.codes.KEY_LEFTCTRL and val == 1) then
-  elseif (code == hid.codes.KEY_RIGHTCTRL and val == 1) then
+  elseif (code == hid.codes.KEY_LEFTCTRL and (val == 1 or val == 2)) then
+    ctrl = true
+  elseif (code == hid.codes.KEY_LEFTCTRL and val == 0) then
+    ctrl = false
+  elseif (code == hid.codes.KEY_RIGHTCTRL and (val == 1 or val == 2)) then
+    ctrl = true
+  elseif (code == hid.codes.KEY_RIGHTCTRL and val == 0) then
+    ctrl = false
   elseif (code == hid.codes.KEY_DELETE and val == 1) then
   elseif (code == hid.codes.KEY_CAPSLOCK and val == 1) then
      map = not map
@@ -1413,7 +752,6 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_SYSRQ and val == 1) then
   elseif (code == hid.codes.KEY_HOME and val == 1) then
   elseif (code == hid.codes.KEY_PAGEUP and val == 1) then
-  elseif (code == hid.codes.KEY_RIGHTCTRL and val == 1) then
   elseif (code == hid.codes.KEY_DELETE and val == 1) then
   elseif (code == hid.codes.KEY_END and val == 1) then
   elseif (code == hid.codes.KEY_PAGEUP and val == 1) then
@@ -1439,37 +777,39 @@ function keyb.event(typ, code, val)
   else
     if val == 1 then
       keyinput = get_key(code, val, shift)
-      if ops.is_op(x_index,y_index) then
-        ops:erase(x_index,y_index)
-      elseif ops.list[string.upper(keyinput)] == 'H' or ops.list[string.upper(keyinput)] == 'h' then
-      elseif ops.is_op(x_index, y_index - 1) then
-      elseif ops.is_op(x_index,y_index + 1) then
-        if ops.list[string.upper(keyinput)] == keyinput then
-          -- remove southward op if new one have  outputs
-          for i = 1,#ops.ports[string.upper(keyinput)] do
-            if ops.ports[string.upper(keyinput)][i][2] == 1 then
-              ops:erase(x_index,y_index + 1)
-            else
-              ops:erase(x_index,y_index)
+      if not ctrl then
+        if orca.is_op(x_index,y_index) then
+          orca:erase(x_index,y_index)
+        elseif orca.list[string.upper(keyinput)] == 'H' or orca.list[string.upper(keyinput)] == 'h' then
+        elseif orca.is_op(x_index, y_index - 1) then
+        elseif orca.is_op(x_index,y_index + 1) then
+          if orca.list[string.upper(keyinput)] == keyinput then
+            -- remove southward op if new one have output
+            for i = 1,#orca.ports[string.upper(keyinput)] do
+              if orca.ports[string.upper(keyinput)][i][2] == 1 then
+                orca:erase(x_index,y_index + 1)
+              else
+                orca:erase(x_index,y_index)
+              end
             end
-          end
-        end 
-      elseif (ops.is_op(x_index,y_index - 1) and tonumber(field.cell[y_index][x_index])) then
-      end
-      if keyinput == '/' then 
-        if sc_ops == max_sc_ops then  
-        else
-          sc_ops = sc_ops + 1 
-          field.cell[y_index][x_index] = keyinput
-          ops:add_to_queue(x_index,y_index)
+          end 
+        elseif (orca.is_op(x_index,y_index - 1) and tonumber(field.cell[y_index][x_index])) then
         end
-      else
         field.cell[y_index][x_index] = keyinput
-        ops:add_to_queue(x_index,y_index)
+        orca:add_to_queue(x_index,y_index)
+      end
+    else 
+      if code == 45 then -- cut
+        orca.cut_area()
+      elseif code == 46 then -- copy
+        orca.copy_area()
+      elseif code == 47 then -- paste
+        orca.paste_area()
       end
     end
   end
 end
+
 
 local function draw_op_frame(x,y)
   screen.level(4)
@@ -1510,7 +850,7 @@ local function draw_grid()
       end
       -- levels
       if field.cell[y][x] ~= 'null' then
-        if ops.is_op(x,y) then
+        if orca.is_op(x,y) then
           screen.level(15)
         elseif field.cell.params[y][x].lit then
           screen.level(12)
@@ -1562,6 +902,14 @@ local function draw_grid()
   end
 end
 
+local function draw_area(x,y)
+  local x_pos = (((x - field_offset_x) * 5) - 5) 
+  local y_pos = (((y - field_offset_y) * 8) - 8)
+  screen.level(2)
+  screen.rect(x_pos,y_pos, 5 * selected_area_x , 8 * selected_area_y )
+  screen.fill()
+end
+
 local function draw_cursor(x,y)
   local x_pos = ((x * 5) - 5) 
   local y_pos = ((y * 8) - 8)
@@ -1569,7 +917,7 @@ local function draw_cursor(x,y)
   local y_index = y + field_offset_y
   if field.cell[y_index][x_index] == 'null' then
   screen.level(2)
-  screen.rect(x_pos,y_pos,5,8)
+  screen.rect(x_pos,y_pos, 5, 8)
   screen.fill()
     screen.move(x_pos,y_pos+6)
     screen.level(14)
@@ -1579,7 +927,7 @@ local function draw_cursor(x,y)
     screen.stroke()
   elseif field.cell[y_index][x_index] ~= 'null'  then
     screen.level(15)
-    screen.rect(x_pos,y_pos,5,8)
+    screen.rect(x_pos,y_pos,5 , 8)
     screen.fill()
     screen.move(x_pos + 1,y_pos+6)
     screen.level(1)
@@ -1601,7 +949,7 @@ local function draw_bar()
   screen.text(frame .. 'f')
   screen.stroke()
   screen.move(40,63)
-  screen.text_center(field.cell[y_index][x_index] and ops.names[string.upper(field.cell[y_index][x_index])] or 'empty')
+  screen.text_center(field.cell[y_index][x_index] and orca.names[string.upper(field.cell[y_index][x_index])] or 'empty')
   screen.stroke()
   screen.move(75,63)
   screen.text(params:get("bpm") .. (frame % 4 == 0 and ' *' or ''))
@@ -1615,45 +963,8 @@ end
 
 --- wip 
 
-local function draw_menu() 
-  screen.clear()
-  for i=1,#menu_entries do
-    screen.level(menu_index == i and 9 or 4)
-    screen.move(5, (i * 10) + 20)
-    screen.text(menu_entries[i][1])
-    screen.stroke()
-  end
-end
-
-
-local function list_projects() 
-  local l = util.scandir(norns.state.data)
-  local projects = {}
-  for i = 1,#l do
-    local name = tab.split(l[i], '.')
-    if name[2] == 'orca' then
-      table.insert(projects, name[1])
-    end
-  end
-  return projects
-end
-
-
-local function draw_projects_list()
-  screen.clear()
-  screen.font_face(0)
-  screen.font_size(8)
-  projects = list_projects()
-  for i=1,#projects do
-    screen.level(menu_index == i and 9 or 4)
-    screen.move(5, (i * 10) + 20)
-    screen.text(projects[i])
-    screen.stroke()
-  end
-end
-
 local function draw_help()
-  if ops.info[string.upper(field.cell[y_index][x_index])] then
+  if orca.info[string.upper(field.cell[y_index][x_index])] then
     screen.level(15)
     screen.rect(0,29,128,25)
     screen.fill()
@@ -1674,8 +985,8 @@ local function draw_help()
     end
     screen.font_face(25)
     screen.font_size(6)
-    if ops.info[string.upper(field.cell[y_index][x_index])] then
-      local s = ops.info[string.upper(field.cell[y_index][x_index])]
+    if orca.info[string.upper(field.cell[y_index][x_index])] then
+      local s = orca.info[string.upper(field.cell[y_index][x_index])]
       local description = tab.split(s, ' ')
       screen.level(9)
       screen.move(3,38)
@@ -1726,28 +1037,21 @@ local function draw_map()
 end
 
 function enc(n,d)
-  if not main_menu or not load_menu then
-    if n == 2 then
-     x_index = util.clamp(x_index + d, 1, XSIZE)
-    elseif n == 3 then
-     y_index = util.clamp(y_index + d, 1, YSIZE)
-    end
-    update_offset()
+  if n == 2 then
+   x_index = util.clamp(x_index + d, 1, XSIZE)
+  elseif n == 3 then
+   y_index = util.clamp(y_index + d, 1, YSIZE)
   end
+  update_offset()
 end
 
 function redraw()
   screen.clear()
-  if main_menu then
-    draw_menu()
-  elseif load_menu then
-    draw_projects_list()
-  else
-    draw_grid()
-    draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
-    if bar then draw_bar() else  end
-    if help then draw_help() else end
-    if map then draw_map() else end
-  end
+  draw_area(x_index, y_index)
+  draw_grid()
+  draw_cursor(util.clamp(x_index - field_offset_x,1,XSIZE), util.clamp(y_index - field_offset_y, 1, YSIZE))
+  if bar then draw_bar() else  end
+  if help then draw_help() else end
+  if map then draw_map() else end
   screen.update()
 end
