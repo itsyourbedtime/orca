@@ -433,8 +433,8 @@ function orca:id(x, y)
 end
 
 function orca:add_to_queue(x,y)
-  x = util.clamp(x,1,XSIZE + 1)
-  y = util.clamp(y,1,YSIZE + 1)
+  x = util.clamp(x,1,XSIZE)
+  y = util.clamp(y,1,YSIZE)
   field.active[orca:id(x,y)] = {x, y, field.cell[y][x]}
 end
 
@@ -457,13 +457,13 @@ end
 function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
-    if k ~= nil then
-    local x = util.clamp(field.active[k][1],1,XSIZE)
-    local y = util.clamp(field.active[k][2],1,YSIZE)
-    local op = field.active[k][3]
-    if op == orca.list[string.upper(op)] and orca.is_op(x,y) then
-      operators[op](self, x, y, frame, field.cell) 
-    end
+    if (k ~= nil or v ~= nil) then 
+      local x = util.clamp(field.active[k][1],0,XSIZE) 
+      local y = util.clamp(field.active[k][2],0,YSIZE)
+      local op = field.active[k][3]
+      if op == orca.list[string.upper(op)] and orca.is_op(x,y) then
+        operators[op](self, x, y, frame, field.cell) 
+      end
     end
   end
 end
@@ -519,7 +519,7 @@ function orca:clean_ports(t, x1, y1)
     if t[i] ~= nil then
       for l=1,#t[i]-2 do
         local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,XSIZE)
-        local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,XSIZE)
+        local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,YSIZE)
         field.cell.params[self.y][self.x].lit = false
         if field.cell[y][x] ~= nil then
           if t[i][l + 2] == 'output' then
@@ -544,8 +544,8 @@ end
 function orca:spawn(t)
   for i=1,#t do
     for l= 1, #t[i] - 2 do
-      local x = self.x + t[i][l]
-      local y = self.y + t[i][l+1]
+      local x = util.clamp(self.x + t[i][l],1,XSIZE)
+      local y = util.clamp(self.y + t[i][l+1],1,YSIZE)
       local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
 

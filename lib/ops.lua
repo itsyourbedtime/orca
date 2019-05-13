@@ -89,6 +89,7 @@ ops.D  = function (self, x, y, frame, grid)
   local modulus = tonumber(self:input(x + 1, y)) or 9 -- only int
   local rate = tonumber(self:input(x - 1, y)) or 1 -- only int
   if modulus == 0 then modulus = 1 end
+  if rate == 0 then rate = 1 end
   local val = (frame % (modulus * rate))
   local out = (val == 0 or modulus == 1) and '*' or 'null'
   if self:active() then
