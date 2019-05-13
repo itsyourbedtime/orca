@@ -707,16 +707,16 @@ function keyb.event(typ, code, val)
     shift = false;
   elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
     orca:erase(x_index,y_index)
-  elseif (code == hid.codes.KEY_LEFT) and (val == 1) then
+  elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
     if shift then selected_area_x = util.clamp(selected_area_x - 1,1,XSIZE) else x_index = util.clamp(x_index -1,1,XSIZE) end
     update_offset()
-  elseif (code == hid.codes.KEY_RIGHT) and (val == 1) then
+  elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if shift then selected_area_x = util.clamp(selected_area_x + 1,1,XSIZE) else x_index = util.clamp(x_index + 1,1,XSIZE) end
     update_offset()
-  elseif (code == hid.codes.KEY_DOWN) and (val == 1) then
+  elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if shift then selected_area_y = util.clamp(selected_area_y + 1,1,YSIZE) else y_index = util.clamp(y_index + 1,1,YSIZE) end
     update_offset()
-  elseif (code == hid.codes.KEY_UP) and (val == 1) then
+  elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
     if shift then selected_area_y = util.clamp(selected_area_y - 1,1,YSIZE) else y_index = util.clamp(y_index - 1 ,1,YSIZE) end
     update_offset()
   elseif (code == hid.codes.KEY_TAB and val == 1) then
