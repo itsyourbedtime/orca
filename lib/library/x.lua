@@ -2,8 +2,8 @@ X = function(self, x, y, frame, grid)
   self.name = 'X'
   self.y = y
   self.x = x
-  local a = self:input(x - 2, y) or 0 -- x
-  local b = self:input(x - 1, y) or 1 -- y
+  local a = self:listen(x - 2, y) or 0 -- x
+  local b = self:listen(x - 1, y) or 1 -- y
   local offsety = util.clamp(b + y, 1, self.YSIZE)
   local offsetx = util.clamp(a + x, 1, self.XSIZE)
   if self:active() then

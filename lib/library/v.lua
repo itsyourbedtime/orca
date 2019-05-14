@@ -2,8 +2,8 @@ V = function (self,x,y,frame, grid)
   self.name = 'V'
   self.y = y
   self.x = x
-  local a = self:input(x - 1, y, 0) or 0
-  local b = self:input(x + 1, y, 0) or 0
+  local a = self:listen(x - 1, y, 0) or 0
+  local b = self:listen(x + 1, y, 0) or 0
   if self:active() then
     self:spawn(self.ports[self.name])
     if (grid.vars[b] ~= nil and a == 0) then

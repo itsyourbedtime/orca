@@ -3,8 +3,8 @@ R = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   local a, b
-  a = self:input(x - 1, y, 1) 
-  b = self:input(x + 1, y, 9)
+  a = self:listen(x - 1, y, 1) 
+  b = self:listen(x + 1, y, 9)
   a = util.clamp(a or 1,0,#self.chars)
   b = util.clamp(b or 9,1,#self.chars)
   if b == 27 and a == 27 then 

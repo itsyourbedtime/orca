@@ -2,8 +2,8 @@ P = function (self, x, y, frame, grid)
   self.name = 'P'
   self.y = y
   self.x = x
-  local length = self:input(x - 1, y, 1) or 1
-  local pos = util.clamp(self:input(x - 2, y, 0) or 1, 1, length)
+  local length = self:listen(x - 1, y, 1) or 1
+  local pos = util.clamp(self:listen(x - 2, y, 0) or 1, 1, length)
   local val = grid[y][x + 1]
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
   if self:active() then

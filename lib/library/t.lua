@@ -2,9 +2,9 @@ T = function (self, x, y, frame, grid)
   self.name = 'T'
   self.y = y
   self.x = x
-  local length = self:input(x - 1, y, 1) or 1
+  local length = self:listen(x - 1, y, 1) or 1
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
-  local pos = util.clamp(self:input(x - 2, y, 0) or 1, 1, length)  
+  local pos = util.clamp(self:listen(x - 2, y, 0) or 1, 1, length)  
   local val = grid[self.y][self.x + util.clamp(pos,1,length)]
   if self:active() then
     grid.params[y+1][x].lit_out  = true

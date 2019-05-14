@@ -303,7 +303,7 @@ function orca.transpose(n, o)
   return {id, value, note, octave, real}
 end
 
-function orca:input(x,y, default)
+function orca:listen(x,y, default)
   local value = string.lower(tostring(field.cell[y][x]))
   if value == '0' then 
     return 0
@@ -390,7 +390,7 @@ function orca:cleanup()
   end
   -- specific ops cleanup
   if (cell == 'P' or cell == 'p') then
-    local seqlen = orca:input(self.x - 1, self.y) or 1
+    local seqlen = orca:listen(self.x - 1, self.y) or 1
     for i=0, seqlen do
       params[self.y + 1][self.x + i].op = true
       params[self.y + 1][self.x + i].lit = false
@@ -398,7 +398,7 @@ function orca:cleanup()
       params[self.y + 1][self.x + i].dot = false
     end
   elseif (cell == 'T' or cell == 't') then
-    local seqlen = orca:input(self.x - 1, self.y) or 1
+    local seqlen = orca:listen(self.x - 1, self.y) or 1
     params[self.y+1][self.x].lit_out  = false
     for i=1, seqlen do
       params[self.y][self.x + i].op = true
@@ -406,7 +406,7 @@ function orca:cleanup()
       params[self.y][self.x + i].dot = false
     end
   elseif (cell == 'K' or cell == 'k') then
-    local seqlen = orca:input(self.x - 1, self.y) or 1
+    local seqlen = orca:listen(self.x - 1, self.y) or 1
     for i=1,seqlen do
       params[self.y][self.x + i].dot = false
       params[self.y][(self.x + i)].op = true
@@ -414,7 +414,7 @@ function orca:cleanup()
       params[self.y + 1][(self.x + i)].act = true
     end
   elseif (cell == 'L' or cell == 'l') or (cell == 'G' or cell == 'g') then
-    local seqlen = orca:input(self.x - 1, self.y) or 1
+    local seqlen = orca:listen(self.x - 1, self.y) or 1
     for i=1,seqlen do
       params[self.y][self.x + i].dot = false
       params[self.y][(self.x + i)].op = true
@@ -424,17 +424,17 @@ function orca:cleanup()
   elseif (cell == 'H' or cell == 'h') then
     field.cell.params[self.y + 1][self.x].act = true
   elseif (cell == 'X' or cell == 'x') then
-    local a = orca:input(self.x - 2, self.y) or 0 -- x
-    local b = orca:input(self.x - 1, self.y) or 1 -- y
+    local a = orca:listen(self.x - 2, self.y) or 0 -- x
+    local b = orca:listen(self.x - 1, self.y) or 1 -- y
     params[self.y + b][self.x + a].dot_cursor = false
     params[self.y + b][self.x + a].cursor = false
     params[self.y + b][self.x + a].placeholder = nil
   elseif (cell == "'" or cell == ':' or cell == '/') then
     if cell == '/' then 
-      softcut.play(orca:input(self.x + 1, self.y) or 1,0) 
+      softcut.play(orca:listen(self.x + 1, self.y) or 1,0) 
     end
     if cell == "'" then 
-      engine.noteOff(orca:input(self.x + 1, self.y) or 0) 
+      engine.noteOff(orca:listen(self.x + 1, self.y) or 0) 
     end
   end 
 end
