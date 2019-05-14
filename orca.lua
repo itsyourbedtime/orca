@@ -616,6 +616,8 @@ function init()
   params:set_action('save_p', function(x) textentry.enter(orca.save_project, 'untitled' ) end)
   params:add_trigger('load_p', "load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
+  params:add_trigger('load_e', "examples" )
+  params:set_action('load_e', function(x) fileselect.enter(norns.state.path .. "/lib/examples/", orca.load_project) end)
   params:add_trigger('new', "new" )
   params:set_action('new', function(x) init() end)
   params:add_separator()
@@ -916,8 +918,8 @@ local function draw_area(x,y)
 end
 
 local function draw_cursor(x,y)
-  local x_pos = (((x - field_offset_x) * 5) - 5) 
-  local y_pos = (((y - field_offset_y) * 8) - 8)
+  local x_pos = ((x * 5) - 5) 
+  local y_pos = ((y * 8) - 8)
   local x_index = x + field_offset_x
   local y_index = y + field_offset_y
   if field.cell[y_index][x_index] == 'null' then
@@ -1047,7 +1049,7 @@ function redraw()
   screen.clear()
   draw_area(x_index, y_index)
   draw_grid()
-  draw_cursor(x_index, y_index)
+  draw_cursor(x_index - field_offset_x , y_index - field_offset_y)
   if bar then 
     draw_bar() 
   end
