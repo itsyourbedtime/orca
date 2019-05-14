@@ -4,7 +4,7 @@ K = function (self, x, y, frame, grid)
   self.x = x
   local length = self:input(x - 1, y, 0) or 0
   local offset = 1
-  length = util.clamp(length,0,XSIZE - bounds_x)
+  length = util.clamp(length,0,self.XSIZE - self.bounds_x)
   local l_start = x + offset
   local l_end = x + length
   if self:active() then
@@ -38,9 +38,9 @@ K = function (self, x, y, frame, grid)
   -- cleanups
   if length < #self.chars then
     for i= length == 0 and length or length+1, #self.chars do
-        grid.params[y][util.clamp((x + i),1,XSIZE)].dot = false
-        grid.params[y][util.clamp((x + i),1,XSIZE)].op = true
-        grid.params[y+1][util.clamp((x + i),1,XSIZE)].act = true
+        grid.params[y][util.clamp((x + i),1,self.XSIZE)].dot = false
+        grid.params[y][util.clamp((x + i),1,self.XSIZE)].op = true
+        grid.params[y+1][util.clamp((x + i),1,self.XSIZE)].act = true
     end
   end
 end

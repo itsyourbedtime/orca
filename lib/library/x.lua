@@ -4,8 +4,8 @@ X = function(self, x, y, frame, grid)
   self.x = x
   local a = self:input(x - 2, y) or 0 -- x
   local b = self:input(x - 1, y) or 1 -- y
-  local offsety = util.clamp(b + y,1,YSIZE)
-  local offsetx = util.clamp(a + x,1,XSIZE)
+  local offsety = util.clamp(b + y, 1, self.YSIZE)
+  local offsetx = util.clamp(a + x, 1, self.XSIZE)
   if self:active() then
     self:clean_ports(self.ports[self.name], self.x, self.y)
     self.ports[self.name][4] = {a, b, 'output'}

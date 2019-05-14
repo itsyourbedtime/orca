@@ -140,6 +140,7 @@ function orca.paste_area()
 end
 
 orca.list =  {
+  ['#'] = '#',
   ["*"] = '*',
   [':'] = ':',
   ["'"] = "'",
@@ -179,6 +180,7 @@ orca.bangs ={
   ["N"] = 'N',
 }
 orca.names =  {
+  ["#"] = 'comment',
   ["*"] = 'bang',
   [':'] = 'midi',
   ["'"] = 'engine',
@@ -213,6 +215,7 @@ orca.names =  {
 
 }
 orca.info = {
+  ['#'] = 'Halts a line.',
   ['*'] = 'Bangs neighboring operators.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
   ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
@@ -279,6 +282,8 @@ orca.ports = {
   ['N'] = {},
   ['Z'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
   ['*'] = {},
+  ['#'] = {},
+  
 }
 orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}

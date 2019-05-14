@@ -6,9 +6,9 @@ G = function(self, x, y, frame, grid)
   local b = self:input(x - 2, y) or 1 -- y
   local length = self:input(x - 1, y, 0) or 0
   local offset = 1
-  length = util.clamp(length,0,XSIZE - length)
-  local offsety = util.clamp(b + y,1,YSIZE) 
-  local offsetx = util.clamp(a + x,1,XSIZE)
+  length = util.clamp(length,0,self.XSIZE - length)
+  local offsety = util.clamp(b + y,1,self.YSIZE) 
+  local offsetx = util.clamp(a + x,1,self.XSIZE)
   
   if self:active() then
     self:spawn(self.ports[self.name])

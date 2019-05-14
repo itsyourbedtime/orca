@@ -6,9 +6,9 @@ L = function (self, x, y, frame, grid)
   local rate = self:input(x - 2, y, 0) or 1 
   rate = rate == 0 and 1 or rate
   local offset = 1
-  length = util.clamp(length,0,XSIZE - bounds_x)
-  local l_start = util.clamp(x + offset, 1, XSIZE - bounds_x)
-  local l_end = util.clamp(x + length, 1, XSIZE - bounds_x)
+  length = util.clamp(length,0,self.XSIZE - self.bounds_x)
+  local l_start = util.clamp(x + offset, 1, self.XSIZE - self.bounds_x)
+  local l_end = util.clamp(x + length, 1, self.XSIZE - self.bounds_x)
   if self:active() then
     self:spawn(self.ports[self.name])
     if length - offset  == 0 then

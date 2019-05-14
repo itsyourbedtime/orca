@@ -7,9 +7,9 @@ Q = function (self, x, y, frame, grid)
   local b = self:input(x - 2, y) or 0 -- y
   local length = self:input(x - 1, y, 0) or 0
   local offset = 1
-  length = util.clamp(length,1,XSIZE - length)
-  local offsety = util.clamp(b + y,1,YSIZE)
-  local offsetx = util.clamp(a + x,1,XSIZE)
+  length = util.clamp(length,1, self.XSIZE - length)
+  local offsety = util.clamp(b + y, 1, self.YSIZE)
+  local offsetx = util.clamp(a + x, 1, self.XSIZE)
   if self:active() then
     self:spawn(self.inputs)
     for i = 1, length do
