@@ -19,7 +19,7 @@ timber = function (self, x, y, frame, grid)
     grid.params[y][x].lit_out = false
     engine.noteOff(sample)
     engine.amp(sample, (-velocity) + 5 )
-    engine.noteOn(sample, sample, music.note_num_to_freq(n), 100)
+    engine.noteOn(sample, sample, self.music.note_num_to_freq(n), 100)
   else
     grid.params[y][x].lit_out = true
     if frame % ( #self.chars  * 4 )== 0 then engine.noteOff(sample) end
