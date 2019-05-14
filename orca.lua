@@ -19,30 +19,48 @@ local NUM_SAMPLES = 35
 local keyb = hid.connect()
 local keycodes = include("orca/lib/keycodes")
 local transpose_table = include("orca/lib/transpose")
-local operators = include("orca/lib/ops")
+local operators = include("orca/lib/library")
+
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local BeatClock = require 'beatclock'
+
 local keyinput = ""
-local XSIZE = 101 
-local YSIZE = 33  
-local x_index = 1
-local y_index = 1
+
 local bar = false
 local help = false
 local map = false
+
+local XSIZE = 101 
+local YSIZE = 33
+
+local x_index = 1
+local y_index = 1
+
 local field_grid = 1
+
 local field_offset_y = 0
 local field_offset_x = 0
+
 local selected_area_y = 1
 local selected_area_x = 1
+
 local bounds_x = 25
 local bounds_y = 8
+
 local max_sc_ops = 6
 local frame = 1
+
 local orca = {}
+
+orca.XSIZE = XSIZE
+orca.YSIZE = YSIZE
+orca.bounds_x = bounds_x
+orca.bounds_y = bounds_y
+
 orca.clk = BeatClock.new()
+
 local field = {}
 field.cell = {}
 field.cell.params = {}
@@ -50,11 +68,8 @@ field.active = {}
 field.cell.vars = {}
 field.cell.active_notes = {}
 
-
 local copy_buffer = {}
 copy_buffer.cell = {}
-
-
 
 
 function orca.all_notes_off(ch)
@@ -578,6 +593,7 @@ function orca:spawn(t)
   end
 end
 -----
+
 
 
 function init()
