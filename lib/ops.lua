@@ -27,8 +27,8 @@ ops.A = function (self,x,y,frame, grid)
   self.name = 'A'
   self.y = y
   self.x = x
-  local b = tonumber(self:input(x + 1, y, 0)) ~= nil and tonumber(self:input(x + 1, y, 0)) or 0
-  local a = tonumber(self:input(x - 1, y, 0))  ~= nil and tonumber(self:input(x - 1, y, 0))  or 0
+  local b = self:input(x + 1, y, 0) or 0
+  local a = self:input(x - 1, y, 0) or 0
   local sum
   if (a ~= 0 or b ~= 0) then sum  = self.chars[(a + b)  % (#self.chars+1) ]
   else sum = 0 end
@@ -46,8 +46,8 @@ ops.B = function (self, x,y, frame, grid)
   self.name = 'B'
   self.y = y
   self.x = x
-  local to = tonumber(self:input(x + 1, y)) or 1
-  local rate = tonumber(self:input(x - 1, y)) or 1
+  local to = self:input(x + 1, y) or 1
+  local rate = self:input(x - 1, y) or 1
   if to == 0 or to == nil then to = 1 end
   if rate == 0 or rate == nil then rate = 1 end
   local key = math.floor(frame / rate) % (to * 2)
@@ -66,11 +66,11 @@ ops.C  = function (self, x, y, frame, grid)
   self.name = 'C'
   self.y = y
   self.x = x
-  local modulus = tonumber(self:input(x + 1, y)) or 9
-  local rate = tonumber(self:input(x - 1, y)) or 1
-  if modulus == 0 or modulus == nil then modulus = 1 end
-  if rate == 0 or rate == nil then rate = 1 end
-  local val = (math.floor(frame / rate) % modulus) + 1
+  local mod = self:input(x + 1, y) or 9
+  local rate = self:input(x - 1, y) or 1
+  if mod == 0 then mod = 1 end
+  if rate == 0 then rate = 1 end
+  local val = (math.floor(frame / rate) % mod) + 1
   if self:active() then
     self:spawn(self.ports[self.name])
     grid[y+1][x] = self.chars[val]
@@ -86,12 +86,12 @@ ops.D  = function (self, x, y, frame, grid)
   self.name = 'D'
   self.y = y
   self.x = x
-  local modulus = tonumber(self:input(x + 1, y)) or 9 -- only int
-  local rate = tonumber(self:input(x - 1, y)) or 1 -- only int
-  if modulus == 0 then modulus = 1 end
+  local mod = self:input(x + 1, y) or 9
+  local rate = self:input(x - 1, y) or 1
+  if mod == 0 then mod = 1 end
   if rate == 0 then rate = 1 end
-  local val = (frame % (modulus * rate))
-  local out = (val == 0 or modulus == 1) and '*' or 'null'
+  local val = (frame % (mod * rate))
+  local out = (val == 0 or mod == 1) and '*' or 'null'
   if self:active() then
     self:spawn(self.ports[self.name])
     grid[y+1][x] = out
@@ -107,8 +107,8 @@ ops.F = function(self, x, y, frame, grid)
   self.name = 'F'
   self.y = y
   self.x = x
-  local b = tonumber(self:input(x + 1, y))
-  local a = tonumber(self:input(x - 1, y))
+  local b = self:input(x + 1, y)
+  local a = self:input(x - 1, y)
   local val = a == b and '*' or 'null'
   if self:active() then
     self:spawn(self.ports[self.name])
@@ -126,7 +126,7 @@ ops.H = function(self, x, y, frame, grid)
   self.x = x
   local ports = {{0, 1 , 'output'}}
   local a = grid[y - 1][x]
-  local existing = grid[y + 1][x] == self.list[grid[y + 1][x]] and grid[y + 1][x] or 'nu'
+  local existing = grid[y + 1][x] == self.list[grid[y + 1][x]] and grid[y + 1][x] or 'null'
   if self:active() then
     self:spawn(self.ports[self.name])
   elseif self.banged(x,y) then
@@ -154,10 +154,9 @@ ops.I = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   local a, b
-  a = self:input(x - 1, y, 0) 
+  a = self:input(x - 1, y, 0) or 0
   b = self:input(x + 1, y, 9)
-  a = tonumber(a) or 0
-  b = tonumber(b) ~= tonumber(a) and tonumber(b) or tonumber(a) + 1
+  b = b ~= a and b or a + 1
   if b < a then a,b = b,a end
   val = util.clamp((frame  % math.ceil(b)) + 1,a,b)
   if self:active() then
@@ -215,8 +214,8 @@ ops.O = function(self, x, y, frame, grid)
   self.y = y
   self.x = x
   self.inputs = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}}
-  local a = tonumber(self:input(x - 2, y))  or 1 ----(tonumber(self:input(x -2, y)) == 0 or tonumber(grid[y][x - 2]) == nil) and 1 or tonumber(grid[y][x - 2]) -- x
-  local b = tonumber(self:input(x - 1, y))  or 0 -- y
+  local a = self:input(x - 2, y) or 1 
+  local b = self:input(x - 1, y) or 0
   local offsety = util.clamp(b + y,1,YSIZE)
   local offsetx = util.clamp(a + x,1,XSIZE)
   if self:active() then
@@ -233,9 +232,9 @@ ops.Q = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   self.inputs = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1 , 'output'}}
-  local a = tonumber(self:input(x - 3, y)) or 1 -- x
-  local b = tonumber(self:input(x - 2, y)) or 0 -- y
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 0) ) or 0
+  local a = self:input(x - 3, y) or 1 -- x
+  local b = self:input(x - 2, y) or 0 -- y
+  local length = self:input(x - 1, y, 0) or 0
   local offset = 1
   length = util.clamp(length,1,XSIZE - length)
   local offsety = util.clamp(b + y,1,YSIZE)
@@ -256,8 +255,8 @@ ops.M  = function (self, x, y, frame, grid)
   self.name = 'M'
   self.y = y
   self.x = x
-  local l = tonumber(self:input(x - 1, y, 1)) or 0-- only int
-  local m = tonumber(self:input(x + 1, y, 1)) or 0-- only int
+  local l = self:input(x - 1, y, 1) or 0
+  local m = self:input(x + 1, y, 1) or 0
   if self:active() then
     self:spawn(self.ports[self.name])
     grid[y + 1][x] = self.chars[(l * m) % #self.chars]
@@ -270,8 +269,8 @@ ops.P = function (self, x, y, frame, grid)
   self.name = 'P'
   self.y = y
   self.x = x
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 1) ) or 1
-  local pos = util.clamp(tonumber(self:input(x - 2, y, 0)) ~= 0 and tonumber(self:input(x - 2, y, 0)) or 1, 1, length)
+  local length = self:input(x - 1, y, 1) or 1
+  local pos = util.clamp(self:input(x - 2, y, 0) or 1, 1, length)
   local val = grid[y][x + 1]
   length = util.clamp(length, 1, XSIZE - bounds_x)
   if self:active() then
@@ -297,9 +296,9 @@ ops.T = function (self, x, y, frame, grid)
   self.name = 'T'
   self.y = y
   self.x = x
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 1) ) or 1
+  local length = self:input(x - 1, y, 1) or 1
   length = util.clamp(length, 1, XSIZE - bounds_x)
-  local pos = util.clamp(tonumber(self:input(x - 2, y, 0)) ~= 0 and tonumber(self:input(x - 2, y, 0)) or 1, 1, length)  
+  local pos = util.clamp(self:input(x - 2, y, 0) or 1, 1, length)  
   local val = grid[self.y][self.x + util.clamp(pos,1,length)]
   if self:active() then
     grid.params[y+1][x].lit_out  = true
@@ -331,8 +330,8 @@ ops.U  = function (self, x, y, frame, grid)
   self.name = 'U'
   self.y = y
   self.x = x
-  local pulses = tonumber(self:input(x + 1, y)) or 1
-  local steps = tonumber(self:input(x - 1, y)) or 1
+  local pulses = self:input(x + 1, y) or 1
+  local steps = self:input(x - 1, y) or 1
   local pattern = euclid.gen(steps, pulses)
   local pos = (frame  % (pulses ~= 0 and pulses or 1) + 1)
   local out = pattern[pos] and '*' or 'null'
@@ -353,8 +352,8 @@ ops.V = function (self,x,y,frame, grid)
   self.name = 'V'
   self.y = y
   self.x = x
-  local a = tonumber(self:input(x - 1, y, 0))  ~= nil and tonumber(self:input(x - 1, y, 0)) or 0
-  local b = tonumber(self:input(x + 1, y, 0)) ~= nil and tonumber(self:input(x + 1, y, 0)) or 0
+  local a = self:input(x - 1, y, 0) or 0
+  local b = self:input(x + 1, y, 0) or 0
   if self:active() then
     self:spawn(self.ports[self.name])
     if (grid.vars[b] ~= nil and a == 0) then
@@ -377,7 +376,7 @@ ops.K = function (self, x, y, frame, grid)
   self.name = 'K'
   self.y = y
   self.x = x
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 0) ) or 0
+  local length = self:input(x - 1, y, 0) or 0
   local offset = 1
   length = util.clamp(length,0,XSIZE - bounds_x)
   local l_start = x + offset
@@ -423,8 +422,9 @@ ops.L = function (self, x, y, frame, grid)
   self.name = 'L'
   self.y = y
   self.x = x
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 0) ) or 0
-  local rate = (tonumber(self:input(x - 2, y, 0) ) == nil or tonumber(self:input(x - 2, y, 0) ) == 0) and 1 or tonumber(self:input(x - 2, y, 0) )
+  local length = self:input(x - 1, y, 0) or 0
+  local rate = self:input(x - 2, y, 0) or 1 
+  rate = rate == 0 and 1 or rate
   local offset = 1
   length = util.clamp(length,0,XSIZE - bounds_x)
   local l_start = util.clamp(x + offset, 1, XSIZE - bounds_x)
@@ -463,8 +463,8 @@ ops.R = function (self, x, y, frame, grid)
   local a, b
   a = self:input(x - 1, y, 1) 
   b = self:input(x + 1, y, 9)
-  a = util.clamp(tonumber(a) or 1,0,#self.chars)
-  b = util.clamp(tonumber(b) or 9,1,#self.chars)
+  a = util.clamp(a or 1,0,#self.chars)
+  b = util.clamp(b or 9,1,#self.chars)
   if b == 27 and a == 27 then a = math.random(#self.chars) b = math.random(#self.chars) end -- rand 
   if b < a then a,b = b,a end
   if self:active() then
@@ -477,9 +477,9 @@ ops.G = function(self, x, y, frame, grid)
   self.name = 'G'
   self.y = y
   self.x = x
-  local a = tonumber(self:input(x - 3, y)) or 0 -- x
-  local b = util.clamp(self:input(x - 2, y) or 1, 1, #self.chars) -- y
-  local length = tonumber(self:input(x - 1, y, 0) ) ~= nil and tonumber(self:input(x - 1, y, 0) ) or 0
+  local a = self:input(x - 3, y) or 0 -- x
+  local b = self:input(x - 2, y) or 1 -- y
+  local length = self:input(x - 1, y, 0) or 0
   local offset = 1
   length = util.clamp(length,0,XSIZE - length)
   local offsety = util.clamp(b + y,1,YSIZE) 
@@ -533,8 +533,8 @@ ops.X = function(self, x, y, frame, grid)
   self.name = 'X'
   self.y = y
   self.x = x
-  local a = tonumber(self:input(x - 2, y)) or 0 -- x
-  local b = tonumber(self:input(x - 1, y)) or 1 -- y
+  local a = self:input(x - 2, y) or 0 -- x
+  local b = self:input(x - 1, y) or 1 -- y
   local offsety = util.clamp(b + y,1,YSIZE)
   local offsetx = util.clamp(a + x,1,XSIZE)
   if self:active() then
@@ -566,10 +566,10 @@ ops.Z = function (self, x, y, frame, grid)
   self.name = 'Z'
   self.x = x
   self.y = y
-  local rate = tonumber(self:input(x - 1, y)) or 1
-  local target  = tonumber(self:input(x + 1, y)) or 1
+  local rate = self:input(x - 1, y) or 1
+  local target  = self:input(x + 1, y) or 1
   rate = rate == 0 and 1 or rate
-  local val = tonumber(self:input(x, y + 1)) or 0
+  local val = self:input(x, y + 1) or 0
   local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
   out = self.chars[val + mod]
   if self:active() then
@@ -583,10 +583,10 @@ ops["'"] = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   self:spawn(self.ports[self.name])
-  local sample = util.clamp(tonumber(self:input(x + 1, y)) ~= nil and tonumber(self:input(x + 1, y)) or 0,0,#self.chars)
-  local octave =  util.clamp(tonumber(self:input(x + 2, y)) ~= nil and tonumber(self:input(x + 2, y)) or 0,0,8)
-  local vel =  util.clamp(tonumber(self:input(x + 4, y)) ~= nil and tonumber(self:input(x + 4, y)) or 5,0,#self.chars)
-  local start =  util.clamp(tonumber(self:input(x + 5, y)) ~= nil and tonumber(self:input(x + 5, y)) or 0,0,16)
+  local sample = self:input(x + 1, y) or 0
+  local octave = util.clamp(self:input(x + 2, y) or 0,0,8)
+  local vel = self:input(x + 4, y) or 5
+  local start = self:input(x + 5, y) or 0
   if octave == nil or octave == 'null' then octave = 0 end
   local transposed = self.transpose(self.chars[self:input(x + 3, y)], octave )
   local oct = transposed[4]
@@ -612,12 +612,12 @@ ops['/'] = function (self, x, y, frame, grid)
   self.x = x
   self:spawn(self.ports[self.name])
   -- bang resets playhead to pos 
-  local playhead = util.clamp(tonumber(grid[y][x + 1]) ~= 0 and  tonumber(grid[y][x + 1])  or 1,1,max_sc_self)
+  local playhead = util.clamp(self:input(x + 1, y) or 1,1,max_sc_ops)
   local rec = tonumber(grid[y][x + 2]) or 0 -- rec 0 - off 1 - 9 on + rec_level
   local play = tonumber(grid[y][x + 3]) or 0 -- play 0 - stop  1 - 5 / fwd  6 - 9 rev
-  local l =  util.clamp(tonumber(self:input(x + 4, y)) ~= nil and tonumber(self:input(x + 4, y)) or 0,0,#self.chars) -- level 1-z
-  local r =  util.clamp(tonumber(self:input(x + 5, y)) ~= nil and tonumber(self:input(x + 5, y)) or 0,0,#self.chars) -- rate  1-z
-  local p =  util.clamp(tonumber(self:input(x + 6, y)) ~= nil and tonumber(self:input(x + 6, y)) or 0,0,#self.chars) -- pos  1-z 
+  local l =  util.clamp(self:input(x + 4, y) or 0,0,#self.chars) -- level 1-z
+  local r =  util.clamp(self:input(x + 5, y) or 0,0,#self.chars) -- rate  1-z
+  local p =  util.clamp(self:input(x + 6, y) or 0,0,#self.chars) -- pos  1-z 
   local pos = util.round((p / #self.chars) * #self.chars, 0.1)
   local level = util.round((l / #self.chars) * 1, 0.1)
   local rate = util.round((r / #self.chars) * 2, 0.1)
@@ -658,12 +658,11 @@ ops[':'] = function (self, x, y, frame, grid)
   self.x = x
   self:spawn(self.ports[self.name])
   local note = 'C'
-  local channel = util.clamp(tonumber(self:input(x + 1, y)) ~= nil and tonumber(self:input(x + 1, y)) or 0,0,16)
-  local octave =  util.clamp(tonumber(self:input(x + 2, y)) ~= nil and tonumber(self:input(x + 2, y)) or 0,0,8)
-  local vel =  util.clamp(tonumber(self:input(x + 4, y)) ~= nil and tonumber(self:input(x + 4, y)) or 0,0,16)
-  local length =  util.clamp(tonumber(self:input(x + 5, y)) ~= nil and tonumber(self:input(x + 5, y)) or 0,0,16)
-  if octave == nil or octave == 'null' then octave = 0 end
-  local transposed = self.transpose(self.chars[self:input(x + 3, y)], octave )
+  local channel = util.clamp(self:input(x + 1, y) or 0,0,16)
+  local octave = util.clamp(self:input(x + 2, y) or 3,0,8)
+  local vel = util.clamp(self:input(x + 4, y) or 0,0,16)
+  local length = util.clamp(self:input(x + 5, y) or 0,0,16)
+  local transposed = self.transpose( self.chars[self:input(x + 3, y)], octave )
   local oct = transposed[4]
   local n = math.floor(transposed[1])
   local velocity = math.floor((vel / 16) * 127)
@@ -682,8 +681,8 @@ ops['\\'] = function (self, x, y, frame, grid)
   self.name = '\\'
   self.y = y
   self.x = x
-  local rate = tonumber(self:input(x - 1, y)) == 0 and 1 or tonumber(self:input(x - 1, y)) or 1
-  local scale = tonumber(self:input(x + 1, y)) == 0 and 60 or tonumber(self:input(x + 1, y)) or 60
+  local rate = self:input(x - 1, y) or 1
+  local scale = self:input(x + 1, y) or 60
   local mode = util.clamp(scale, 1, #music.SCALES)
   local scales = music.generate_scale_of_length(60,music.SCALES[mode].name,12)
   if self:active() then

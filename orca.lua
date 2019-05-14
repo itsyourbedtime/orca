@@ -541,8 +541,8 @@ end
 function orca:spawn(t)
   for i=1,#t do
     for l= 1, #t[i] - 2 do
-      local x = util.clamp(self.x + t[i][l],1,XSIZE)
-      local y = util.clamp(self.y + t[i][l+1],1,YSIZE)
+      local x = util.clamp(self.x + t[i][l],0,XSIZE)
+      local y = util.clamp(self.y + t[i][l+1],0,YSIZE)
       local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
 
