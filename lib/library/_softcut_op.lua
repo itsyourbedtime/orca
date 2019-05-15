@@ -1,12 +1,16 @@
-local max_sc_ops = 6
-
 _softcut_op = function ( self, x, y, frame, grid)
   self.name = '/'
   self.y = y
   self.x = x
+  -- default buffer vals
+  if grid.sc_ops[self:id(self.x,self.y)] == nil then 
+    self.sc_ops = util.clamp(self.sc_ops + 1, 1, self.max_sc_ops)
+    grid.sc_ops[self:id(self.x,self.y)] = self.sc_ops
+    grid[self.y][self.x + 1] = grid.sc_ops[self:id(self.x,self.y)]
+  end
+  
   self:spawn( self.ports[self.name] )
-  -- bang resets playhead to pos 
-  local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, max_sc_ops )
+  local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local rec = tonumber( grid[self.y][self.x + 2] ) or 0 -- rec 0 - off 1 - 9 on + rec_level
   local play = tonumber( grid[self.y][self.x + 3] ) or 0 -- play 0 - stop  1 - 5 / fwd  6 - 9 rev
   local l =  util.clamp( self:listen( self.x + 4, self.y ) or 0, 0, #self.chars ) -- level 1-z

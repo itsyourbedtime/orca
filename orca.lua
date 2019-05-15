@@ -45,7 +45,6 @@ local selected_area_x = 1
 local bounds_x = 25
 local bounds_y = 8
 
-local max_sc_ops = 6
 local frame = 1
 
 local orca = {}
@@ -56,6 +55,8 @@ orca.bounds_x = bounds_x
 orca.bounds_y = bounds_y
 orca.music = require 'musicutil'
 orca.clk = beatclock.new()
+orca.sc_ops = 0
+orca.max_sc_ops = 6
 
 local field = {}
 field.cell = {}
@@ -64,6 +65,7 @@ field.active = {}
 field.cell.vars = {}
 field.cell.active_notes = {}
 field.cell.active_notes_mono = {}
+field.cell.sc_ops = {}
 
 local copy_buffer = {}
 copy_buffer.cell = {}
@@ -456,6 +458,7 @@ function orca:cleanup()
   elseif (cell == "'" or cell == ':' or cell == '/') then
     if cell == '/' then 
       softcut.play(orca:listen(self.x + 1, self.y) or 1,0) 
+      orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
     end
     if cell == "'" then 
       engine.noteOff(orca:listen(self.x + 1, self.y) or 0) 
@@ -652,7 +655,7 @@ function init()
   audio.level_cut(1)
   audio.level_adc_cut(1)
   audio.level_eng_cut(1)
-  for i=1,max_sc_ops do
+  for i=1,orca.max_sc_ops do
     softcut.level(i,1)
     softcut.level_input_cut(1, i, 1.0)
     softcut.level_input_cut(2, i, 1.0)
@@ -799,7 +802,7 @@ function keyb.event(typ, code, val)
     if orca.clk.playing then
       orca.clk:stop()
       engine.noteKillAll()
-      for i=1,max_sc_ops do
+      for i=1, orca.max_sc_ops do
         softcut.play(i,0)
       end
     else
