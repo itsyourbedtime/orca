@@ -293,8 +293,7 @@ function orca.cut_area()
     copy_buffer.cell[y -  y_index ] = {}
     for x = x_index, x_index + ( selected_area_x - 1 ) do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
-      field.cell[y][x] = 'null'
-      field.cell.params[y][x] = {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil}
+      orca:erase(util.clamp(x, 1, orca.XSIZE), util.clamp(y, 1, orca.YSIZE))
     end
   end
 end
