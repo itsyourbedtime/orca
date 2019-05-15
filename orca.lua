@@ -72,6 +72,7 @@ orca.list =  {
   ['='] = '=',
   ["*"] = '*',
   [':'] = ':',
+  ['!'] = '!',
   ['%'] = '%',
   ["'"] = "'",
   ['/'] = '/',
@@ -114,6 +115,7 @@ orca.names =  {
   ["="] = 'osc',
   ["*"] = 'bang',
   [':'] = 'midi',
+  ['!'] = 'cc',
   ['%'] = 'mono',
   ["'"] = 'engine',
   ['/'] = 'softcut',
@@ -150,6 +152,7 @@ orca.info = {
   ['#'] = 'Halts a line.',
   ['='] = 'Osc.',
   ['*'] = 'Bangs neighboring operators.',
+  ['!'] = 'Sends MIDI control change.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
   ['%'] = 'Midi mono',
   ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
@@ -186,6 +189,7 @@ orca.info = {
 orca.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ['%'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
+  ['!'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}},
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
   ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
   ['\\']= {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
@@ -488,7 +492,7 @@ function orca:exec_queue()
       local x = util.clamp(field.active[k][1], 0, orca.XSIZE) 
       local y = util.clamp(field.active[k][2], 0, orca.YSIZE)
       local op = field.active[k][3]
-      if (op == orca.list[string.upper(op)] and orca.is_op(x,y)) then
+      if (string.upper(op) == orca.list[string.upper(op)] and orca.is_op(x,y)) then
         operators[string.upper(op)](self, x, y, frame, field.cell) 
       end
     end
