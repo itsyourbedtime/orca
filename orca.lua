@@ -258,10 +258,10 @@ orca.save_project = function(txt)
 end
 
 function orca.copy_area()
-  for y=y_index - 1, y_index + ( selected_area_y - 1) do
+  for y=y_index, y_index + ( selected_area_y - 1) do
     local y_c = util.clamp(y - y_index, 1, orca.YSIZE)
     copy_buffer.cell[y_c ] = {}
-    for x = x_index - 1, x_index + ( selected_area_x - 1 ) do
+    for x = x_index, x_index + ( selected_area_x - 1 ) do
       local x_c = util.clamp(x - x_index, 1, orca.XSIZE)
       copy_buffer.cell[y_c][x_c ] = field.cell[y][x]
     end
@@ -279,8 +279,8 @@ function orca.cut_area()
 end
 
 function orca.paste_area()
-  for y=1, #copy_buffer.cell do
-    for x = 1, #copy_buffer.cell[y] do
+  for y=0, #copy_buffer.cell do
+    for x = 0, #copy_buffer.cell[y] do
       orca:erase(util.clamp(x_index + x,1,orca.XSIZE), util.clamp(y_index + y, 1, orca.YSIZE))
       field.cell[y_index + y][(x_index + x)] = copy_buffer.cell[y][x]
       orca:add_to_queue(x_index + x, y_index + y)
