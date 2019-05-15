@@ -72,6 +72,7 @@ orca.list =  {
   ['='] = '=',
   ["*"] = '*',
   [':'] = ':',
+  ['%'] = '%',
   ["'"] = "'",
   ['/'] = '/',
   ['\\']= '\\',
@@ -113,6 +114,7 @@ orca.names =  {
   ["="] = 'osc',
   ["*"] = 'bang',
   [':'] = 'midi',
+  ['%'] = 'mono',
   ["'"] = 'engine',
   ['/'] = 'softcut',
   ['\\']= 'r note',
@@ -149,6 +151,7 @@ orca.info = {
   ['='] = 'Osc.',
   ['*'] = 'Bangs neighboring operators.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
+  ['%'] = 'Midi mono',
   ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
   ['/'] = 'Softcut 1-plhead 2-rec 3-play 4-level 5-pos',
   ['\\']= 'Outputs random note within octave',
@@ -182,6 +185,7 @@ orca.info = {
 }
 orca.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
+  ['%'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
   ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
   ['\\']= {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
@@ -577,7 +581,7 @@ function orca:spawn(t)
       -- draw frame
       if field.cell[self.y][self.x] ~= string.lower(field.cell[self.y][self.x]) then
         field.cell.params[self.y][self.x].lit = true
-      elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x]  == ':' or field.cell[self.y][self.x]  == '/') then
+      elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x]  == ':' or field.cell[self.y][self.x]  == '/' or field.cell[self.y][self.x]  == '=' or field.cell[self.y][self.x]  == '\\') then
         field.cell.params[self.y][self.x].lit = true
       end
       -- draw inputs / outputs
@@ -653,6 +657,7 @@ function init()
   end
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
+  orca.notes_off_metro = metro.init()
   orca.clk.on_step = function() orca:exec_queue() end
   orca.clk:add_clock_params()
   params:set("bpm", 120)
