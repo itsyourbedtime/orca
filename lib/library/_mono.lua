@@ -1,5 +1,5 @@
 midi_out = function ( self, x, y, frame, grid )
-  self.name = ':'
+  self.name = '%'
   self.y = y
   self.x = x
   self:spawn(self.ports[self.name])
