@@ -4,7 +4,7 @@ E = function( self, x, y, frame, grid )
   self.y = y
   if self:active() then
     self:move(1, 0)
-  elseif self.banged( x, y ) then
+  elseif self.banged( self.x, self.y ) then
     self:move(1, 0)
   end
 end

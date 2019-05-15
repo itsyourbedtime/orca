@@ -2,16 +2,14 @@ F = function( self, x, y, frame, grid )
   self.name = 'F'
   self.y = y
   self.x = x
-  local b = self:listen( x + 1, y)
-  local a = self:listen( x - 1, y)
+  local b = self:listen( self.x + 1, self.y)
+  local a = self:listen( self.x - 1, self.y)
   local val = a == b and '*' or 'null'
   if self:active() then
     self:spawn(self.ports[self.name])
-    grid[y + 1][x] = val
-  elseif not self:active() then
-    if self.banged( x, y ) then
-      grid[y + 1][x] = val
-    end
+    grid[self.y + 1][self.x] = val
+  elseif self.banged( self.x, self.y ) then
+    grid[self.y + 1][self.x] = val
   end
 end
 

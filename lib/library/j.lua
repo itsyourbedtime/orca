@@ -2,14 +2,12 @@ J = function(self, x, y, frame, grid)
   self.name = 'J'
   self.y = y
   self.x = x
-  local a = grid[y - 1][x]
+  local a = grid[self.y - 1][self.x]
   if self:active() then
     self:spawn(self.ports[self.name])
-    grid[y + 1][x] = a
-  elseif not self:active() then
-    if self.banged(x,y) then
-      grid[y + 1][x] = a
-    end
+    grid[self.y + 1][self.x] = a
+  elseif self.banged(self.x, self.y) then
+    grid[self.y + 1][self.x] = a
   end
 end
 

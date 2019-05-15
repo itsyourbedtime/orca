@@ -5,11 +5,9 @@ Y = function(self, x, y, frame, grid)
   local a = grid[y][x - 1]
   if self:active() then
     self:spawn(self.ports[self.name])
-    grid[y][x + 1] = a
-  elseif not self:active() then
-    if self.banged(x,y) then
-      grid[y][x + 1] = a
-    end
+    grid[self.y][self.x + 1] = a
+  elseif self.banged( self.x, self.y ) then
+    grid[self.y][self.x + 1] = a
   end
 end
 

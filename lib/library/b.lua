@@ -2,8 +2,8 @@ B = function ( self, x,y, frame, grid )
   self.name = 'B'
   self.y = y
   self.x = x
-  local to = self:listen( x + 1, y ) or 1
-  local rate = self:listen( x - 1, y ) or 1
+  local to = self:listen( self.x + 1, self.y ) or 1
+  local rate = self:listen( self.x - 1, self.y ) or 1
   if to == 0 or to == nil then 
     to = 1 
   end
@@ -14,11 +14,9 @@ B = function ( self, x,y, frame, grid )
   local val = key <= to and key or to - ( key - to )
   if self:active() then
     self:spawn( self.ports[self.name] )
-    grid[y + 1][x] = self.chars[val]
-  elseif not self:active() then
-    if self.banged( x, y ) then
-      grid[y + 1][x] = self.chars[val]
-    end
+    grid[self.y + 1][self.x] = self.chars[val]
+  elseif self.banged( self.x, self.y ) then
+    grid[self.y + 1][self.x] = self.chars[val]
   end
 end
 

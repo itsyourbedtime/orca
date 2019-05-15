@@ -483,11 +483,11 @@ function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
     if (k ~= nil or v ~= nil) then 
-      local x = util.clamp(field.active[k][1],0,orca.XSIZE) 
-      local y = util.clamp(field.active[k][2],0,orca.YSIZE)
+      local x = util.clamp(field.active[k][1], 0, orca.XSIZE) 
+      local y = util.clamp(field.active[k][2], 0, orca.YSIZE)
       local op = field.active[k][3]
-      if op == orca.list[string.upper(op)] and orca.is_op(x,y) then
-        operators[op](self, x, y, frame, field.cell) 
+      if op ~=nil and orca.is_op(x,y) then
+        operators[string.upper(op)](self, x, y, frame, field.cell) 
       end
     end
   end

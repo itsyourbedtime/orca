@@ -3,9 +3,9 @@ N = function(self, x, y, frame, grid)
   self.x = x
   self.y = y
   if self:active() then
-    self:move(0,-1)
-  elseif self.banged(x,y) then
-    self:move(0,-1)
+    self:move(0, -1)
+  elseif self.banged(self.x, self.y) then
+    self:move(0, -1)
   end
 end
 
