@@ -809,7 +809,7 @@ function keyb.event(typ, code, val)
         elseif orca.list[string.upper(keyinput)] == 'H' or orca.list[string.upper(keyinput)] == 'h' then
         elseif orca.is_op(x_index, y_index - 1) then
         elseif orca.is_op(x_index,y_index + 1) then
-          if orca.list[string.upper(keyinput)] == keyinput then
+          if (orca.list[string.upper(keyinput)] == keyinput and field.cell.params[y_index][x_index].act == true) then
             -- remove southward op if new one have output
             for i = 1,#orca.ports[string.upper(keyinput)] do
               if orca.ports[string.upper(keyinput)][i][2] == 1 then
