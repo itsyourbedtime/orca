@@ -484,7 +484,7 @@ function orca:exec_queue()
       local x = util.clamp(field.active[k][1], 0, orca.XSIZE) 
       local y = util.clamp(field.active[k][2], 0, orca.YSIZE)
       local op = field.active[k][3]
-      if op ~=nil and orca.is_op(x,y) then
+      if (op == orca.list[string.upper(op)] and orca.is_op(x,y)) then
         operators[string.upper(op)](self, x, y, frame, field.cell) 
       end
     end
