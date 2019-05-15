@@ -293,7 +293,8 @@ function orca.cut_area()
     copy_buffer.cell[y -  y_index ] = {}
     for x = x_index, x_index + ( selected_area_x - 1 ) do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
-      orca:erase(x,y)
+      field.cell[y][x] = 'null'
+      field.cell.params[y][x] = {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil}
     end
   end
 end
@@ -815,6 +816,9 @@ function keyb.event(typ, code, val)
       if not ctrl then
         if orca.is_op(x_index,y_index) then
           orca:erase(x_index,y_index)
+          if field.cell[y_index][x_index] == '/' then
+            orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
+          end
         elseif orca.list[string.upper(keyinput)] == 'H' or orca.list[string.upper(keyinput)] == 'h' then
         elseif orca.is_op(x_index, y_index - 1) then
         elseif orca.is_op(x_index,y_index + 1) then
