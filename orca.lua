@@ -415,6 +415,12 @@ function orca:cleanup()
       params[self.y + 1][self.x + i].cursor = false
       params[self.y + 1][self.x + i].dot = false
     end
+  elseif cell == '#' then
+    for i = self.x, orca.XSIZE do
+      params[self.y][i].op = true
+      params[self.y][i].act = true
+      params[self.y][i].dot = false
+    end
   elseif (cell == 'T' or cell == 't') then
     local seqlen = orca:listen(self.x - 1, self.y) or 1
     params[self.y+1][self.x].lit_out  = false
