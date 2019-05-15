@@ -13,11 +13,12 @@ midi_out = function ( self, x, y, frame, grid )
   local n = math.floor( transposed[1] )
   local velocity = math.floor(( vel / 16 ) * 127 )
   if self.banged( self.x, self.y ) then
-    self.all_notes_off( channel )
+    if grid.active_notes_mono ~= nil then 
+      self.all_notes_off_mono( channel )
+    end
     grid.params[y][x].lit_out = false
     self.midi_out_device:note_on( n, velocity, channel )
-    table.insert(grid.active_notes, n)
-    self.notes_off_metro:start(( 60 / self.clk.bpm / self.clk.steps_per_beat / 4 ) * length, 1 )
+    self:add_note_mono(n)
   else
     grid.params[self.y][self.x].lit_out = true
   end

@@ -63,6 +63,7 @@ field.cell.params = {}
 field.active = {}
 field.cell.vars = {}
 field.cell.active_notes = {}
+field.cell.active_notes_mono = {}
 
 local copy_buffer = {}
 copy_buffer.cell = {}
@@ -231,11 +232,22 @@ orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 orca.chars[0] = '0'
 
+function orca:add_note_mono(n)
+  table.insert(field.cell.active_notes_mono , n)
+end
+
 function orca.all_notes_off(ch)
     for _, a in pairs(field.cell.active_notes) do
       orca.midi_out_device:note_off(a, nil, ch)
     end
   field.cell.active_notes = {}
+end
+
+function orca.all_notes_off_mono(ch)
+    for _, a in pairs(field.cell.active_notes_mono) do
+      orca.midi_out_device:note_off(a, nil, ch)
+    end
+  field.cell.active_notes_mono = {}
 end
 
 orca.load_project = function(pth)
@@ -662,6 +674,7 @@ function init()
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
   orca.notes_off_metro = metro.init()
+  orca.notes_off_metro.event = orca.all_notes_off(1)
   orca.clk.on_step = function() orca:exec_queue() end
   orca.clk:add_clock_params()
   params:set("bpm", 120)
