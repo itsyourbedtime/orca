@@ -14,7 +14,7 @@ end
 unrequire("timber/lib/timber_engine")
 engine.name = "Timber"
 local Timber = require "timber/lib/timber_engine"
-local NUM_SAMPLES = 35
+local NUM_SAMPLES = 36
 local keyb = hid.connect()
 local keycodes = include("orca/lib/keycodes")
 local transpose_table = include("orca/lib/transpose")
@@ -79,6 +79,7 @@ orca.list =  {
   ['!'] = '!',
   ['%'] = '%',
   ["'"] = "'",
+  ['"'] = '"',
   ['/'] = '/',
   ['\\']= '\\',
   ["A"] = 'A',
@@ -122,6 +123,7 @@ orca.names =  {
   ['!'] = 'cc',
   ['%'] = 'mono',
   ["'"] = 'engine',
+  ['"'] = 'param',
   ['/'] = 'softcut',
   ['\\']= 'r note',
   ["A"] = 'add',
@@ -160,6 +162,7 @@ orca.info = {
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
   ['%'] = 'Midi mono',
   ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
+  ['"'] = 'Sets engine param 1-sample 2-param 3-value',
   ['/'] = 'Softcut 1-plhead 2-rec 3-play 4-level 5-pos',
   ['\\']= 'Outputs random note within octave',
   ['='] = 'Sends a OSC message',
@@ -194,6 +197,7 @@ orca.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ['%'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
   ['!'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}},
+  ['"'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}},
   ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
   ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
   ['\\']= {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
@@ -235,6 +239,9 @@ orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 orca.chars[0] = '0'
 
+
+
+
 local function load_folder(file, add)
   
   local sample_id = 0
@@ -247,7 +254,7 @@ local function load_folder(file, add)
     end
   end
   
-  Timber.clear_samples(sample_id, NUM_SAMPLES - 1)
+  --Timber.clear_samples(sample_id, 35)
   
   local split_at = string.match(file, "^.*()/")
   local folder = string.sub(file, 1, split_at)
@@ -264,7 +271,8 @@ local function load_folder(file, add)
       -- Check file type
       local lower_v = v:lower()
       if string.find(lower_v, ".wav") or string.find(lower_v, ".aif") or string.find(lower_v, ".aiff") then
-        Timber.load_sample(sample_id, folder .. v)
+        params:set("sample_" .. sample_id, folder .. v)
+        --params:set('play_mode_' .. sample_id, 4)
         sample_id = sample_id + 1
       else
         print("Skipped", v)
@@ -272,6 +280,7 @@ local function load_folder(file, add)
     end
   end
 end
+
 
 
 function orca:add_note_mono(n)
@@ -650,7 +659,7 @@ function orca:spawn(t)
       -- draw frame
       if field.cell[self.y][self.x] ~= string.lower(field.cell[self.y][self.x]) then
         field.cell.params[self.y][self.x].lit = true
-      elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x]  == ':' or field.cell[self.y][self.x]  == '/' or field.cell[self.y][self.x]  == '=' or field.cell[self.y][self.x]  == '\\') then
+      elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == '"' or field.cell[self.y][self.x]  == ':' or field.cell[self.y][self.x]  == '/' or field.cell[self.y][self.x]  == '=' or field.cell[self.y][self.x]  == '\\') then
         field.cell.params[self.y][self.x].lit = true
       end
       -- draw inputs / outputs
@@ -736,6 +745,8 @@ function init()
   params:add_trigger('load_f','Load Folder')
   params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
   if file ~= "cancel" then load_folder(file, add) end end) end)
+  Timber.options.PLAY_MODE_BUFFER_DEFAULT = 3
+  Timber.options.PLAY_MODE_STREAMING_DEFAULT = 3
   params:add_separator()
   Timber.add_params()
   for i = 0, NUM_SAMPLES - 1 do
@@ -743,11 +754,12 @@ function init()
       {type = "option", id = "launch_mode_" .. i, name = "Launch Mode", options = {"Gate", "Toggle"}, default = 1, action = function(value)
         Timber.setup_params_dirty = true
       end},
+      
     }
     
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
-    params:set("play_mode_" .. i, 4) -- set all to 1-shot 
+    params:set('play_mode_' .. i, 4)
   end
   params:add_separator()
   orca.midi_out_device = midi.connect(1)

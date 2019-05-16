@@ -23,7 +23,8 @@ _softcut_op = function ( self, x, y, frame, grid)
     grid[self.y][self.x + 2] = 'null'
     softcut.buffer_clear_region( 0, #self.chars )
   end
-  if rec >= 1 then 
+  if rec >= 1 then  
+    if rec < 9 then softcut.pre_level( playhead, (rec) / 9) else softcut.pre_level( playhead, 1) end
     softcut.rec_level( playhead, rec / 9 ) 
     grid.params[self.y][self.x].lit_out = true 
   else 
