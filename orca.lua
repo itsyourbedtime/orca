@@ -257,7 +257,7 @@ local function load_folder(file, add)
   for k, v in ipairs(Timber.FileSelect.list) do
     if v == file then found = true end
     if found then
-      if sample_id > 255 then
+      if sample_id > 35 then
         print("Max files loaded")
         break
       end
