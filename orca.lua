@@ -272,7 +272,7 @@ local function load_folder(file, add)
       local lower_v = v:lower()
       if string.find(lower_v, ".wav") or string.find(lower_v, ".aif") or string.find(lower_v, ".aiff") then
         params:set("sample_" .. sample_id, folder .. v)
-        --params:set('play_mode_' .. sample_id, 4)
+        params:set('amp_env_sustain_' .. i, 0)
         sample_id = sample_id + 1
       else
         print("Skipped", v)
@@ -760,6 +760,7 @@ function init()
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
     params:set('play_mode_' .. i, 4)
+    params:set('amp_env_sustain_' .. i, 0)
   end
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
