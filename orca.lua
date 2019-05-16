@@ -59,6 +59,7 @@ orca.sc_ops = 0
 orca.max_sc_ops = 6
 
 local field = {}
+field.project = 'untitled'
 field.cell = {}
 field.cell.params = {}
 field.active = {}
@@ -153,7 +154,7 @@ orca.names =  {
 }
 orca.info = {
   ['#'] = 'Halts a line.',
-  ['='] = 'Osc.',
+  ['='] = 'Sends osc message.',
   ['*'] = 'Bangs neighboring operators.',
   ['!'] = 'Sends MIDI control change.',
   [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
@@ -172,9 +173,9 @@ orca.info = {
   ['H'] = 'Stops southward operator from operating.',
   ['I'] = 'Increments southward operator.',
   ['J'] = 'Outputs the northward operator.',
-  ['K'] = '',
+  ['K'] = 'Otputs multiple variables',
   ['L'] = 'Loops a number of eastward operators.',
-  ['M'] = '.',
+  ['M'] = 'Outputs product of inputs.',
   ['N'] = 'Moves northward, or bangs.',
   ['O'] = 'Reads a distant operator with offset.',
   ['P'] = 'Writes an eastward operator with offset.',
@@ -187,7 +188,7 @@ orca.info = {
   ['W'] = 'Moves westward, or bangs.',
   ['X'] = 'Writes a distant operator with offset',
   ['Y'] = 'Outputs the westward operator',
-  ['Z'] = '',
+  ['Z'] = 'Transitions operand to input.',
 }
 orca.ports = {
   [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
@@ -234,6 +235,45 @@ orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 orca.chars[0] = '0'
 
+local function load_folder(file, add)
+  
+  local sample_id = 0
+  if add then
+    for i = NUM_SAMPLES - 1, 0, -1 do
+      if Timber.samples_meta[i].num_frames > 0 then
+        sample_id = i + 1
+        break
+      end
+    end
+  end
+  
+  Timber.clear_samples(sample_id, NUM_SAMPLES - 1)
+  
+  local split_at = string.match(file, "^.*()/")
+  local folder = string.sub(file, 1, split_at)
+  file = string.sub(file, split_at + 1)
+  
+  local found = false
+  for k, v in ipairs(Timber.FileSelect.list) do
+    if v == file then found = true end
+    if found then
+      if sample_id > 255 then
+        print("Max files loaded")
+        break
+      end
+      -- Check file type
+      local lower_v = v:lower()
+      if string.find(lower_v, ".wav") or string.find(lower_v, ".aif") or string.find(lower_v, ".aiff") then
+        Timber.load_sample(sample_id, folder .. v)
+        sample_id = sample_id + 1
+      else
+        print("Skipped", v)
+      end
+    end
+  end
+end
+
+
 function orca:add_note_mono(n)
   table.insert(field.cell.active_notes_mono , n)
 end
@@ -258,7 +298,8 @@ orca.load_project = function(pth)
     if saved ~= nil then
       print("data found")
       field = saved
-      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6) 
+      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)
+      field.project = name 
       softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
       params:read(norns.state.data .. name ..".pset")
       print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
@@ -270,6 +311,7 @@ end
 
 orca.save_project = function(txt)
   if txt then
+    field.project = txt
     tab.save(field, norns.state.data .. txt ..".orca")
     softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#orca.chars, 1)
     params:write(norns.state.data .. txt .. ".pset")
@@ -280,20 +322,20 @@ orca.save_project = function(txt)
 end
 
 function orca.copy_area()
-  for y=y_index, y_index + ( selected_area_y - 1) do
+  for y=y_index, y_index + selected_area_y do
     copy_buffer.cell[y -  y_index ] = {}
-    for x = x_index, x_index + ( selected_area_x - 1 ) do
+    for x = x_index, x_index + selected_area_x do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
     end
   end
 end
 
 function orca.cut_area()
-  for y=y_index, y_index + ( selected_area_y - 1) do
+  for y=y_index, y_index +  selected_area_y do
     copy_buffer.cell[y -  y_index ] = {}
-    for x = x_index, x_index + ( selected_area_x - 1 ) do
+    for x = x_index, x_index + selected_area_x do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
-      orca:erase(util.clamp(x, 1, orca.XSIZE), util.clamp(y, 1, orca.YSIZE))
+      orca:erase(x, y)
     end
   end
 end
@@ -359,6 +401,8 @@ function orca.is_bang(x,y)
 end
 
 function orca.banged(x,y)
+  local x = util.clamp(x, 1, orca.XSIZE)
+  local y = util.clamp(y, 1, orca.YSIZE)
   if field.cell[y][x - 1] == '*' then 
     return true
   elseif field.cell[y][x + 1] == '*' then
@@ -640,7 +684,7 @@ function init()
     end
   end
   params:add_trigger('save_p', "save project" )
-  params:set_action('save_p', function(x) textentry.enter(orca.save_project, 'untitled' ) end)
+  params:set_action('save_p', function(x) textentry.enter(orca.save_project,  field.project) end)
   params:add_trigger('load_p', "load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
   params:add_trigger('new', "new" )
@@ -689,6 +733,10 @@ function init()
   params:set("bpm", 120)
   orca.clk:start()
   params:add_separator()
+  params:add_trigger('load_f','Load Folder')
+  params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
+  if file ~= "cancel" then load_folder(file, add) end end) end)
+  params:add_separator()
   Timber.add_params()
   for i = 0, NUM_SAMPLES - 1 do
     local extra_params = {
@@ -696,6 +744,7 @@ function init()
         Timber.setup_params_dirty = true
       end},
     }
+    
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
     params:set("play_mode_" .. i, 4) -- set all to 1-shot 
@@ -1086,7 +1135,7 @@ function redraw()
   if help then 
     draw_help() 
   end
-  if map then 
+  if map then
     draw_map() 
   end
   screen.update()
