@@ -272,7 +272,7 @@ local function load_folder(file, add)
       local lower_v = v:lower()
       if string.find(lower_v, ".wav") or string.find(lower_v, ".aif") or string.find(lower_v, ".aiff") then
         params:set("sample_" .. sample_id, folder .. v)
-        params:set('amp_env_sustain_' .. i, 0)
+        params:set('amp_env_sustain_' .. sample_id, 0)
         sample_id = sample_id + 1
       else
         print("Skipped", v)
