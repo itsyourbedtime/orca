@@ -21,6 +21,10 @@ L = function (self, x, y, frame, grid)
         grid.params[self.y][(self.x + i)].op = false
         grid.params[self.y + 1][(self.x + i)].lit_out = false
         grid.params[self.y][(self.x + i)].lit = false
+        if self.is_op(self.x + i, self.y) then 
+          self:remove_from_queue(self.x + i, self.y) 
+          self:clean_ports(orca.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
+        end
       end
     end
   end
@@ -32,6 +36,7 @@ L = function (self, x, y, frame, grid)
     for i= length == 0 and length or length+1, #self.chars do
       grid.params[self.y][(self.x + i)].dot = false
       grid.params[self.y][(self.x + i)].op = true
+      if self.is_op(self.x + i, self.y) then self:add_to_queue(self.x + i, self.y) end
     end
   end
 end

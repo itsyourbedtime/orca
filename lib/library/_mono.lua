@@ -18,7 +18,7 @@ midi_out = function ( self, x, y, frame, grid )
     end
     grid.params[y][x].lit_out = false
     self.midi_out_device:note_on( n, velocity, channel )
-    self:add_note_mono(n)
+    table.insert(grid.active_notes_mono, n)
   else
     grid.params[self.y][self.x].lit_out = true
   end

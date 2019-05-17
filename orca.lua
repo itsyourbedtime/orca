@@ -12,14 +12,15 @@ function unrequire(name)
 end
 
 unrequire("timber/lib/timber_engine")
+
 engine.name = "Timber"
+
 local Timber = require "timber/lib/timber_engine"
 local NUM_SAMPLES = 36
 local keyb = hid.connect()
-local keycodes = include("orca/lib/keycodes")
-local transpose_table = include("orca/lib/transpose")
-local operators = include("orca/lib/library")
-
+local keycodes = include("lib/keycodes")
+local transpose_table = include("lib/transpose")
+local operators = include("lib/library")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
@@ -47,16 +48,8 @@ local bounds_y = 8
 
 local frame = 1
 
-local orca = {}
-
-orca.XSIZE = 101
-orca.YSIZE = 33
-orca.bounds_x = bounds_x
-orca.bounds_y = bounds_y
-orca.music = require 'musicutil'
-orca.clk = beatclock.new()
-orca.sc_ops = 0
-orca.max_sc_ops = 6
+local copy_buffer = {}
+copy_buffer.cell = {}
 
 local field = {}
 field.project = 'untitled'
@@ -68,182 +61,23 @@ field.cell.active_notes = {}
 field.cell.active_notes_mono = {}
 field.cell.sc_ops = {}
 
-local copy_buffer = {}
-copy_buffer.cell = {}
-
-orca.list =  {
-  ['#'] = '#',
-  ['='] = '=',
-  ["*"] = '*',
-  [':'] = ':',
-  ['!'] = '!',
-  ['%'] = '%',
-  ["'"] = "'",
-  ['"'] = '"',
-  ['/'] = '/',
-  ['\\']= '\\',
-  ["A"] = 'A',
-  ["B"] = 'B',
-  ["C"] = 'C',
-  ["D"] = 'D',
-  ["E"] = 'E',
-  ["F"] = 'F',
-  ['G'] = 'G',
-  ['H'] = 'H',
-  ["I"] = 'I',
-  ["J"] = 'J',
-  ['K'] = 'K',
-  ["L"] = 'L',
-  ["M"] = 'M',
-  ["N"] = 'N',
-  ['O'] = 'O',
-  ["P"] = 'P',
-  ['Q'] = 'Q',
-  ["R"] = 'R',
-  ["S"] = 'S',
-  ['T'] = 'T',
-  ['U'] = 'U',
-  ["V"] = 'V',
-  ["W"] = 'W',
-  ["X"] = 'X',
-  ['Y'] = 'Y',
-  ["Z"] = 'Z'
-}
-orca.bangs ={
-  ["E"] = 'E',
-  ["W"] = 'W',
-  ["S"] = 'S',
-  ["N"] = 'N',
-}
-orca.names =  {
-  ["#"] = 'comment',
-  ["="] = 'osc',
-  ["*"] = 'bang',
-  [':'] = 'midi',
-  ['!'] = 'cc',
-  ['%'] = 'mono',
-  ["'"] = 'engine',
-  ['"'] = 'param',
-  ['/'] = 'softcut',
-  ['\\']= 'r note',
-  ["A"] = 'add',
-  ["B"] = 'bounce',
-  ["C"] = 'clock',
-  ["D"] = 'delay',
-  ["E"] = 'east',
-  ["F"] = 'if',
-  ['G'] = 'generator',
-  ['H'] = 'halt',
-  ["I"] = 'increment',
-  ["J"] = 'jumper',
-  ['K'] = 'konkat',
-  ["L"] = 'loop',
-  ["M"] = 'mult',
-  ["N"] = 'north',
-  ['O'] = 'offset',
-  ["P"] = 'push',
-  ['Q'] = 'query',
-  ["R"] = 'random',
-  ["S"] = 'south',
-  ['T'] = 'track',
-  ['U'] = 'euclid',
-  ["V"] = 'variable',
-  ["W"] = 'west',
-  ["X"] = 'write',
-  ['Y'] = 'jymper',
-  ["Z"] = 'zoom'
-
-}
-orca.info = {
-  ['#'] = 'Halts a line.',
-  ['='] = 'Sends osc message.',
-  ['*'] = 'Bangs neighboring operators.',
-  ['!'] = 'Sends MIDI control change.',
-  [':'] = 'Midi 1-channel 2-octave 3-note 4-velocity 5-length',
-  ['%'] = 'Midi mono',
-  ["'"] = 'Engine 1-sample 2-pitch 3-pitch 4-level 5-pos',
-  ['"'] = 'Sets engine param 1-sample 2-param 3-value',
-  ['/'] = 'Softcut 1-plhead 2-rec 3-play 4-level 5-pos',
-  ['\\']= 'Outputs random note within octave',
-  ['='] = 'Sends a OSC message',
-  ['A'] = 'Outputs the sum of inputs.',
-  ['B'] = 'Bounces between two values based on the runtime frame.',
-  ['C'] = 'Outputs a constant value based on the runtime frame.',
-  ['D'] = 'Bangs on a fraction of the runtime frame.',
-  ['E'] = 'Moves eastward, or bangs.',
-  ['F'] = 'Bangs if both inputs are equal.',
-  ['G'] = 'Writes distant operators with offset.',
-  ['H'] = 'Stops southward operator from operating.',
-  ['I'] = 'Increments southward operator.',
-  ['J'] = 'Outputs the northward operator.',
-  ['K'] = 'Otputs multiple variables',
-  ['L'] = 'Loops a number of eastward operators.',
-  ['M'] = 'Outputs product of inputs.',
-  ['N'] = 'Moves northward, or bangs.',
-  ['O'] = 'Reads a distant operator with offset.',
-  ['P'] = 'Writes an eastward operator with offset.',
-  ['Q'] = 'Reads distant operators with offset.',
-  ['R'] = 'Outputs a random value.',
-  ['S'] = 'Moves southward, or bangs.',
-  ['T'] = 'Reads an eastward operator with offset',
-  ['U'] = 'Bangs based on the Euclidean pattern',
-  ['V'] = 'Reads and writes globally available variable',
-  ['W'] = 'Moves westward, or bangs.',
-  ['X'] = 'Writes a distant operator with offset',
-  ['Y'] = 'Outputs the westward operator',
-  ['Z'] = 'Transitions operand to input.',
-}
-orca.ports = {
-  [':'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
-  ['%'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}},
-  ['!'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}},
-  ['"'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}},
-  ["'"] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5,0, 'input_op'}},
-  ['/'] = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0 , 'input_op'}, {4, 0 , 'input_op'}, {5, 0 , 'input_op'}, {6, 0 , 'input_op'}},
-  ['\\']= {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['A'] = {{1, 0, 'input_op'}, {-1, 0, 'input_op'}, {0, 1 , 'output_op'}},
-  ['B'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['C'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['D'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['F'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['G'] = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}},
-  ['H'] = {{0, 1, 'input_op'}},
-  ['J'] = {{0, -1, 'input'}, {0, 1, 'output_op'}},
-  ['K'] = {{-1, 0, 'input'}},
-  ['L'] = {{-1, 0, 'input'}, {-2, 0, 'input'}},
-  ['I'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['O'] = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}},
-  ['Q'] = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1, 'output'}},
-  ['M'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}},
-  ['P'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output_op'}},
-  ['G'] = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}},
-  ['T'] = {{-1,0, 'input_op'},  {-2, 0, 'input_op'},  {1, 0, 'input_op'}, {0, 1 , 'output_op'}},
-  ['R'] = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output_op'}},
-  ['X'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {-2, 0 , 'input'}},
-  ['U'] = {{1, 0, 'input_op'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['V'] = {{-1,0, 'input_op'},  {1, 0, 'input_op'}},
-  ['Y'] = {{-1, 0, 'input'}, {1, 0, 'output'}},
-  ['W'] = {},
-  ['S'] = {},
-  ['E'] = {},
-  ['N'] = {},
-  ['Z'] = {{1, 0, 'input'}, {-1, 0, 'input'}, {0, 1 , 'output'}},
-  ['*'] = {},
-  ['#'] = {},
-  ["="] = {{1,0,'input_op'}},
-  
-  
-}
-
+local orca = {}
+orca.XSIZE = 101
+orca.YSIZE = 33
+orca.bounds_x = bounds_x
+orca.bounds_y = bounds_y
+orca.music = require 'musicutil'
+orca.clk = beatclock.new()
+orca.sc_ops = 0
+orca.max_sc_ops = 6
+orca.info = include("lib/library/__info")
+orca.list = include("lib/library/__all")
+orca.ports = include("lib/library/__ports")
 orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 orca.chars[0] = '0'
 
-
-
-
 local function load_folder(file, add)
-  
   local sample_id = 0
   if add then
     for i = NUM_SAMPLES - 1, 0, -1 do
@@ -281,11 +115,6 @@ local function load_folder(file, add)
   end
 end
 
-
-
-function orca:add_note_mono(n)
-  table.insert(field.cell.active_notes_mono , n)
-end
 
 function orca.all_notes_off(ch)
     for _, a in pairs(field.cell.active_notes) do
@@ -399,16 +228,6 @@ function orca.is_op(x,y)
   end
 end
 
-function orca.is_bang(x,y)
-  if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
-    if (orca.bangs[string.upper(field.cell[y][x])] and field.cell.params[y][x].op) then
-      return true
-    end
-  else
-    return false
-  end
-end
-
 function orca.banged(x,y)
   local x = util.clamp(x, 1, orca.XSIZE)
   local y = util.clamp(y, 1, orca.YSIZE)
@@ -441,8 +260,11 @@ end
 
 function orca:shift(s, e)
   local data = field.cell[self.y][self.x + s]
+  local params = field.cell.params[self.y][self.x + s]
   table.remove(field.cell[self.y], self.x + s)
+  table.remove(field.cell.params[self.y], self.x + s)
   table.insert(field.cell[self.y], self.x + e, data)
+  table.insert(field.cell.params[self.y], self.x + e, params)
 end
 
 function orca:cleanup()
@@ -573,6 +395,12 @@ function orca:exec_queue()
   end
 end
 
+function orca:move_cell(x,y)
+  field.cell[y][x] = field.cell[self.y][self.x]
+  self:erase(self.x,self.y)
+  orca:add_to_queue(x,y)
+end
+
 function orca:move(x,y)
   a = self.y + y
   b = self.x + x
@@ -595,8 +423,6 @@ function orca:move(x,y)
         collider == tonumber(collider)
         or
         collider ~= orca.is_op(a,b)
-        or
-        orca.is_bang(a,b)
         )
       then
         self:explode()
@@ -613,19 +439,13 @@ function orca:move(x,y)
   end
 end
 
-function orca:move_cell(x,y)
-  field.cell[y][x] = field.cell[self.y][self.x]
-  self:erase(self.x,self.y)
-  orca:add_to_queue(x,y)
-end
-
 function orca:clean_ports(t, x1, y1)
+  field.cell.params[self.y][self.x].lit = false
   for i=1,#t do
     if t[i] ~= nil then
       for l=1,#t[i]-2 do
         local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,orca.XSIZE)
         local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,orca.YSIZE)
-        field.cell.params[self.y][self.x].lit = false
         if field.cell[y][x] ~= nil then
           if t[i][l + 2] == 'output' then
             field.cell.params[y][x].lit_out = false
@@ -647,6 +467,8 @@ function orca:clean_ports(t, x1, y1)
 end
 
 function orca:spawn(t)
+  -- draw frame
+  field.cell.params[self.y][self.x].lit = true
   for i=1,#t do
     for l= 1, #t[i] - 2 do
       local x = util.clamp(self.x + t[i][l],0,orca.XSIZE)
@@ -655,12 +477,6 @@ function orca:spawn(t)
       local port_type = t[i][l + 2]
       if existing == orca.list[string.upper(existing)] then
         orca:clean_ports(orca.ports[existing], x,y)
-      end
-      -- draw frame
-      if field.cell[self.y][self.x] ~= string.lower(field.cell[self.y][self.x]) then
-        field.cell.params[self.y][self.x].lit = true
-      elseif (field.cell[self.y][self.x] == "'" or field.cell[self.y][self.x] == '"' or field.cell[self.y][self.x]  == ':' or field.cell[self.y][self.x]  == '/' or field.cell[self.y][self.x]  == '=' or field.cell[self.y][self.x]  == '\\') then
-        field.cell.params[self.y][self.x].lit = true
       end
       -- draw inputs / outputs
       if field.cell[y][x] ~= nil then
@@ -1048,7 +864,7 @@ local function draw_bar()
   screen.text(frame .. 'f')
   screen.stroke()
   screen.move(40,63)
-  screen.text_center(field.cell[y_index][x_index] and orca.names[string.upper(field.cell[y_index][x_index])] or 'empty')
+  screen.text_center(field.cell[y_index][x_index] and orca.info.names[string.upper(field.cell[y_index][x_index])] or 'empty')
   screen.stroke()
   screen.move(75,63)
   screen.text(params:get("bpm") .. (frame % 4 == 0 and ' *' or ''))
@@ -1059,7 +875,7 @@ local function draw_bar()
 end
 
 local function draw_help()
-  if orca.info[string.upper(field.cell[y_index][x_index])] then
+  if orca.info.description[string.upper(field.cell[y_index][x_index])] then
     screen.level(15)
     screen.rect(0,29,128,25)
     screen.fill()
@@ -1080,8 +896,8 @@ local function draw_help()
     end
     screen.font_face(25)
     screen.font_size(6)
-    if orca.info[string.upper(field.cell[y_index][x_index])] then
-      local s = orca.info[string.upper(field.cell[y_index][x_index])]
+    if orca.info.description[string.upper(field.cell[y_index][x_index])] then
+      local s = orca.info.description[string.upper(field.cell[y_index][x_index])]
       local description = tab.split(s, ' ')
       screen.level(9)
       screen.move(3,38)
