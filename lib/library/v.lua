@@ -11,8 +11,10 @@ V = function (self,x,y,frame, grid)
        grid.params[self.y + 1][self.x].lit_out = true
        grid[self.y + 1][self.x] = grid.vars[b] 
       end 
-    elseif self:active() and b ~= 0 and  a ~= 0  then
+    elseif b ~= 'null' and  a ~= 0 then
       grid.vars[a] = grid[self.y][self.x + 1]
+    elseif b == 'null' and a ~= 0 then 
+      grid.vars[a] = 'null'
     else 
       grid[self.y + 1][self.x] = 'null'
       grid.params[self.y + 1][self.x].lit_out = false

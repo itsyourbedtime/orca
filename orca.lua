@@ -320,7 +320,7 @@ function orca:cleanup()
       params[self.y][self.x + i].dot = false
       params[self.y][(self.x + i)].op = true
     end
-  elseif (cell == 'U' or cell == 'u') or (cell == 'D' or cell == 'd') or (cell == 'F' or cell == 'f') then
+  elseif (cell == 'U' or cell == 'u') or (cell == 'D' or cell == 'd') or (cell == 'F' or cell == 'f') or (cell == 'J' or cell == 'j') then
     if field.cell[self.y + 1][self.x] == '*' then field.cell[self.y + 1][self.x] = 'null' end
   elseif (cell == 'H' or cell == 'h') then
     field.cell.params[self.y + 1][self.x].act = true
@@ -467,8 +467,6 @@ function orca:clean_ports(t, x1, y1)
 end
 
 function orca:spawn(t)
-  -- draw frame
-  field.cell.params[self.y][self.x].lit = true
   for i=1,#t do
     for l= 1, #t[i] - 2 do
       local x = util.clamp(self.x + t[i][l],0,orca.XSIZE)
@@ -478,6 +476,8 @@ function orca:spawn(t)
       if existing == orca.list[string.upper(existing)] then
         orca:clean_ports(orca.ports[existing], x,y)
       end
+      -- draw frame
+      field.cell.params[self.y][self.x].lit = true
       -- draw inputs / outputs
       if field.cell[y][x] ~= nil then
         if port_type == 'output' then
