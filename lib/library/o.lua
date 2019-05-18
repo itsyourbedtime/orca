@@ -10,7 +10,7 @@ O = function(self, x, y, frame, grid)
   if self:active() then
     grid[self.y + 1][self.x] = grid[offsety][offsetx]
     self:clean_ports(self.ports[self.name], self.x, self.y)
-    self.ports[self.name] = self.inputs
+    --self.ports[self.name] = self.inputs
     self.ports[self.name][4] = {a, b, 'input'}
     self:spawn(self.ports[self.name])
   end
