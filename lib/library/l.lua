@@ -20,6 +20,7 @@ L = function (self, x, y, frame, grid)
         grid.params[self.y][(self.x + i)].dot = true
         grid.params[self.y][(self.x + i)].op = false
         grid.params[self.y + 1][(self.x + i)].lit_out = false
+        grid.params[self.y][(self.x + i)].lit_out = false
         grid.params[self.y][(self.x + i)].lit = false
         if self.is_op(self.x + i, self.y) then 
           self:remove_from_queue(self.x + i, self.y) 
