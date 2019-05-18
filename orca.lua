@@ -51,17 +51,17 @@ local frame = 1
 local copy_buffer = {}
 copy_buffer.cell = {}
 
-field = {}
+local field = {}
 field.project = 'untitled'
 field.cell = {}
 field.cell.params = {}
 field.active = {}
 field.cell.vars = {}
 field.cell.active_notes = {}
-field.cell.active_notes_mono = {}
+field.cell.grid = {}
 field.cell.sc_ops = {}
 
-orca = {}
+local orca = {}
 orca.XSIZE = 101
 orca.YSIZE = 33
 orca.bounds_x = bounds_x
@@ -76,6 +76,8 @@ orca.ports = include("lib/library/__ports")
 orca.notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"}
 orca.chars = {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
 orca.chars[0] = '0'
+
+g = grid.connect()
 
 local function load_folder(file, add)
   local sample_id = 0
@@ -515,6 +517,7 @@ function orca:spawn(t)
 end
 -----
 function init()
+  -- field 
   for y = 0,orca.YSIZE + orca.YSIZE do
     field.cell[y] = {}
     field.cell.params[y] = {}
@@ -523,6 +526,11 @@ function init()
       table.insert(field.cell.params[y], {op = true, lit = false, lit_out = false, act = true, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil})
     end
   end
+  -- grid 
+  for i = 1, g.rows do
+    field.cell.grid[i] = {}
+  end
+  
   params:add_trigger('save_p', "save project" )
   params:set_action('save_p', function(x) textentry.enter(orca.save_project,  field.project) end)
   params:add_trigger('load_p', "load project" )
@@ -599,7 +607,7 @@ function init()
   min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end}
 
-  g = grid.connect()
+
 
 end
 
