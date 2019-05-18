@@ -51,7 +51,7 @@ local frame = 1
 local copy_buffer = {}
 copy_buffer.cell = {}
 
-local field = {}
+field = {}
 field.project = 'untitled'
 field.cell = {}
 field.cell.params = {}
@@ -61,7 +61,7 @@ field.cell.active_notes = {}
 field.cell.active_notes_mono = {}
 field.cell.sc_ops = {}
 
-local orca = {}
+orca = {}
 orca.XSIZE = 101
 orca.YSIZE = 33
 orca.bounds_x = bounds_x
@@ -115,19 +115,34 @@ local function load_folder(file, add)
   end
 end
 
-
-function orca.all_notes_off(ch)
-    for _, a in pairs(field.cell.active_notes) do
-      orca.midi_out_device:note_off(a, nil, ch)
-    end
-  field.cell.active_notes = {}
+function orca:add_note(ch, note, length)
+  local id = self:id(self.x,self.y) 
+  if field.cell.active_notes[id] == nil then 
+    field.cell.active_notes[id] = {}
+  end
+  field.cell.active_notes[id][#field.cell.active_notes[id] + 1] = {note, length}
 end
 
-function orca.all_notes_off_mono(ch)
-    for _, a in pairs(field.cell.active_notes_mono) do
-      orca.midi_out_device:note_off(a, nil, ch)
+function orca:add_note_mono(ch, note, length)
+  local id = self:id(self.x,self.y) 
+  if field.cell.active_notes[id] == nil then 
+    field.cell.active_notes[id] = {}
+  end
+  field.cell.active_notes[id][ch] = {note, length}
+end
+
+function orca:notes_off(ch)
+  local id = self:id(self.x,self.y)
+  if field.cell.active_notes[id] ~= nil then
+    for k, v in pairs(field.cell.active_notes[id]) do
+      local note = field.cell.active_notes[id][k][1]
+      local length = util.clamp(field.cell.active_notes[id][k][2], 1, #orca.chars)
+      if frame % length  == 0 then 
+        orca.midi_out_device:note_off(note, nil, ch)
+        field.cell.active_notes[id][k] = nil
+      end
     end
-  field.cell.active_notes_mono = {}
+  end
 end
 
 orca.load_project = function(pth)
@@ -552,7 +567,6 @@ function init()
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
   orca.notes_off_metro = metro.init()
-  orca.notes_off_metro.event = orca.all_notes_off(1)
   orca.clk.on_step = function() orca:exec_queue() end
   orca.clk:add_clock_params()
   params:set("bpm", 120)
@@ -584,6 +598,9 @@ function init()
   params:add{type = "number", id = "midi_out_device", name = "midi out device",
   min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end}
+
+  g = grid.connect()
+
 end
 
 local function get_key(code, val, shift)

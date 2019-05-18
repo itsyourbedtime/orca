@@ -2,7 +2,8 @@ midi_out = function ( self, x, y, frame, grid )
   self.name = '%'
   self.y = y
   self.x = x
-  self:spawn(self.ports[self.name])
+  self:spawn(self.ports[self.name])    
+  self:notes_off( channel )
   local note = 'C'
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
   local octave = util.clamp( self:listen( self.x + 2, self.y ) or 3, 0, 8 )
@@ -13,12 +14,9 @@ midi_out = function ( self, x, y, frame, grid )
   local n = math.floor( transposed[1] )
   local velocity = math.floor(( vel / 16 ) * 127 )
   if self.banged( self.x, self.y ) then
-    if grid.active_notes_mono ~= nil then 
-      self.all_notes_off_mono( channel )
-    end
     grid.params[y][x].lit_out = false
     self.midi_out_device:note_on( n, velocity, channel )
-    table.insert(grid.active_notes_mono, n)
+    self:add_note_mono( channel, n, length )
   else
     grid.params[self.y][self.x].lit_out = true
   end

@@ -1,5 +1,5 @@
 rNote = function ( self, x, y, frame, grid )
-  self.name = '\\'
+  self.name = '^'
   self.y = y
   self.x = x
   local rate = self:listen( self.x - 1, self.y ) or 1
