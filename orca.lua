@@ -301,7 +301,11 @@ function orca:cleanup()
     params[self.y + 1][self.x].lit_out = false 
   end
   -- specific ops cleanup
-  if (cell == 'P' or cell == 'p') then
+  if cell == '<' then
+    local col = util.clamp(self:listen( self.x - 2, self.y ) or 1 % g.cols, 1, g.cols)
+    local row = util.clamp(self:listen( self.x - 1, self.y ) or 1 % g.rows, 1, g.rows)
+    g:led(col, row, 0)
+  elseif (cell == 'P' or cell == 'p') then
     local seqlen = orca:listen(self.x - 1, self.y) or 1
     for i=0, seqlen do
       params[self.y + 1][self.x + i].op = true
@@ -572,9 +576,8 @@ function init()
     softcut.filter_bp(i, 0);
     softcut.filter_rq(i, 0);
   end
-  redraw_metro = metro.init(function(stage) redraw() end, 1/30)
+  redraw_metro = metro.init(function(stage) redraw() g:redraw() end, 1/30)
   redraw_metro:start()
-  orca.notes_off_metro = metro.init()
   orca.clk.on_step = function() orca:exec_queue() end
   orca.clk:add_clock_params()
   params:set("bpm", 120)
@@ -976,6 +979,21 @@ function enc(n,d)
    y_index = util.clamp(y_index + d, 1, orca.YSIZE)
   end
   update_offset()
+end
+
+function g.key(x, y, z)
+    field.cell.grid[y][x] = z == 1 and 15 or 0
+end
+
+function g.redraw()
+  for y = 1, g.rows do
+    for x = 1, g.cols do
+      if field.cell.grid[y][x] ~= nil then
+        g:led(x, y, field.cell.grid[y][x] )
+      end
+    end
+  end
+  g:refresh()
 end
 
 function redraw()

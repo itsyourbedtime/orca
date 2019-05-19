@@ -1,4 +1,4 @@
-grid_read = function ( self, x, y, frame, grid )
+grid_write = function ( self, x, y, frame, _grid )
   self.name = '>'
   self.y = y
   self.x = x
@@ -7,24 +7,23 @@ grid_read = function ( self, x, y, frame, grid )
   local row = util.clamp(self:listen( self.x + 2, self.y ) or 0 % g.rows, 0, g.rows)
   local val = util.clamp(self:listen( self.x + 3, self.y ) or 0 % 16, 0, 16)
   if self.banged( self.x, self.y ) then
-    grid.params[self.y][self.x].lit_out = false
-    if col == 0 and row == 0 then 
-      g:all(val)
-    elseif col == 0 and row ~= 0 then
-      for i = 1, g.cols do 
-        g:led(i, row, val)
+    _grid.params[self.y][self.x].lit_out = false
+    for y = 1, g.rows do 
+      for x = 1, g.cols do
+        if (col == 0 and row == 0) then
+          _grid.grid[y][x] = val
+        elseif (col == 0 and row ~= 0) then
+          _grid.grid[row][x] = val
+        elseif (col ~= 0 and row == 0) then 
+          _grid.grid[y][col] = val
+        else
+          _grid.grid[row][col] = val
+        end
       end
-    elseif col ~= 0 and row == 0 then
-      for i = 1, g.rows do 
-        g:led(col, i, val)
-      end
-    else
-      g:led(col, row, val)
     end
-    g:refresh()
   else
-    grid.params[self.y][self.x].lit_out = true
+    _grid.params[self.y][self.x].lit_out = true
   end
 end
 
-return grid_read
+return grid_write

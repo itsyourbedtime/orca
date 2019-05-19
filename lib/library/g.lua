@@ -43,6 +43,11 @@ G = function(self, x, y, frame, grid)
       grid[util.clamp(offsety,1, #self.chars)][(offsetx + i) - 1] = grid[self.y][self.x + i]
       self:add_to_queue((offsetx + i) - 1, util.clamp( offsety, 1, #self.chars ))
     end
+  elseif self.banged( self.x, self.y ) then
+    for i=1,length do
+      grid[util.clamp(offsety,1, #self.chars)][(offsetx + i) - 1] = grid[self.y][self.x + i]
+      self:add_to_queue((offsetx + i) - 1, util.clamp( offsety, 1, #self.chars ))
+    end
   end
   
   -- cleanups 
