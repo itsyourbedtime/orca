@@ -18,13 +18,11 @@ K = function (self, x, y, frame, grid)
         local var = self:listen(x+i,y)
         grid.params[self.y][(self.x + i)].dot = true
         grid.params[self.y + 1][(self.x + i)].dot_port = false
-        grid.params[self.y][(self.x + i)].op = false
-        grid.params[self.y][(self.x + i)].act = false
+        grid.params[self.y][(self.x + i)].lock = true
         grid.params[self.y + 1][(self.x + i)].lit_out = false
         grid.params[self.y][(self.x + i)].lit = false
         if grid.vars[var] ~= nil then
-          grid.params[self.y + 1][(self.x + i)].op = false
-          grid.params[self.y + 1][(self.x + i)].act = false
+          grid.params[self.y + 1][(self.x + i)].lock = true
           grid.params[self.y + 1][(self.x + i)].lit_out = false
           grid.params[self.y + 2][(self.x + i)].lit_out = false
           grid.params[self.y + 1][(self.x + i)].lit = false
@@ -39,8 +37,7 @@ K = function (self, x, y, frame, grid)
   if length < #self.chars then
     for i= length == 0 and length or length+1, #self.chars do
       grid.params[self.y][util.clamp((self.x + i), 1, self.XSIZE)].dot = false
-      grid.params[self.y][util.clamp((self.x + i), 1, self.XSIZE)].op = true
-      grid.params[self.y + 1][util.clamp((self.x + i), 1, self.XSIZE)].act = true
+      grid.params[self.y][util.clamp((self.x + i), 1, self.XSIZE)].lock = false
     end
   end
 end

@@ -15,7 +15,6 @@ C = function ( self, x, y, frame, grid )
     self:spawn( self.ports[self.name] )
     grid[self.y + 1][self.x] = self.chars[val]
   elseif self.banged( self.x, self.y ) then
-    self:spawn( self.ports[self.name] )
     grid[self.y + 1][self.x] = self.chars[val]
   end
 end

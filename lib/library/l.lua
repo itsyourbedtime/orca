@@ -18,7 +18,7 @@ L = function (self, x, y, frame, grid)
     else
       for i = 1,length do
         grid.params[self.y][(self.x + i)].dot = true
-        grid.params[self.y][(self.x + i)].op = false
+        grid.params[self.y][(self.x + i)].lock = true
         grid.params[self.y + 1][(self.x + i)].lit_out = false
         grid.params[self.y][(self.x + i)].lit_out = false
         grid.params[self.y][(self.x + i)].lit = false
@@ -36,7 +36,7 @@ L = function (self, x, y, frame, grid)
   if length < #self.chars then
     for i= length == 0 and length or length+1, #self.chars do
       grid.params[self.y][(self.x + i)].dot = false
-      grid.params[self.y][(self.x + i)].op = true
+      grid.params[self.y][(self.x + i)].lock = false
       if self.is_op(self.x + i, self.y) then self:add_to_queue(self.x + i, self.y) end
     end
   end

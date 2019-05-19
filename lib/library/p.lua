@@ -10,7 +10,7 @@ P = function (self, x, y, frame, grid)
     self:clean_ports(self.ports[self.name], self.x, self.y)
     for i = 1,length do
       grid.params[self.y + 1][(self.x + i) - 1 ].dot = true
-      grid.params[self.y + 1][(self.x + i) - 1 ].op = false
+      grid.params[self.y + 1][(self.x + i) - 1 ].lock = true
     end
     self.ports[self.name][4] = {((pos or 1)  % (length + 1)) - 1, 1, 'output_op'}
     self:spawn(self.ports[self.name])
@@ -20,7 +20,7 @@ P = function (self, x, y, frame, grid)
   for i= length, #self.chars do
     if grid.params[self.y + 1][(self.x + i)].dot then
       grid.params[self.y + 1][(self.x + i)].dot = false
-      grid.params[self.y + 1][(self.x + i) ].op = true
+      grid.params[self.y + 1][(self.x + i) ].lock = false
     end
   end
 end

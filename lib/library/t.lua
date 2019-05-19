@@ -11,7 +11,7 @@ T = function (self, x, y, frame, grid)
     self:spawn(self.ports[self.name])
     for i = 1,length do
       grid.params[self.y][(self.x + i)].dot = true
-      grid.params[self.y][(self.x + i)].op = false
+      grid.params[self.y][(self.x + i)].lock = true
     end
     -- highliht pos
     
@@ -27,7 +27,7 @@ T = function (self, x, y, frame, grid)
   -- cleanups
   for i= length+1, #self.chars do
     grid.params[self.y][(self.x + i)].dot = false
-    grid.params[self.y][(self.x + i)].op = true
+    grid.params[self.y][(self.x + i)].lock = false
     grid.params[self.y][(self.x + i)].cursor = false
   end
 end
