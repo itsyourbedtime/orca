@@ -982,7 +982,8 @@ function enc(n,d)
 end
 
 function g.key(x, y, z)
-    field.cell.grid[y][x] = z == 1 and 15 or 0
+  local last = field.cell.grid[y][x]
+    field.cell.grid[y][x] = z == 1 and 15 or last < 6 and last or 0
 end
 
 function g.redraw()
