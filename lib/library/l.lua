@@ -13,7 +13,7 @@ L = function (self, x, y, frame, grid)
     self:spawn(self.ports[self.name])
     if length - offset  == 0 then
       for i= 2, length do
-        grid.params[self.y][self.x + i].op = true
+        grid.params[self.y][self.x + i].lock = false
       end
     else
       for i = 1,length do

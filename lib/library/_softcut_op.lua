@@ -19,6 +19,7 @@ _softcut_op = function ( self, x, y, frame, grid)
   local pos = util.round((p / #self.chars) * #self.chars, 0.1)
   local level = util.round(( l / #self.chars) * 1, 0.1 )
   local rate = util.round(( r / #self.chars) * 2, 0.1 )
+  grid.sc_ops_pos[playhead] = pos
   if grid[self.y][self.x + 2] == '*' then
     grid[self.y][self.x + 2] = 'null'
     softcut.buffer_clear_region( 0, #self.chars )
@@ -26,9 +27,7 @@ _softcut_op = function ( self, x, y, frame, grid)
   if rec >= 1 then  
     if rec < 9 then softcut.pre_level( playhead, (rec) / 9) else softcut.pre_level( playhead, 1) end
     softcut.rec_level( playhead, rec / 9 ) 
-    grid.params[self.y][self.x].lit_out = true 
   else 
-    grid.params[self.y][self.x].lit_out = false 
     end
   if play > 5 then
     rate = -rate 
@@ -42,12 +41,9 @@ _softcut_op = function ( self, x, y, frame, grid)
     softcut.play(playhead,play)
   end
   if self.banged(self.x, self.y) then
-    grid.params[self.y][self.x].lit_out = false
     if play ~= 0 then
       softcut.position( playhead, pos )
     end
-  else 
-    grid.params[self.y][self.x].lit_out = true
   end
 end
 

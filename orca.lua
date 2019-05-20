@@ -1,11 +1,7 @@
--- ORCA for norns
---
--- its your bedtime
---
---         X
---
--- hundred rabbits
---
+-- ORCA
+-- v0.9.1 @its_your_bedtime
+-- llllllll.co/t/orca
+
 function unrequire(name)
   package.loaded[name] = nil
   _G[name] = nil
@@ -60,8 +56,10 @@ field.cell.vars = {}
 field.cell.active_notes = {}
 field.cell.grid = {}
 field.cell.sc_ops = {}
+field.cell.sc_ops_pos = {0, 0, 0, 0, 0, 0}
+field.cell.etc = {}
 
-local orca = {}
+orca = {}
 orca.XSIZE = 101
 orca.YSIZE = 33
 orca.bounds_x = bounds_x
@@ -117,12 +115,28 @@ local function load_folder(file, add)
   end
 end
 
+function orca.sc_clear_region(p, l)
+  softcut.buffer_clear_region(field.cell.sc_ops_pos[p], l)
+end
+
+function orca.copy(obj)
+  if type(obj) ~= 'table' then return obj end
+  local res = {}
+  for k, v in pairs(obj) do
+    res[simplecopy(k)] = simplecopy(v)
+  end
+  return res
+end
+
 function orca:add_note(ch, note, length)
   local id = self:id(self.x,self.y) 
   if field.cell.active_notes[id] == nil then 
     field.cell.active_notes[id] = {}
   end
-  field.cell.active_notes[id][#field.cell.active_notes[id] + 1] = {note, length}
+  if field.cell.active_notes[id][note] == {note, length} then
+    orca.midi_out_device:note_off(note, nil, ch)
+  end
+  field.cell.active_notes[id][note] = {note, length}
 end
 
 function orca:add_note_mono(ch, note, length)
@@ -147,7 +161,7 @@ function orca:notes_off(ch)
   end
 end
 
-orca.load_project = function(pth)
+function orca.load_project(pth)
   if string.find(pth, 'orca') ~= nil then
     saved = tab.load(pth)
     if saved ~= nil then
@@ -164,7 +178,7 @@ orca.load_project = function(pth)
   end
 end
 
-orca.save_project = function(txt)
+function orca.save_project(txt)
   if txt then
     field.project = txt
     tab.save(field, norns.state.data .. txt ..".orca")
@@ -180,17 +194,18 @@ function orca.copy_area()
   for y=y_index, y_index + selected_area_y do
     copy_buffer.cell[y -  y_index ] = {}
     for x = x_index, x_index + selected_area_x do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
     end
   end
 end
 
 function orca.cut_area()
   for y=y_index, y_index +  selected_area_y do
-    copy_buffer.cell[y -  y_index ] = {}
+    copy_buffer.cell[util.clamp(y -  y_index, 0, orca.YSIZE) ] = {}
     for x = x_index, x_index + selected_area_x do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = field.cell[y][x]
+      local to_copy = orca.copy(field.cell[y][x])
       orca:erase(x, y)
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = to_copy
     end
   end
 end
@@ -199,7 +214,7 @@ function orca.paste_area()
   for y=0, #copy_buffer.cell do
     for x = 0, #copy_buffer.cell[y] do
       orca:erase(util.clamp(x_index + x, 1, orca.XSIZE), util.clamp(y_index + y, 1, orca.YSIZE))
-      field.cell[y_index + y][(x_index + x)] = copy_buffer.cell[y][x]
+      field.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
       orca:add_to_queue(x_index + x, y_index + y)
     end
   end
@@ -211,16 +226,15 @@ end
 
 function orca.transpose(n, o)
   if n == nil or n == 'null' then n = 'C' else n = tostring(n) end 
-  if o == nil or o == 'null' then o = 0 end
+  if o == nil or o == 'null' then o = 3 end
   local note = orca.normalize(string.sub(transpose_table[n], 1, 1))
   local octave = util.clamp(orca.normalize(string.sub(transpose_table[n], 2)) + o,0,8)
   local value = tab.key(orca.notes, note)
-  local id = util.clamp((octave * 12) + value, 0, 127)
-  local real = id < 89 and tab.key(transpose_table, id - 45) or nil -- ??
-  return {id, value, note, octave, real}
+  local id = math.ceil( util.clamp((octave * 12) + value, 0, 127) - 1)
+  return {id, value, note, octave, orca.music.note_num_to_name(id)}
 end
 
-function orca:listen(x,y, default)
+function orca:listen(x,y)
   local value = string.lower(tostring(field.cell[y][x]))
   if value == '0' then 
     return 0
@@ -246,26 +260,31 @@ end
 function orca.banged(x,y)
   local x = util.clamp(x, 1, orca.XSIZE)
   local y = util.clamp(y, 1, orca.YSIZE)
-  if field.cell[y][x - 1] == '*' then 
+  if field.cell[y][x - 1] == '*' then
+    field.cell.params[y][x].lit = false
     return true
   elseif field.cell[y][x + 1] == '*' then
+    field.cell.params[y][x].lit = false
     return true
   elseif field.cell[y - 1][x] == '*' then
+    field.cell.params[y][x].lit = false
     return true
   elseif field.cell[y + 1][x] == '*' then 
+    field.cell.params[y][x].lit = false
     return true
   else
+    if field.cell[y][x] == string.upper(field.cell[y][x]) then
+      field.cell.params[y][x].lit = true
+    end
     return false
   end
 end
 
 function orca:active()
-  if field.cell.params[self.y][self.x].lock == false then
-    if field.cell[self.y][self.x] == string.upper(field.cell[self.y][self.x]) then
-      return true
-    elseif field.cell[self.y][self.x] == string.lower(field.cell[self.y][self.x]) then
-      return false
-    end
+  if field.cell[self.y][self.x] == string.upper(field.cell[self.y][self.x]) then
+    return true
+  elseif field.cell[self.y][self.x] == string.lower(field.cell[self.y][self.x]) then
+    return false
   end
 end
 
@@ -285,75 +304,40 @@ end
 function orca:cleanup()
   local cell = field.cell[self.y][self.x]
   local params = field.cell.params
-  params[self.y][self.x] = {lit = false, lit_out = false, lock = false, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil}
+  local ops_to_clear = {'P', 'p', 'L', 'l', 'T', 't', 'G', 'g', 'K', 'k'}
+  local offset = (cell == 'P' or cell == 'p') and 1 or 0 
+  local param_defaults = {lit = false, lit_out = false, lock = false, cursor = false, dot = false, placeholder = nil}
+  
   if orca.is_op(self.x, self.y) then 
     self:clean_ports(orca.ports[string.upper(field.cell[self.y][self.x])]) 
   end
-  if params[self.y+1][self.x].cursor == true then
-    params[self.y+1][self.x].cursor = false 
+  
+  if field.cell[self.y + 1][self.x] == '*' then 
+    field.cell[self.y + 1][self.x] = 'null' 
   end
-  if params[self.y + 1][self.x].lit_out == true then
-    params[self.y + 1][self.x].lit_out = false 
-  end
-  -- specific ops cleanup
-  if cell == '<' then
+  
+  params[self.y][self.x] = param_defaults
+  
+  if tab.contains(ops_to_clear, cell) then
+    local seqlen = orca:listen(self.x - 1, self.y) or 1
+    for i=0, seqlen do
+      params[self.y + offset][(self.x + i) - offset] = param_defaults
+      if self.is_op((self.x + i) - offset, self.y + offset) then 
+        self:add_to_queue(self.x + i, self.y) 
+      end
+    end
+  elseif cell == '<' then
     local col = util.clamp(self:listen( self.x - 2, self.y ) or 1 % g.cols, 1, g.cols)
     local row = util.clamp(self:listen( self.x - 1, self.y ) or 1 % g.rows, 1, g.rows)
     g:led(col, row, 0)
-  elseif (cell == 'P' or cell == 'p') then
-    local seqlen = orca:listen(self.x - 1, self.y) or 1
-    for i=0, seqlen do
-      params[self.y + 1][self.x + i].lock = false
-      params[self.y + 1][self.x + i].lit = false
-      params[self.y + 1][self.x + i].cursor = false
-      params[self.y + 1][self.x + i].dot = false
-    end
   elseif cell == '#' then
-    for i = self.x, orca.XSIZE do
-      params[self.y][i].lock = false
-      params[self.y][i].dot = false
-    end
-  elseif (cell == 'T' or cell == 't') then
-    local seqlen = orca:listen(self.x - 1, self.y) or 1
-    params[self.y+1][self.x].lit_out  = false
-    for i=1, seqlen do
-      params[self.y][self.x + i].lock = false
-      params[self.y][self.x + i].cursor = false
-      params[self.y][self.x + i].dot = false
-    end
-  elseif (cell == 'K' or cell == 'k') then
-    local seqlen = orca:listen(self.x - 1, self.y) or 1
-    for i=1,seqlen do
-      params[self.y][self.x + i].dot = false
-      params[self.y][(self.x + i)].lock = false
-      params[self.y + 1][(self.x + i)].lock = false
-    end
-  elseif (cell == 'L' or cell == 'l') or (cell == 'G' or cell == 'g') then
-    local seqlen = orca:listen(self.x - 1, self.y) or 1
-    for i=1,seqlen do
-      params[self.y][self.x + i].dot = false
-      params[self.y][(self.x + i)].lock = false
-      if self.is_op(self.x + i, self.y) then self:add_to_queue(self.x + i, self.y) end
-    end
-  elseif (cell == 'U' or cell == 'u') or (cell == 'D' or cell == 'd') or (cell == 'F' or cell == 'f') or (cell == 'J' or cell == 'j') then
-    if field.cell[self.y + 1][self.x] == '*' then field.cell[self.y + 1][self.x] = 'null' end
-  elseif (cell == 'H' or cell == 'h') then
-    field.cell.params[self.y + 1][self.x].lock = false
-  elseif (cell == 'X' or cell == 'x') then
-    local a = orca:listen(self.x - 2, self.y) or 0 -- x
-    local b = orca:listen(self.x - 1, self.y) or 1 -- y
-    params[self.y + b][self.x + a].dot_cursor = false
-    params[self.y + b][self.x + a].cursor = false
-    params[self.y + b][self.x + a].placeholder = nil
-  elseif (cell == "'" or cell == ':' or cell == '/') then
-    if cell == '/' then 
-      softcut.play(orca:listen(self.x + 1, self.y) or 1,0) 
-      orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
-    end
-    if cell == "'" then 
-      engine.noteOff(orca:listen(self.x + 1, self.y) or 0) 
-    end
-  end 
+    for i = self.x, orca.XSIZE do params[self.y][i].lock = false params[self.y][i].dot = false end
+  elseif cell == '/' then 
+    softcut.play(orca:listen(self.x + 1, self.y) or 1, 0) 
+    orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
+  elseif cell == "'" then 
+    engine.noteOff(orca:listen(self.x + 1, self.y) or 0)
+  end
 end
 
 function orca:erase(x,y)
@@ -424,25 +408,9 @@ function orca:move(x,y)
       if collider == '*' then
         orca:move_cell(b,a)
         self:erase(self.x,self.y)
-      elseif field.cell.params[a][b].lock == true then
-        orca:move_cell(b,a)
-      elseif (
-        field.cell.params[a][b].lock == true
-        or
-        collider == field.cell[self.y][self.x]
-        or
-        (orca:active() and orca.list[string.upper(field.cell[a][b])])
-        or
-        collider == tonumber(collider)
-        or
-        collider ~= orca.is_op(a,b)
-        )
-      then
+      elseif (collider == field.cell[self.y][self.x] or collider ~= orca.is_op(a,b)
+      or (orca:active() and orca.list[string.upper(collider)])) then
         self:explode()
-      -- L fix
-      elseif field.cell.params[a][b].lock == true then
-        orca:move_cell(b,a)
-        self:erase(self.x,self.y)
       end
     else
       self:explode()
@@ -462,15 +430,15 @@ function orca:clean_ports(t, x1, y1)
         if field.cell[y][x] ~= nil then
           if t[i][l + 2] == 'output' then
             field.cell.params[y][x].lit_out = false
-            field.cell.params[y][x].dot_port = false
+            field.cell.params[y][x].dot = false
           elseif t[i][l + 2] == 'input' then
-            field.cell.params[y][x].dot_port = false
+            field.cell.params[y][x].dot = false
           elseif t[i][l + 2] == 'input_op' then
             field.cell.params[y][x].lock = false
-            field.cell.params[y][x].dot_port = false
+            field.cell.params[y][x].dot = false
           elseif t[i][l + 2] == 'output_op' then
             field.cell.params[y][x].lock = false
-            field.cell.params[y][x].dot_port = false
+            field.cell.params[y][x].dot = false
             field.cell.params[y][x].lit_out = false
           end
         end
@@ -486,26 +454,26 @@ function orca:spawn(t)
       local y = util.clamp(self.y + t[i][l+1],0,orca.YSIZE)
       local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
-      if existing == orca.list[string.upper(existing)] then
-        orca:clean_ports(orca.ports[existing], x,y)
-      end
+     --if existing == orca.list[string.upper(existing)] and existing ~= self.name and field.cell.params[y_index][x_index].lock == false then
+       -- orca:clean_ports(orca.ports[existing], x,y)
+      --end
       -- draw frame
       field.cell.params[self.y][self.x].lit = true
       -- draw inputs / outputs
       if field.cell[y][x] ~= nil then
         if port_type == 'output' then
           field.cell.params[y][x].lit_out = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         elseif port_type == 'input' then
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         elseif port_type == 'input_op' then
           field.cell.params[y][x].lock = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
           field.cell.params[y][x].lit = false
         elseif port_type == 'output_op' then
           field.cell.params[y][x].lit_out = true
           field.cell.params[y][x].lock = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         end
       end
     end
@@ -519,7 +487,7 @@ function init()
     field.cell.params[y] = {}
     for x = 0,orca.XSIZE + orca.XSIZE do
       table.insert(field.cell[y], 'null')
-      table.insert(field.cell.params[y], {lit = false, lit_out = false, lock = false, cursor = false, dot_cursor = false, dot_port = false, dot = false, placeholder = nil})
+      table.insert(field.cell.params[y], {lit = false, lit_out = false, lock = false, cursor = false, dot = false, placeholder = nil})
     end
   end
   -- grid 
@@ -587,9 +555,7 @@ function init()
       {type = "option", id = "launch_mode_" .. i, name = "Launch Mode", options = {"Gate", "Toggle"}, default = 1, action = function(value)
         Timber.setup_params_dirty = true
       end},
-      
     }
-    
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
     params:set('play_mode_' .. i, 4)
@@ -601,9 +567,6 @@ function init()
   params:add{type = "number", id = "midi_out_device", name = "midi out device",
   min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end}
-
-
-
 end
 
 local function get_key(code, val, shift)
@@ -719,7 +682,7 @@ function keyb.event(typ, code, val)
         elseif orca.list[string.upper(keyinput)] == 'H' or orca.list[string.upper(keyinput)] == 'h' then
         elseif orca.is_op(x_index, y_index - 1) then
         elseif orca.is_op(x_index,y_index + 1) then
-          if (orca.list[string.upper(keyinput)] == keyinput and field.cell.params[y_index][x_index].lock == false) then
+          if orca.list[string.upper(keyinput)] == keyinput then
             -- remove southward op if new one have output
             for i = 1,#orca.ports[string.upper(keyinput)] do
               if orca.ports[string.upper(keyinput)][i][2] == 1 then
@@ -747,23 +710,9 @@ function keyb.event(typ, code, val)
   end
 end
 
-local function draw_op_frame(x,y)
-  screen.level(4)
-  screen.rect((x * 5)-5, ((y*8) - 5) - 3, 5,8)
-  screen.fill()
-end
-
-local function draw_op_out(x,y)
-  if field.cell.params[y][x].lock == true then
-    screen.level(1)
-    screen.rect((x * 5)-5, ((y*8) - 5) - 3, 5,8)
-    screen.fill()
-  end
-end
-
-local function draw_op_cursor(x,y)
-  screen.level(1)
-  screen.rect((x * 5)-5, ((y*8) - 5) - 3, 5,8)
+local function draw_op_frame(x, y, brightness)
+  screen.level(brightness)
+  screen.rect(( x * 5 ) - 5, (( y * 8 ) - 5 ) - 3, 5, 8)
   screen.fill()
 end
 
@@ -775,13 +724,10 @@ local function draw_grid()
       local y = y + field_offset_y
       local x = x + field_offset_x
       if field.cell.params[y][x].lit then
-        draw_op_frame(x - field_offset_x,y - field_offset_y)
+        draw_op_frame(x - field_offset_x,y - field_offset_y, 4)
       end
-      if field.cell.params[y][x].cursor then
-        draw_op_cursor(x - field_offset_x,y - field_offset_y)
-      end
-      if field.cell.params[y][x].lit_out then
-        draw_op_out(x - field_offset_x,y - field_offset_y)
+      if field.cell.params[y][x].lit_out or field.cell.params[y][x].cursor then
+        draw_op_frame(x - field_offset_x,y - field_offset_y, 1)
       end
       -- levels
       if field.cell[y][x] ~= 'null' then
@@ -789,26 +735,16 @@ local function draw_grid()
           screen.level(15)
         elseif field.cell.params[y][x].lit then
           screen.level(12)
-        elseif field.cell.params[y][x].cursor then
-          screen.level(12)
-        elseif field.cell.params[y][x].lit_out then
-          screen.level(12)
-        elseif field.cell.params[y][x].dot_port then
-          screen.level(9)
-        elseif field.cell.params[y][x].dot_cursor then
+        elseif field.cell.params[y][x].cursor or field.cell.params[y][x].lit_out then
           screen.level(12)
         elseif field.cell.params[y][x].dot then
-          screen.level(5)
+          screen.level(9)
         else
           screen.level(3)
         end
       elseif field.cell[y][x] == 'null' then
-        if field.cell.params[y][x].dot_port then
+        if field.cell.params[y][x].dot then
           screen.level(9)
-        elseif field.cell.params[y][x].dot_cursor then
-          screen.level(12)
-        elseif field.cell.params[y][x].dot then
-          screen.level(5)
         elseif field.cell.params[y][x].placeholder ~= nil then
           screen.level(12)
         else
@@ -818,11 +754,7 @@ local function draw_grid()
       screen.move(((x - field_offset_x) * 5) - 4 , ((y - field_offset_y )* 8) - (field.cell[y][x] and 2 or 3))
       --
       if field.cell[y][x] == 'null' or field.cell[y][x] == nil then
-        if field.cell.params[y][x].dot_port then
-          screen.text('.')
-        elseif field.cell.params[y][x].dot_cursor then
-          screen.text('.')
-        elseif field.cell.params[y][x].dot then
+        if field.cell.params[y][x].dot then
           screen.text('.')
         elseif field.cell.params[y][x].placeholder ~= nil then
           screen.text(field.cell.params[y][x].placeholder)

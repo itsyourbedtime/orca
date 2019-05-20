@@ -1,5 +1,15 @@
-local param_ids = { "amp_env_attack", "amp_env_decay", "original_freq", "detune_cents", 
-"by_percentage","filter_freq", "filter_resonance", "filter_type", "quality" }
+local param_ids = { 
+  "amp_env_attack",
+  "amp_env_decay", 
+  "original_freq", 
+  "detune_cents", 
+  "by_percentage",
+  "filter_freq", 
+  "filter_resonance", 
+  "filter_type", 
+  "quality" 
+  
+}
 
 timber_param = function ( self, x, y, frame, grid )
   self.name = '"'
@@ -18,10 +28,7 @@ timber_param = function ( self, x, y, frame, grid )
               or param == 9 and (val % 4) + 1  
               or val_scaled
   if self.banged( self.x, self.y ) then
-    grid.params[self.y][self.x].lit_out = false
     params:set( param_ids[param] .. "_" .. sample, value )
-  else
-    grid.params[self.y][self.x].lit_out = true
   end
 end
 

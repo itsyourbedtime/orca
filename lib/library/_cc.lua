@@ -11,13 +11,8 @@ midi_out = function ( self, x, y, frame, grid )
   local knob = util.clamp( self:listen( self.x + 2, self.y ) or 0, 1, #self.chars )
   local val = util.clamp( self:listen( self.x + 3, self.y ) or 0, 0, #self.chars )
   local val = math.floor(( val / #self.chars ) * 127 )
-  
   if self.banged( self.x, self.y ) then
-    grid.params[self.y][self.x].lit_out = false
     self.midi_out_device:cc(knob, val, channel)
-    print(knob, val, channel)
-  else
-    grid.params[self.y][self.x].lit_out = true
   end
 end
 

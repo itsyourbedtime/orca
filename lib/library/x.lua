@@ -13,7 +13,6 @@ X = function(self, x, y, frame, grid)
     grid[offsety][offsetx] = grid[self.y][self.x + 1]
     grid.params[offsety][offsetx].placeholder = grid[self.y][self.x + 1] ~= '*' and 
     self:add_to_queue(offsetx, offsety)
-    
   elseif self.banged( self.x, self.y ) then
     grid[offsety][offsetx] = grid[self.y][self.x + 1]
     grid.params[offsety][offsetx].placeholder = grid[self.y][self.x + 1] ~= '*' and 
