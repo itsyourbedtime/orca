@@ -3,12 +3,7 @@ local param_ids = {
   "pan", 
   "rate_slew_time", 
   "level_slew_time", 
-  "filter_fc_mod", 
-  "filter_fc", 
-  "filter_rq", 
-  "loop_end", 
   "sc_clear_region"
-  
 } 
 
 softcut_param = function ( self, x, y, frame, grid )
@@ -22,22 +17,13 @@ softcut_param = function ( self, x, y, frame, grid )
   local value = val / 1
   if self.banged( self.x, self.y ) then
     if param == 1 then
-      val = (val % 3) + 1
-      if val == 0 then 
-        norns.audio.level_adc_cut(0)
-        norns.audio.level_eng_cut(0)
-      elseif val == 1 then
-        norns.audio.level_adc_cut(1)
-        norns.audio.level_eng_cut(0)
-      elseif val == 2 then
-        norns.audio.level_eng_cut(1)
-        norns.audio.level_adc_cut(0)
-      elseif val == 3 then
-        norns.audio.level_eng_cut(1)
-        norns.audio.level_adc_cut(1)
-      end
-    elseif param == 9 then
+      val = val % 4
+      norns.audio.level_adc_cut(val == 0 and 0 or 1)
+      norns.audio.level_eng_cut(val == 3 and 1 or 0)
+    elseif param == #param_ids then
       self.sc_clear_region(playhead, value)
+    elseif param == 2 then
+      softcut[param_ids[param]](playhead, value % 3)
     else
       softcut[param_ids[param]](playhead, value)
     end

@@ -6,7 +6,6 @@ midi_out = function ( self, x, y, frame, grid )
   self.x = x
   self:spawn(self.ports[self.name])
   self.notes_off_metro.event = self.all_notes_off(channel)
-  local note = 'C'
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
   local knob = util.clamp( self:listen( self.x + 2, self.y ) or 0, 1, #self.chars )
   local val = util.clamp( self:listen( self.x + 3, self.y ) or 0, 0, #self.chars )

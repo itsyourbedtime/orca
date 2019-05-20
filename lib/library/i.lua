@@ -9,7 +9,7 @@ I = function (self, x, y, frame, grid)
   if b < a then 
     a,b = b,a 
   end
-  val = util.clamp(( frame  % math.ceil(b)) + 1, a, b )
+  val = util.clamp(( frame  % (b + 1)), a, b )
   if self:active() then
     self:spawn(self.ports[self.name])
     grid[self.y + 1][self.x] = self.chars[val]

@@ -13,9 +13,7 @@ midi_out = function ( self, x, y, frame, grid )
   local note = self.chars[note_in]
   if l == string.upper(l) then note = string.upper(note) end
   local transposed = self.transpose( note, octave )
-  local oct = transposed[4]
-  local n = transposed[1]
-  local velocity = math.floor(( vel / 16 ) * 127 )
+  local n, oct, velocity = transposed[1], transposed[4], math.floor(( vel / 16 ) * 127 )
   if self.banged( self.x, self.y ) then
     self.midi_out_device:note_on( n, velocity, channel )
     self:add_note_mono( channel, n, length )
