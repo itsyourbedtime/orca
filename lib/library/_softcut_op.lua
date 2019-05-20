@@ -8,7 +8,6 @@ _softcut_op = function ( self, x, y, frame, grid)
     grid.sc_ops[self:id(self.x,self.y)] = self.sc_ops
     grid[self.y][self.x + 1] = grid.sc_ops[self:id(self.x,self.y)]
   end
-  
   self:spawn( self.ports[self.name] )
   local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local rec = util.clamp( self:listen( self.x + 2, self.y ) or 0, 0, #self.chars ) -- rec 0 - off 1 - z on + rec_level
@@ -25,22 +24,12 @@ _softcut_op = function ( self, x, y, frame, grid)
     grid[self.y][self.x + 2] = 'null'
     softcut.buffer_clear_region( 0, #self.chars )
   end
-  if rec > 0 then  
-    if rec < #self.chars then 
-      softcut.pre_level( playhead, rec / #self.chars) 
-    else 
-      softcut.pre_level( playhead, 1) 
-    end
-    softcut.rec_level( playhead, rec / #self.chars ) 
-  end
-  if play > 0 then
-    softcut.play( playhead, 1)
-    softcut.rec( playhead, rec > 0 and 1 or 0 )
-    softcut.rate( playhead, pl == 2 and -rate or rate )
-    softcut.level( playhead, level )
-  else
-    softcut.play(playhead, 0)
-  end
+  softcut.pre_level( playhead, rec / #self.chars) 
+  softcut.rec_level( playhead, rec / #self.chars ) 
+  softcut.play( playhead, play > 0 and 1 or 0 )
+  softcut.rec( playhead, rec > 0 and 1 or 0 )
+  softcut.rate( playhead, pl == 2 and -rate or rate )
+  softcut.level( playhead, level )
   if self.banged(self.x, self.y) then
     if play ~= 0 then
       softcut.position( playhead, pos )
