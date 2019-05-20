@@ -46,10 +46,10 @@ local field = {
     vars = {},
     active_notes = {},
     grid = {},
-    sc_ops = {},
+    sc_ops = {},  
+    sc_ops_pos = {0, 0, 0, 0, 0, 0},
     etc = {}
   },
-  sc_ops_pos = {0, 0, 0, 0, 0, 0},
 }
 
 

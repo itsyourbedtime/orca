@@ -20,7 +20,7 @@ _softcut_op = function ( self, x, y, frame, grid)
   local level = util.round( l / #self.chars, 0.1 )
   local rate = util.round(( r / #self.chars) * 2, 0.1 )
   local pl = play % 3 
-  grid.sc_ops_pos[playhead] = pos
+  grid.sc_ops_pos[playhead] = pos 
   if grid[self.y][self.x + 2] == '*' then
     grid[self.y][self.x + 2] = 'null'
     softcut.buffer_clear_region( 0, #self.chars )
