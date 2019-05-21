@@ -322,8 +322,8 @@ function orca:move_cell(x,y)
 end
 
 function orca:move(x,y)
-  local a = self.y + y
-  local b = self.x + x
+  local a = util.clamp(self.y + y, 1, orca.YSIZE)
+  local b = util.clamp(self.x + x, 1, orca.XSIZE)
   local collider = field.cell[a][b]
   -- collide rules
   if collider ~= 'null'  then
