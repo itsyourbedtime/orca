@@ -2,42 +2,24 @@
 -- v0.9.1 @its_your_bedtime
 -- llllllll.co/t/orca
 
-function unrequire(name)
-  package.loaded[name] = nil
-  _G[name] = nil
-end
-
-unrequire("timber/lib/timber_engine")
-
-engine.name = "Timber"
-
-local Timber = require "timber/lib/timber_engine"
-local NUM_SAMPLES = 36
-local keyb = hid.connect()
-local keycodes = include("lib/keycodes")
-local transpose_table = include("lib/transpose")
-local operators = include("lib/library")
 local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local beatclock = require 'beatclock'
+local keycodes = include("lib/keycodes")
+local transpose_table = include("lib/transpose")
+local operators = include("lib/library")
+local orca_softcut = include("lib/sc")
+local orca_engine = include("lib/engine")
+local keyb = hid.connect()
+local g = grid.connect()
 local keyinput = ""
-local bar = false
-local help = false
-local map = false
-local x_index = 1
-local y_index = 1
-local dot_density = 1
-local field_offset_y = 0
-local field_offset_x = 0
-local selected_area_y = 1
-local selected_area_x = 1
-local bounds_x = 25
-local bounds_y = 8
-local frame = 1
-local copy_buffer = {}
-copy_buffer.cell = {}
-
+local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
+local selected_area_y, selected_area_x = 1, 1
+local bounds_x, bounds_y = 25, 8
+local bar, help, map = false
+local dot_density, frame = 1, 1
+local copy_buffer = {cell = {}}
 local field = { 
   project = 'untitled',
   active = {},
@@ -51,7 +33,6 @@ local field = {
     etc = {}
   },
 }
-
 
 local orca = {
   XSIZE = 101,
@@ -68,41 +49,7 @@ local orca = {
   chars = include("lib/chars"),
   notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"},
 }
-g = grid.connect()
 
-local function load_folder(file, add)
-  local sample_id = 0
-  if add then
-    for i = NUM_SAMPLES - 1, 0, -1 do
-      if Timber.samples_meta[i].num_frames > 0 then
-        sample_id = i + 1
-        break
-      end
-    end
-  end
-  local split_at = string.match(file, "^.*()/")
-  local folder = string.sub(file, 1, split_at)
-  file = string.sub(file, split_at + 1)
-  local found = false
-  for k, v in ipairs(Timber.FileSelect.list) do
-    if v == file then found = true end
-    if found then
-      if sample_id > 35 then
-        print("Max files loaded")
-        break
-      end
-      -- Check file type
-      local lower_v = v:lower()
-      if string.find(lower_v, ".wav") or string.find(lower_v, ".aif") or string.find(lower_v, ".aiff") then
-        params:set("sample_" .. sample_id, folder .. v)
-        params:set('amp_env_sustain_' .. sample_id, 0)
-        sample_id = sample_id + 1
-      else
-        print("Skipped", v)
-      end
-    end
-  end
-end
 
 function orca.sc_clear_region(p, l)
   softcut.buffer_clear_region(field.cell.sc_ops_pos[p], l)
@@ -200,9 +147,9 @@ function orca.cut_area()
 end
 
 function orca.paste_area()
-  for y=0, #copy_buffer.cell do
+  for y=0, #copy_buffer.cell - 1 do
     for x = 0, #copy_buffer.cell[y] do
-      orca:erase(util.clamp(x_index + x, 1, orca.XSIZE), util.clamp(y_index + y, 1, orca.YSIZE))
+      orca:erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
       field.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
       orca:add_to_queue(x_index + x, y_index + y)
     end
@@ -247,6 +194,8 @@ function orca.is_op(x,y)
 end
 
 function orca.banged(x,y)
+  local x = util.clamp(x, 0, orca.XSIZE)
+  local y = util.clamp(y, 0, orca.YSIZE)
   if field.cell[y][x - 1] == '*' then
     field.cell.params[y][x].lit = false
     return true
@@ -401,18 +350,20 @@ end
 function orca:clean_ports(t, x1, y1)
   field.cell.params[self.y][self.x].lit = false
   local defaults = {lit = false, lit_out = false, lock = false, cursor = false, dot = false}
-  for i=1,#t do
-    if t[i] ~= nil then
-      for l=1,#t[i]-2 do
-        local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,orca.XSIZE)
-        local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,orca.YSIZE)
-        if field.cell[y][x] ~= nil then
-          if t[i][l + 2] ~= nil then
-            field.cell.params[y][x].lit_out = false
-            field.cell.params[y][x].dot = false
-            field.cell.params[y][x].lock = false
-            if self.is_op(x,y) then 
-              self:add_to_queue(x, y) 
+  if t ~= nil then
+    for i=1,#t do
+      if t[i] ~= nil then
+        for l=1,#t[i]-2 do
+          local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l], 1, orca.XSIZE)
+          local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1], 1, orca.YSIZE)
+          if field.cell[y][x] ~= nil then
+            if t[i][l + 2] ~= nil then
+              field.cell.params[y][x].lit_out = false
+              field.cell.params[y][x].dot = false
+              field.cell.params[y][x].lock = false
+              if self.is_op(x,y) then 
+                self:add_to_queue(x, y) 
+              end
             end
           end
         end
@@ -446,102 +397,46 @@ function init()
       table.insert(field.cell.params[y], {lit = false, lit_out = false, lock = false, cursor = false, dot = false})
     end
   end
+  
   -- grid 
   for i = 1, g.rows do
     field.cell.grid[i] = {}
   end
   
-  params:add_trigger('save_p', "save project" )
+  -- redraw metro
+  redraw_metro = metro.init(function(stage) redraw() g:redraw() end, 1/30)
+  redraw_metro:start()
+  -- ops exec 
+  orca.clk.on_step = function() orca:exec_queue() end,
+  orca.clk:add_clock_params()
+  orca.clk:start()
+
+  -- params
+  params:set("bpm", 120)
+  params:add_trigger('save_p', "Save project" )
   params:set_action('save_p', function(x) textentry.enter(orca.save_project,  field.project) end)
-  params:add_trigger('load_p', "load project" )
+  params:add_trigger('load_p', "Load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
   params:add_trigger('new', "new" )
   params:set_action('new', function(x) init() end)
   params:add_separator()
-  params:add_control("EXT", "softcut ext level", controlspec.new(0, 1, 'lin', 0, 1, ""))
+  params:add_control("EXT", "Softcut ext level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("EXT", function(x) audio.level_adc_cut(x) end)
-  params:add_control("ENG", "softcut eng level", controlspec.new(0, 1, 'lin', 0, 1, ""))
+  params:add_control("ENG", "Softcut eng level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
   params:add_separator()
-  softcut.reset()
-  audio.level_cut(1)
-  audio.level_adc_cut(1)
-  audio.level_eng_cut(1)
-  for i=1,orca.max_sc_ops do
-    softcut.level(i,1)
-    softcut.level_input_cut(1, i, 1.0)
-    softcut.level_input_cut(2, i, 1.0)
-    softcut.pan(i, 0.5)
-    softcut.play(i, 0)
-    softcut.rate(i, 1)
-    softcut.loop_start(i, 0)
-    softcut.loop_end(i, #orca.chars + 1)
-    softcut.loop(i, 0)
-    softcut.rec(i, 0)
-    softcut.fade_time(i,0.02)
-    softcut.level_slew_time(i,0.01)
-    softcut.rate_slew_time(i,0.01)
-    softcut.rec_level(i, 1)
-    softcut.pre_level(i, 1)
-    softcut.position(i, 0)
-    softcut.buffer(i,1)
-    softcut.enable(i, 1)
-    softcut.filter_dry(i, 1)
-    softcut.filter_fc(i, 0)
-    softcut.filter_lp(i, 0)
-    softcut.filter_bp(i, 0)
-    softcut.filter_rq(i, 0)
-  end
-  redraw_metro = metro.init(function(stage) redraw() g:redraw() end, 1/30)
-  redraw_metro:start()
-  orca.clk.on_step = function() orca:exec_queue() end
-  orca.clk:add_clock_params()
-  params:set("bpm", 120)
-  orca.clk:start()
-  params:add_separator()
-  params:add_trigger('load_f','Load Folder')
-  params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
-  if file ~= "cancel" then load_folder(file, add) end end) end)
-  Timber.options.PLAY_MODE_BUFFER_DEFAULT = 3
-  Timber.options.PLAY_MODE_STREAMING_DEFAULT = 3
-  params:add_separator()
-  Timber.add_params()
-  for i = 0, NUM_SAMPLES - 1 do
-    local extra_params = {
-      {type = "option", id = "launch_mode_" .. i, name = "Launch Mode", options = {"Gate", "Toggle"}, default = 1, action = function(value)
-        Timber.setup_params_dirty = true
-      end},
-    }
-    params:add_separator()
-    Timber.add_sample_params(i, true, extra_params)
-    params:set('play_mode_' .. i, 4)
-    params:set('amp_env_sustain_' .. i, 0)
-  end
+  orca_softcut.init()
+  orca_engine.init()
+  
+  -- midi
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
   orca.midi_out_device.event = function() end
-  params:add{type = "number", id = "midi_out_device", name = "midi out device",
-  min = 1, max = 4, default = 1,
-  action = function(value) orca.midi_out_device = midi.connect(value) end}
-end
-
-local function get_key(code, val, shift)
-  if keycodes.keys[code] ~= nil and val == 1 then
-    if (shift) then
-      if keycodes.shifts[code] ~= nil then
-        return(keycodes.shifts[code])
-      else
-        return(keycodes.keys[code])
-      end
-    else
-      return(string.lower(keycodes.keys[code]))
-    end
-  elseif keycodes.cmds[code] ~= nil and val == 1 then
-    if (code == hid.codes.KEY_ENTER) then
-      -- enter 
-      --operators[string.upper(field.cell[y_index][x_index])](self, x_index, y_index, frame, field.cell) 
-    end
-  end
+  params:add{
+    type = "number", id = "midi_out_device", 
+    name = "midi out device", min = 1, max = 4, default = 1,
+    action = function(value) orca.midi_out_device = midi.connect(value) end 
+  }
 end
 
 local function update_offset()
@@ -554,6 +449,20 @@ local function update_offset()
       field_offset_y =  util.clamp(field_offset_y + 1,0,orca.YSIZE - bounds_y) 
     elseif y_index < bounds_y + (field_offset_y - 7)  then 
     field_offset_y = util.clamp(field_offset_y - 1,0,orca.YSIZE - bounds_y)
+  end
+end
+
+local function get_key(code, val, shift)
+  if keycodes.keys[code] ~= nil and val == 1 then
+    if shift then
+      if keycodes.shifts[code] ~= nil then
+        return keycodes.shifts[code]
+      else
+        return keycodes.keys[code]
+      end
+    else
+      return string.lower(keycodes.keys[code])
+    end
   end
 end
 
@@ -592,8 +501,7 @@ function keyb.event(typ, code, val)
     dot_density = util.clamp(dot_density + 1, 1, 8)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
   elseif (code == hid.codes.KEY_ESC and val == 1) then
-    selected_area_y = 1
-    selected_area_x = 1
+    selected_area_y, selected_area_x = 1, 1
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
   elseif (code == hid.codes.KEY_LEFTALT and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTALT and val == 1) then
@@ -651,7 +559,7 @@ function keyb.event(typ, code, val)
         field.cell[y_index][x_index] = keyinput
         orca:add_to_queue(x_index,y_index)
       end
-    end
+    
     if ctrl then 
       if code == 45 then -- cut
         orca.cut_area()
@@ -661,6 +569,7 @@ function keyb.event(typ, code, val)
         orca.paste_area()
       end
     end
+  end
   end
 end
 
@@ -765,7 +674,7 @@ local function draw_bar()
   screen.font_size(6)
   screen.text(frame .. 'f')
   screen.stroke()
-  screen.move(40,63)
+  screen.move(44,63)
   screen.text_center(field.cell[y_index][x_index] and orca.info.names[string.upper(field.cell[y_index][x_index])] or 'empty')
   screen.stroke()
   screen.move(75,63)
@@ -786,13 +695,13 @@ local function draw_help()
     screen.fill()
     if bar then
       screen.level(15)
-      screen.move(36,53)
+      screen.move(40,53)
       screen.line_rel(4,4)
-      screen.move(44,53)
+      screen.move(48,53)
       screen.line_rel(-4,4)
       screen.stroke()
       screen.level(0)
-      screen.move(37,54)
+      screen.move(41,54)
       screen.line_rel(6,0)
       screen.stroke()
     end
@@ -830,8 +739,7 @@ local function draw_map()
         screen.level(1)
         screen.rect(((x / orca.XSIZE ) * 114) + 5, ((y / orca.YSIZE) * 48) + 7, 3,3 )
         screen.fill()
-      end
-      if field.cell.params[y][x].lit then
+      elseif field.cell.params[y][x].lit then
         screen.level(4)
         screen.rect(((x / orca.XSIZE ) * 114) + 5, ((y / orca.YSIZE) * 48) + 7, 3,3 )
         screen.fill()

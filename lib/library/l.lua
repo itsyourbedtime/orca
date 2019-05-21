@@ -24,7 +24,7 @@ L = function (self, x, y, frame, grid)
         grid.params[self.y][(self.x + i)].lit = false
         if self.is_op(self.x + i, self.y) then 
           self:remove_from_queue(self.x + i, self.y) 
-          self:clean_ports(orca.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
+          self:clean_ports(self.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
         end
       end
     end

@@ -6,6 +6,7 @@ grid_write = function ( self, x, y, frame, _grid )
   local col = util.clamp(self:listen( self.x + 1, self.y ) or 0 % g.cols, 0, g.cols)
   local row = util.clamp(self:listen( self.x + 2, self.y ) or 0 % g.rows, 0, g.rows)
   local val = util.clamp(self:listen( self.x + 3, self.y ) or 0 % 16, 0, 16)
+  val = _grid[self.y][self.x + 3]  == '*' and 15 or val
   if self.banged( self.x, self.y ) then
     for y = 1, g.rows do 
       for x = 1, g.cols do
