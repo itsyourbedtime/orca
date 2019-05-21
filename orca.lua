@@ -11,7 +11,7 @@ local transpose_table = include("lib/transpose")
 local operators = include("lib/library")
 local orca_softcut = include("lib/sc")
 local orca_engine = include("lib/engine")
-local keyb = hid.connect()
+local keyb = hid.connect(2)
 local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x = 1, 1
@@ -19,6 +19,7 @@ local bounds_x, bounds_y = 25, 8
 local bar, help, map = false
 local dot_density, frame = 1, 1
 local copy_buffer = {cell = {}}
+local keyb_layout = 1 -- PC
 g = grid.connect()
 local field = { 
   project = 'untitled',
@@ -429,6 +430,11 @@ function init()
   orca.clk:add_clock_params()
   orca.clk:start()
   -- params
+  params:add{
+    type = "number", id = "keyb_layout", 
+    name = "Keyboard", min = 1, max = 2, default = 1,
+    action = function(value) keyb_layout = value end 
+  }
   params:set("bpm", 120)
   params:add_separator()
   params:add_trigger('save_p', "< Save project" )
@@ -488,14 +494,22 @@ end
 
 function keyb.event(typ, code, val)
   local menu = norns.menu.status()
+  local CTRLCMD 
+  if (keyb_layout == 2) then
+    CTRLCMDLEFT = hid.codes.KEY_LEFTMETA
+    CTRLCMDRIGHT = hid.codes.KEY_RIGHTMETA
+  else
+    CTRLCMDLEFT = hid.codes.KEY_LEFTCTRL
+    CTRLCMDRIGHT = hid.codes.KEY_RIGHTCTRL
+  end
    --print("hid.event ", typ, code, val)
   if ((code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 1 or val == 2)) then
     shift  = true;
   elseif (code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 0) then
     shift = false;
-    elseif ((code == hid.codes.KEY_LEFTCTRL or code == hid.codes.KEY_RIGHTCTRL) and (val == 1 or val == 2)) then
+    elseif ((code == CTRLCMDLEFT or code == CTRLCMDRIGHT) and (val == 1 or val == 2)) then
     ctrl = true
-  elseif ((code == hid.codes.KEY_LEFTCTRL or code == hid.codes.KEY_RIGHTCTRL) and val == 0) then
+  elseif ((code == CTRLCMDLEFT or code == CTRLCMDRIGHT) and val == 0) then
     ctrl = false
   elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
     orca:erase(x_index,y_index)
