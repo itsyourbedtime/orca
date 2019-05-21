@@ -20,7 +20,7 @@ local bar, help, map = false
 local dot_density, frame = 1, 1
 local copy_buffer = {cell = {}}
 g = grid.connect()
-local field = { 
+field = { 
   project = 'untitled',
   active = {},
   cell = {
@@ -34,9 +34,9 @@ local field = {
   },
 }
 
-local orca = {
+orca = {
   XSIZE = 101,
-  YSIZE = 33,
+  YSIZE = 41,
   bounds_x = bounds_x,
   bounds_y = bounds_y,
   music = require 'musicutil',
@@ -98,7 +98,7 @@ end
 
 function orca.load_project(pth)
   if string.find(pth, 'orca') ~= nil then
-    saved = tab.load(pth)
+    local saved = tab.load(pth)
     if saved ~= nil then
       print("data found")
       field = saved
@@ -171,22 +171,16 @@ end
 
 function orca:listen(x,y)
   local value = string.lower(tostring(field.cell[y][x]))
-  if value == '0' then 
-    return 0
-  elseif value ~= nil or value ~= 'null' then 
-    return tab.key(orca.chars, value)
-  else
-    return false
-  end
+  return (value ~= nil and value ~= 'null') and tab.key(orca.chars, value) or value == 0 and 0 or false
 end 
 
 function orca.is_op(x,y)
-  local x = util.clamp(x,0,orca.XSIZE)
-  local y = util.clamp(y,0,orca.YSIZE)
-  if (field.cell[y][x] ~= 'null' and field.cell[y][x] ~= nil) then
-    if orca.list[string.upper(field.cell[y][x])] and field.cell.params[y][x].lock == false then
-      return true
-    end
+  --local x = util.clamp(x, 1, orca.XSIZE)
+  --local y = util.clamp(y, 1, orca.YSIZE)
+  local cell = field.cell[y][x]
+  local lock = field.cell.params[y][x].lock
+  if orca.list[string.upper(cell)] and lock == false then
+    return true
   else
     return false
   end
@@ -216,9 +210,10 @@ function orca.banged(x,y)
 end
 
 function orca:active()
-  if field.cell[self.y][self.x] == string.upper(field.cell[self.y][self.x]) then
+  local cell = field.cell[self.y][self.x]
+  if cell == string.upper(cell) then
     return true
-  elseif field.cell[self.y][self.x] == string.lower(field.cell[self.y][self.x]) then
+  elseif cell == string.lower(cell) then
     return false
   end
 end
@@ -239,12 +234,12 @@ end
 function orca:cleanup()
   local cell = field.cell[self.y][self.x]
   local params = field.cell.params
-  local ops_to_clear = {'P', 'p', 'L', 'l', 'T', 't', 'G', 'g', 'K', 'k'}
-  local offset = (cell == 'P' or cell == 'p') and 1 or 0 
+  local ops_to_clear = {P = true , p = true , L = true, l = true, T = true, t = true, G = true, g = true, K = true, k = true}
   params[self.y][self.x] = {lit = false, lit_out = false, lock = false, cursor = false, dot = false}
   if orca.is_op(self.x,self.y) then self:clean_ports(orca.ports[string.upper(field.cell[self.y][self.x])]) end
   if field.cell[self.y + 1][self.x] == '*' then field.cell[self.y + 1][self.x] = 'null' end
-  if tab.contains(ops_to_clear, cell) then
+  if ops_to_clear[cell] then
+    local offset = (cell == 'P' or cell == 'p') and 1 or 0 
     local seqlen = orca:listen(self.x - 1, self.y) or 1
     for i=0, seqlen do
       params[self.y + offset][(self.x + i)] = {lit = false, lit_out = false, lock = false, cursor = false, dot = false}
@@ -282,9 +277,12 @@ function orca:id(x, y)
 end
 
 function orca:add_to_queue(x,y)
-  x = util.clamp(x,1,orca.XSIZE)
-  y = util.clamp(y,1,orca.YSIZE)
-  field.active[orca:id(x,y)] = {x, y, field.cell[y][x]}
+  local x = util.clamp(x, 0, orca.XSIZE)
+  local y = util.clamp(y, 0, orca.YSIZE)
+  local id = orca:id(x ,y)
+  if x ~= nil and y ~= nil then
+    field.active[id] = {x, y, field.cell[y][x]}
+  end
 end
 
 function orca.removeKey(t, k_to_remove)
@@ -306,8 +304,8 @@ function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
     if (k ~= nil or v ~= nil) then 
-      local x = util.clamp(field.active[k][1], 0, orca.XSIZE) 
-      local y = util.clamp(field.active[k][2], 0, orca.YSIZE)
+      local x = util.clamp(field.active[k][1], 1, orca.XSIZE) 
+      local y = util.clamp(field.active[k][2], 1, orca.YSIZE)
       local op = field.active[k][3]
       if (string.upper(op) == orca.list[string.upper(op)] and orca.is_op(x,y)) then
         operators[string.upper(op)](self, x, y, frame, field.cell) 
@@ -323,8 +321,8 @@ function orca:move_cell(x,y)
 end
 
 function orca:move(x,y)
-  a = self.y + y
-  b = self.x + x
+  local a = self.y + y
+  local b = self.x + x
   local collider = field.cell[a][b]
   -- collide rules
   if collider ~= 'null'  then
@@ -345,15 +343,33 @@ function orca:move(x,y)
   end
 end
 
+
 function orca:clean_ports(t, x1, y1)
+  field.cell.params[self.y][self.x].lit = false
   if t ~= nil then
     for i=1,#t do
-      for l=1,#t[i]-2 do
-        local x = util.clamp(x1 ~= nil and x1 + t[i][l] or self.x + t[i][l], 1, orca.XSIZE)
-        local y = util.clamp(y1 ~= nil and y1 + t[i][l + 1] or self.y + t[i][l + 1], 1, orca.YSIZE)
-        local cell = field.cell.params[y][x]
-        cell.lit_out, cell.dot, cell.lock = false, false, false
-        if self.is_op(x,y) then self:add_to_queue(x, y) end
+      if t[i] ~= nil then
+        for l=1,#t[i]-2 do
+          local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,orca.XSIZE)
+          local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,orca.YSIZE)
+          if field.cell[y][x] ~= nil then
+            if t[i][l + 2] == 'output' then
+              field.cell.params[y][x].lit_out = false
+              field.cell.params[y][x].dot_port = false
+            elseif t[i][l + 2] == 'input' then
+              field.cell.params[y][x].dot_port = false
+            elseif t[i][l + 2] == 'input_op' then
+              field.cell.params[y][x].lock = false
+              field.cell.params[y][x].dot_port = false
+              if self.is_op(x,y) then self:add_to_queue(x, y) end
+            elseif t[i][l + 2] == 'output_op' then
+              field.cell.params[y][x].lock = false
+              field.cell.params[y][x].dot_port = false
+              field.cell.params[y][x].lit_out = false
+              if self.is_op(x,y) then self:add_to_queue(x, y) end
+            end
+          end
+        end
       end
     end
   end
@@ -362,13 +378,32 @@ end
 function orca:spawn(t)
   for i=1,#t do
     for l= 1, #t[i] - 2 do
-      local x = util.clamp(self.x + t[i][l], 1, orca.XSIZE)
-      local y = util.clamp(self.y + t[i][l+1], 1, orca.YSIZE)
+      local x = util.clamp(self.x + t[i][l],0,orca.XSIZE)
+      local y = util.clamp(self.y + t[i][l+1],0,orca.YSIZE)
+      local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
+      if existing == orca.list[string.upper(existing)] then
+        orca:clean_ports(orca.ports[existing], x,y)
+      end
+      -- draw frame
       field.cell.params[self.y][self.x].lit = true
-      field.cell.params[y][x].dot = true
-      field.cell.params[y][x].lit_out = port_type == 'output' or port_type == 'output_op' and true or false
-      field.cell.params[y][x].lock = port_type == 'output_op' or port_type == 'input_op' and true or false
+      -- draw inputs / outputs
+      if field.cell[y][x] ~= nil then
+        if port_type == 'output' then
+          field.cell.params[y][x].lit_out = true
+          field.cell.params[y][x].dot_port = true
+        elseif port_type == 'input' then
+          field.cell.params[y][x].dot_port = true
+        elseif port_type == 'input_op' then
+          field.cell.params[y][x].lock = true
+          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].lit = false
+        elseif port_type == 'output_op' then
+          field.cell.params[y][x].lit_out = true
+          field.cell.params[y][x].lock = true
+          field.cell.params[y][x].dot_port = true
+        end
+      end
     end
   end
 end
@@ -450,6 +485,7 @@ local function get_key(code, val, shift)
 end
 
 function keyb.event(typ, code, val)
+  local menu = norns.menu.status()
    --print("hid.event ", typ, code, val)
   if ((code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 1 or val == 2)) then
     shift  = true;
@@ -462,17 +498,33 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
     orca:erase(x_index,y_index)
   elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
-    if shift then selected_area_x = util.clamp(selected_area_x - 1,1,orca.XSIZE) else x_index = util.clamp(x_index -1,1,orca.XSIZE) end
-    update_offset()
+    if not menu then
+      if shift then selected_area_x = util.clamp(selected_area_x - 1,1,orca.XSIZE) else x_index = util.clamp(x_index -1,1,orca.XSIZE) end
+      update_offset()
+    elseif menu then
+      norns.enc(3, shift and -20 or -2)
+    end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
-    if shift then selected_area_x = util.clamp(selected_area_x + 1,1,orca.XSIZE) else x_index = util.clamp(x_index + 1,1,orca.XSIZE) end
-    update_offset()
+    if not menu then
+      if shift then selected_area_x = util.clamp(selected_area_x + 1,1,orca.XSIZE) else x_index = util.clamp(x_index + 1,1,orca.XSIZE) end
+      update_offset()
+    elseif menu then
+      norns.enc(3, shift and 20 or 2)
+    end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
-    if shift then selected_area_y = util.clamp(selected_area_y + 1,1,orca.YSIZE) else y_index = util.clamp(y_index + 1,1,orca.YSIZE) end
-    update_offset()
+    if not menu then
+      if shift then selected_area_y = util.clamp(selected_area_y + 1,1,orca.YSIZE) else y_index = util.clamp(y_index + 1,1,orca.YSIZE) end
+      update_offset()
+    elseif menu then
+      norns.enc(2, shift and 104 or 2)
+    end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
-    if shift then selected_area_y = util.clamp(selected_area_y - 1,1,orca.YSIZE) else y_index = util.clamp(y_index - 1 ,1,orca.YSIZE) end
-    update_offset()
+    if not menu then
+      if shift then selected_area_y = util.clamp(selected_area_y - 1,1,orca.YSIZE) else y_index = util.clamp(y_index - 1 ,1,orca.YSIZE) end
+      update_offset()
+    elseif menu then
+     norns.enc(2, shift and -104 or -2)
+    end
   elseif (code == hid.codes.KEY_TAB and val == 1) then
     bar = not bar
   elseif (code == 41 and val == 1) then
@@ -483,9 +535,16 @@ function keyb.event(typ, code, val)
   elseif (code == 27 and val == 1) then
     dot_density = util.clamp(dot_density + 1, 1, 8)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
-  elseif (code == hid.codes.KEY_ESC and val == 1) then
-    selected_area_y, selected_area_x = 1, 1
+  elseif (code == hid.codes.KEY_ESC and val == 1 ) then
+    if not menu then
+      selected_area_y, selected_area_x = 1, 1
+    elseif menu then
+      norns.key(2, 1)
+    end
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
+    if menu then
+      norns.key(3, 1)
+    end
   elseif (code == hid.codes.KEY_LEFTALT and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTALT and val == 1) then
   elseif (code == hid.codes.KEY_DELETE and val == 1) then
@@ -565,15 +624,15 @@ local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
   for y= 1, bounds_y do
-    for x = 1,bounds_x do
+    for x = 1, bounds_x do
       local y = y + field_offset_y
       local x = x + field_offset_x
       local f = field.cell.params[y][x]
       local cell = field.cell[y][x]
       if f.lit then draw_op_frame(x - field_offset_x,y - field_offset_y, 4) end
       if f.lit_out or f.cursor then draw_op_frame(x - field_offset_x,y - field_offset_y, 1) end
-      if cell ~= 'null' then
-        screen.level( orca.is_op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out ) and 12 or f.dot and 9 or 3 )
+      if cell ~= 'null' or cell ~= nil then
+        screen.level( orca.is_op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out or f.dot) and 12 or 2 )
       elseif cell == 'null' then
         screen.level( f.dot and 9 or 1)
       end
@@ -605,24 +664,24 @@ local function draw_cursor(x,y)
   screen.level(cell == 'null' and 2 or 15)
   screen.rect(x_pos, y_pos, 5, 8)
   screen.fill()
-  screen.move(x_pos + (cell ~= 'null' and 1 or 0), y_pos + 6)
+  screen.move(x_pos + ((cell ~= 'null' ) and 1 or 0), y_pos + 6)
   screen.level(cell == 'null' and 14 or 1)
   screen.font_face(cell == 'null' and 0 or 25)
   screen.font_size(cell == 'null' and 8 or 6)
-  screen.text(cell == 'null' and '@' or cell)
+  screen.text((cell == 'null' or cell == nil) and '@' or cell)
 end
 
 local function draw_bar()
   screen.level(0)
-  screen.rect(0,56,128,8)
+  screen.rect(0, 56, 128, 8)
   screen.fill()
   screen.level(15)
-  screen.move(2,63)
+  screen.move(2, 63)
   screen.font_face(25)
   screen.font_size(6)
   screen.text(frame .. 'f')
   screen.stroke()
-  screen.move(44,63)
+  screen.move(44, 63)
   screen.text_center(field.cell[y_index][x_index] and orca.info.names[string.upper(field.cell[y_index][x_index])] or 'empty')
   screen.stroke()
   screen.move(75,63)
@@ -636,21 +695,21 @@ end
 local function draw_help()
   if orca.info.description[string.upper(field.cell[y_index][x_index])] then
     screen.level(15)
-    screen.rect(0,29,128,25)
+    screen.rect(0, 29, 128, 25)
     screen.fill()
     screen.level(0)
-    screen.rect(1,30,126,23)
+    screen.rect(1, 30, 126, 23)
     screen.fill()
     if bar then
       screen.level(15)
-      screen.move(40,53)
-      screen.line_rel(4,4)
-      screen.move(48,53)
-      screen.line_rel(-4,4)
+      screen.move(40, 53)
+      screen.line_rel(4, 4)
+      screen.move(48, 53)
+      screen.line_rel(-4, 4)
       screen.stroke()
       screen.level(0)
-      screen.move(41,54)
-      screen.line_rel(6,0)
+      screen.move(41, 54)
+      screen.line_rel(6, 0)
       screen.stroke()
     end
     screen.font_face(25)
@@ -659,7 +718,7 @@ local function draw_help()
       local s = orca.info.description[string.upper(field.cell[y_index][x_index])]
       local description = tab.split(s, ' ')
       screen.level(9)
-      screen.move(3,38)
+      screen.move(3, 38)
       local y = 40
       for i = 1, #description do
         screen.text(description[i] .. " ")

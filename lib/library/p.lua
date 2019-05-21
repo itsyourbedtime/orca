@@ -8,20 +8,22 @@ P = function (self, x, y, frame, grid)
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
   if self:active() then
     self:clean_ports(self.ports[self.name], self.x, self.y)
-    for i = 1,length do
-      grid.params[self.y + 1][(self.x + i) - 1 ].dot = true
-      grid.params[self.y + 1][(self.x + i) - 1 ].lock = true
+    for i = 1, #self.chars do
+      if i <= length then
+        grid.params[self.y + 1][(self.x + i) - 1 ].dot = true
+        grid.params[self.y + 1][(self.x + i) - 1 ].lock = true
+      else
+        if grid[self.y][(self.x + i)] == self.name then 
+          break
+        else
+          grid.params[self.y + 1][(self.x + i)].dot = false
+          grid.params[self.y + 1][(self.x + i) ].lock = false
+        end
+      end
     end
     self.ports[self.name][4] = {((pos or 1)  % (length + 1)) - 1, 1, 'output_op'}
     self:spawn(self.ports[self.name])
     grid[self.y + 1][(self.x + ((pos or 1)  % (length + 1))) - 1] = val
-  end
-  -- cleanups
-  for i= length, #self.chars do
-    if grid.params[self.y + 1][(self.x + i)].dot then
-      grid.params[self.y + 1][(self.x + i)].dot = false
-      grid.params[self.y + 1][(self.x + i) ].lock = false
-    end
   end
 end
 
