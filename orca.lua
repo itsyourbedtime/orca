@@ -259,7 +259,7 @@ function orca:cleanup()
   end
 end
 
-function orca:erase(x,y)
+function orca:erase(x, y)
   self.x = x
   self.y = y
   if self:active() then self:cleanup() end
@@ -280,7 +280,7 @@ function orca:add_to_queue(x,y)
   local x = util.clamp(x, 0, orca.XSIZE)
   local y = util.clamp(y, 0, orca.YSIZE)
   local id = orca:id(x ,y)
-  if x ~= nil and y ~= nil then
+  if field.cell[y][x] ~= 'null' and orca.is_op(x, y) then
     field.active[id] = {x, y, field.cell[y][x]}
   end
 end
@@ -297,15 +297,16 @@ end
 function orca:remove_from_queue(x,y)
   self.x = x
   self.y = y
-  field.active = orca.removeKey(field.active, orca:id(self.x,self.y))
+  local id = orca:id(self.x,self.y)
+  field.active = orca.removeKey(field.active, id)
 end
 
 function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k,v in pairs(field.active) do
-    if (k ~= nil or v ~= nil) then 
-      local x = util.clamp(field.active[k][1], 1, orca.XSIZE) 
-      local y = util.clamp(field.active[k][2], 1, orca.YSIZE)
+    if v ~= nil then 
+      local y = field.active[k][2]
+      local x = field.active[k][1]
       local op = field.active[k][3]
       if (string.upper(op) == orca.list[string.upper(op)] and orca.is_op(x,y)) then
         operators[string.upper(op)](self, x, y, frame, field.cell) 
@@ -345,28 +346,32 @@ end
 
 
 function orca:clean_ports(t, x1, y1)
-  field.cell.params[self.y][self.x].lit = false
   if t ~= nil then
     for i=1,#t do
       if t[i] ~= nil then
         for l=1,#t[i]-2 do
-          local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l],1,orca.XSIZE)
-          local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1],1,orca.YSIZE)
+          local x = (x1 ~= nil and x1 + t[i][l])  or self.x + t[i][l]
+          local y = (y1 ~= nil and y1 + t[i][l + 1]) or self.y + t[i][l+1]
+          local is_op = orca.is_op(x, y)
           if field.cell[y][x] ~= nil then
             if t[i][l + 2] == 'output' then
               field.cell.params[y][x].lit_out = false
-              field.cell.params[y][x].dot_port = false
+              field.cell.params[y][x].lit = false
+              field.cell.params[y][x].dot = false
             elseif t[i][l + 2] == 'input' then
-              field.cell.params[y][x].dot_port = false
+              field.cell.params[y][x].dot = false
+              field.cell.params[y][x].lit = false
             elseif t[i][l + 2] == 'input_op' then
+              field.cell.params[y][x].lit = false
               field.cell.params[y][x].lock = false
-              field.cell.params[y][x].dot_port = false
-              if self.is_op(x,y) then self:add_to_queue(x, y) end
+              field.cell.params[y][x].dot = false
+              if is_op then self:add_to_queue(x, y) end
             elseif t[i][l + 2] == 'output_op' then
+              field.cell.params[y][x].lit = false
               field.cell.params[y][x].lock = false
-              field.cell.params[y][x].dot_port = false
+              field.cell.params[y][x].dot = false
               field.cell.params[y][x].lit_out = false
-              if self.is_op(x,y) then self:add_to_queue(x, y) end
+              if is_op then self:add_to_queue(x, y) end
             end
           end
         end
@@ -376,32 +381,34 @@ function orca:clean_ports(t, x1, y1)
 end
 
 function orca:spawn(t)
+  field.cell.params[self.y][self.x].lit = true
   for i=1,#t do
     for l= 1, #t[i] - 2 do
-      local x = util.clamp(self.x + t[i][l],0,orca.XSIZE)
-      local y = util.clamp(self.y + t[i][l+1],0,orca.YSIZE)
+      local x = util.clamp(self.x + t[i][l], 0, orca.XSIZE)
+      local y = util.clamp(self.y + t[i][l+1], 0, orca.YSIZE)
       local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
       local port_type = t[i][l + 2]
-      if existing == orca.list[string.upper(existing)] then
-        orca:clean_ports(orca.ports[existing], x,y)
+      local out = t[i][2] == 1 and true or false
+      
+      if existing ~= 'null' then 
+        if field.cell.params[y][x].lock == false then
+          orca:clean_ports(orca.ports[existing], x, y)
+        end
       end
-      -- draw frame
-      field.cell.params[self.y][self.x].lit = true
-      -- draw inputs / outputs
       if field.cell[y][x] ~= nil then
         if port_type == 'output' then
           field.cell.params[y][x].lit_out = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         elseif port_type == 'input' then
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         elseif port_type == 'input_op' then
           field.cell.params[y][x].lock = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
           field.cell.params[y][x].lit = false
         elseif port_type == 'output_op' then
           field.cell.params[y][x].lit_out = true
           field.cell.params[y][x].lock = true
-          field.cell.params[y][x].dot_port = true
+          field.cell.params[y][x].dot = true
         end
       end
     end
@@ -535,12 +542,13 @@ function keyb.event(typ, code, val)
   elseif (code == 27 and val == 1) then
     dot_density = util.clamp(dot_density + 1, 1, 8)
   elseif (code == hid.codes.KEY_102ND and val == 1) then
-  elseif (code == hid.codes.KEY_ESC and val == 1 ) then
-    if not menu then
-      selected_area_y, selected_area_x = 1, 1
-    elseif menu then
-      norns.key(2, 1)
-    end
+  elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then
+        selected_area_y, selected_area_x = 1, 1
+      if menu and shift then 
+        norns.key(1, 1)
+      elseif menu and not shift then 
+        norns.key(2, 1)
+      end
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
     if menu then
       norns.key(3, 1)
@@ -581,22 +589,12 @@ function keyb.event(typ, code, val)
     if val == 1 then
       keyinput = get_key(code, val, shift)
       if not ctrl then
-        if orca.is_op(x_index,y_index) then
+        if orca.is_op(x_index,y_index) and keyinput ~= field.cell[y_index][x_index] then
           orca:erase(x_index,y_index)
           if field.cell[y_index][x_index] == '/' then
             orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
           end
         elseif keyinput == 'H' then
-        elseif orca.is_op(x_index,y_index + 1) then
-          if orca.list[string.upper(keyinput)] == keyinput then
-            for i = 1,#orca.ports[string.upper(keyinput)] do
-              if orca.ports[string.upper(keyinput)][i][2] == 1 then
-                if field.cell.params[y_index][x_index].lock == false then orca:erase(x_index,y_index + 1) end
-              else
-                orca:erase(x_index,y_index)
-              end
-            end
-          end 
         end
         field.cell[y_index][x_index] = keyinput
         orca:add_to_queue(x_index,y_index)
@@ -632,7 +630,7 @@ local function draw_grid()
       if f.lit then draw_op_frame(x - field_offset_x,y - field_offset_y, 4) end
       if f.lit_out or f.cursor then draw_op_frame(x - field_offset_x,y - field_offset_y, 1) end
       if cell ~= 'null' or cell ~= nil then
-        screen.level( orca.is_op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out or f.dot) and 12 or 2 )
+        screen.level( orca.is_op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out or f.dot) and 12 or 1 )
       elseif cell == 'null' then
         screen.level( f.dot and 9 or 1)
       end

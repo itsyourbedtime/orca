@@ -12,14 +12,17 @@ L = function (self, x, y, frame, grid)
   local l_end = util.clamp( self.x + length, 1, self.YSIZE)
   if self:active() then
     self:spawn(self.ports[self.name])
+    if frame % rate == 0 and length ~= 0 then
+      self:shift(offset, length)
+    end
     for i = 1, #self.chars do
       local is_op = self.is_op(self.x + i, self.y)
-      if i <= length then
+      if i <= length + 1 then
         grid.params[self.y][(self.x + i)] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
         grid.params[self.y + 1][(self.x + i)].lit_out = false
-        if is_op then 
-          self:remove_from_queue(self.x + i, self.y) 
+        if is_op and  grid.params[self.y][(self.x + i)].lock == true then 
           self:clean_ports(self.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
+          break
         end
       else
         if grid[self.y][(self.x + i) + 2] == self.name then 
@@ -27,14 +30,11 @@ L = function (self, x, y, frame, grid)
         else
           grid.params[self.y][(self.x + i)].lock = false
           grid.params[self.y][(self.x + i)].dot = false
-          if is_op then 
-            self:add_to_queue(self.x + i, self.y) 
-          end
         end
       end
-    end
-    if frame % rate == 0 and length ~= 0 then
-      self:shift(offset, length)
+      if grid.params[self.y][(self.x + i)].lock == false then 
+        self:add_to_queue(self.x + i, self.y) 
+      end
     end
   elseif self.banged(self.x, self.y) then
   end
