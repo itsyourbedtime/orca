@@ -1,6 +1,5 @@
 local orca_engine = {}
 local NUM_SAMPLES = 36
-
 function unrequire(name)
   package.loaded[name] = nil
   _G[name] = nil
@@ -11,7 +10,6 @@ unrequire("timber/lib/timber_engine")
 engine.name = "Timber"
 
 local Timber = require "timber/lib/timber_engine"
-
 
 function orca_engine.load_folder(file, add)
   local sample_id = 0
@@ -47,10 +45,8 @@ function orca_engine.load_folder(file, add)
   end
 end
 
-
-
 function orca_engine.init()
-  params:add_trigger('load_f','Load Folder')
+  params:add_trigger('load_f','+ Load Folder')
   params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
   if file ~= "cancel" then orca_engine.load_folder(file, add) end end) end)
   Timber.options.PLAY_MODE_BUFFER_DEFAULT = 3
@@ -69,6 +65,5 @@ function orca_engine.init()
     params:set('amp_env_sustain_' .. i, 0)
   end
 end
-
 
 return orca_engine

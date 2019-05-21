@@ -12,7 +12,6 @@ local operators = include("lib/library")
 local orca_softcut = include("lib/sc")
 local orca_engine = include("lib/engine")
 local keyb = hid.connect()
-local g = grid.connect()
 local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x = 1, 1
@@ -20,6 +19,7 @@ local bounds_x, bounds_y = 25, 8
 local bar, help, map = false
 local dot_density, frame = 1, 1
 local copy_buffer = {cell = {}}
+g = grid.connect()
 local field = { 
   project = 'untitled',
   active = {},
@@ -49,7 +49,6 @@ local orca = {
   chars = include("lib/chars"),
   notes = {"C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B"},
 }
-
 
 function orca.sc_clear_region(p, l)
   softcut.buffer_clear_region(field.cell.sc_ops_pos[p], l)
@@ -327,14 +326,13 @@ function orca:move(x,y)
   a = self.y + y
   b = self.x + x
   local collider = field.cell[a][b]
-  local moving_ops = {['E'] = 'E', ['N'] = 'N', ['S'] = 'S', ['W'] = 'W'}
   -- collide rules
   if collider ~= 'null'  then
     if field.cell[a][b] ~= nil then
       if collider == '*' then
         orca:move_cell(b,a)
         self:erase(self.x,self.y)
-      elseif orca.is_op(b, a) and collider ~= moving_ops[collider] then
+      elseif orca.is_op(b, a) then
         self:explode()
       elseif field.cell.params[a][b].lock then
         self:explode()
@@ -348,25 +346,14 @@ function orca:move(x,y)
 end
 
 function orca:clean_ports(t, x1, y1)
-  field.cell.params[self.y][self.x].lit = false
-  local defaults = {lit = false, lit_out = false, lock = false, cursor = false, dot = false}
   if t ~= nil then
     for i=1,#t do
-      if t[i] ~= nil then
-        for l=1,#t[i]-2 do
-          local x = util.clamp(x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l], 1, orca.XSIZE)
-          local y = util.clamp(y1 ~= nil and y1 + t[i][l+1] or self.y + t[i][l+1], 1, orca.YSIZE)
-          if field.cell[y][x] ~= nil then
-            if t[i][l + 2] ~= nil then
-              field.cell.params[y][x].lit_out = false
-              field.cell.params[y][x].dot = false
-              field.cell.params[y][x].lock = false
-              if self.is_op(x,y) then 
-                self:add_to_queue(x, y) 
-              end
-            end
-          end
-        end
+      for l=1,#t[i]-2 do
+        local x = util.clamp(x1 ~= nil and x1 + t[i][l] or self.x + t[i][l], 1, orca.XSIZE)
+        local y = util.clamp(y1 ~= nil and y1 + t[i][l + 1] or self.y + t[i][l + 1], 1, orca.YSIZE)
+        local cell = field.cell.params[y][x]
+        cell.lit_out, cell.dot, cell.lock = false, false, false
+        if self.is_op(x,y) then self:add_to_queue(x, y) end
       end
     end
   end
@@ -378,7 +365,6 @@ function orca:spawn(t)
       local x = util.clamp(self.x + t[i][l], 1, orca.XSIZE)
       local y = util.clamp(self.y + t[i][l+1], 1, orca.YSIZE)
       local port_type = t[i][l + 2]
-      -- draw frame
       field.cell.params[self.y][self.x].lit = true
       field.cell.params[y][x].dot = true
       field.cell.params[y][x].lit_out = port_type == 'output' or port_type == 'output_op' and true or false
@@ -386,10 +372,10 @@ function orca:spawn(t)
     end
   end
 end
------
+
 function init()
   -- field 
-  for y = 0,orca.YSIZE + orca.YSIZE do
+  for y = 0, orca.YSIZE + orca.YSIZE do
     field.cell[y] = {}
     field.cell.params[y] = {}
     for x = 0,orca.XSIZE + orca.XSIZE do
@@ -397,37 +383,31 @@ function init()
       table.insert(field.cell.params[y], {lit = false, lit_out = false, lock = false, cursor = false, dot = false})
     end
   end
-  
   -- grid 
   for i = 1, g.rows do
     field.cell.grid[i] = {}
   end
-  
-  -- redraw metro
-  redraw_metro = metro.init(function(stage) redraw() g:redraw() end, 1/30)
-  redraw_metro:start()
   -- ops exec 
   orca.clk.on_step = function() orca:exec_queue() end,
   orca.clk:add_clock_params()
   orca.clk:start()
-
   -- params
   params:set("bpm", 120)
-  params:add_trigger('save_p', "Save project" )
+  params:add_separator()
+  params:add_trigger('save_p', "< Save project" )
   params:set_action('save_p', function(x) textentry.enter(orca.save_project,  field.project) end)
-  params:add_trigger('load_p', "Load project" )
+  params:add_trigger('load_p', "> Load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
-  params:add_trigger('new', "new" )
+  params:add_trigger('new', "+ New" )
   params:set_action('new', function(x) init() end)
   params:add_separator()
-  params:add_control("EXT", "Softcut ext level", controlspec.new(0, 1, 'lin', 0, 1, ""))
+  params:add_control("EXT", "/ External level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("EXT", function(x) audio.level_adc_cut(x) end)
-  params:add_control("ENG", "Softcut eng level", controlspec.new(0, 1, 'lin', 0, 1, ""))
+  params:add_control("ENG", "/ Engine level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
   params:add_separator()
   orca_softcut.init()
   orca_engine.init()
-  
   -- midi
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
@@ -437,6 +417,9 @@ function init()
     name = "midi out device", min = 1, max = 4, default = 1,
     action = function(value) orca.midi_out_device = midi.connect(value) end 
   }
+  -- redraw metro
+  redraw_metro = metro.init(function(stage) redraw() g:redraw() end, 1/30)
+  redraw_metro:start()
 end
 
 local function update_offset()
@@ -559,17 +542,16 @@ function keyb.event(typ, code, val)
         field.cell[y_index][x_index] = keyinput
         orca:add_to_queue(x_index,y_index)
       end
-    
-    if ctrl then 
-      if code == 45 then -- cut
-        orca.cut_area()
-      elseif code == 46 then -- copy
-        orca.copy_area()
-      elseif code == 47 then -- paste
-        orca.paste_area()
+      if ctrl then 
+        if code == 45 then -- cut
+          orca.cut_area()
+        elseif code == 46 then -- copy
+          orca.copy_area()
+        elseif code == 47 then -- paste
+          orca.paste_area()
+        end
       end
     end
-  end
   end
 end
 
@@ -586,42 +568,20 @@ local function draw_grid()
     for x = 1,bounds_x do
       local y = y + field_offset_y
       local x = x + field_offset_x
-      if field.cell.params[y][x].lit then
-        draw_op_frame(x - field_offset_x,y - field_offset_y, 4)
-      end
-      if field.cell.params[y][x].lit_out or field.cell.params[y][x].cursor then
-        draw_op_frame(x - field_offset_x,y - field_offset_y, 1)
-      end
-      -- levels
-      if field.cell[y][x] ~= 'null' then
-        if orca.is_op(x,y) then
-          screen.level(15)
-        elseif field.cell.params[y][x].lit then
-          screen.level(12)
-        elseif field.cell.params[y][x].cursor or field.cell.params[y][x].lit_out then
-          screen.level(12)
-        elseif field.cell.params[y][x].dot then
-          screen.level(9)
-        else
-          screen.level(3)
-        end
-      elseif field.cell[y][x] == 'null' then
-        if field.cell.params[y][x].dot then
-          screen.level(9)
-        else
-          screen.level(1)
-        end
+      local f = field.cell.params[y][x]
+      local cell = field.cell[y][x]
+      if f.lit then draw_op_frame(x - field_offset_x,y - field_offset_y, 4) end
+      if f.lit_out or f.cursor then draw_op_frame(x - field_offset_x,y - field_offset_y, 1) end
+      if cell ~= 'null' then
+        screen.level( orca.is_op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out ) and 12 or f.dot and 9 or 3 )
+      elseif cell == 'null' then
+        screen.level( f.dot and 9 or 1)
       end
       screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( field.cell[y][x] and 2 or 3))
-      --
-      if field.cell[y][x] == 'null' or field.cell[y][x] == nil then
-        if field.cell.params[y][x].dot then
-          screen.text('.')
-        else
-          screen.text( ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
-        end
+      if cell == 'null' or cell == nil then
+        screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
       else
-        screen.text(field.cell[y][x])
+        screen.text(cell)
       end
       screen.stroke()
     end
@@ -641,27 +601,15 @@ local function draw_cursor(x,y)
   local y_pos = ((y * 8) - 8)
   local x_index = x + field_offset_x
   local y_index = y + field_offset_y
-  if field.cell[y_index][x_index] == 'null' then
-  screen.level(2)
-  screen.rect(x_pos,y_pos, 5, 8)
+  local cell = field.cell[y_index][x_index]
+  screen.level(cell == 'null' and 2 or 15)
+  screen.rect(x_pos, y_pos, 5, 8)
   screen.fill()
-    screen.move(x_pos,y_pos+6)
-    screen.level(14)
-    screen.font_face(0)
-    screen.font_size(8)
-    screen.text('@')
-    screen.stroke()
-  elseif field.cell[y_index][x_index] ~= 'null'  then
-    screen.level(15)
-    screen.rect(x_pos,y_pos,5 , 8)
-    screen.fill()
-    screen.move(x_pos + 1,y_pos+6)
-    screen.level(1)
-    screen.font_face(25)
-    screen.font_size(6)
-    screen.text(field.cell[y_index][x_index])
-    screen.stroke()
-  end
+  screen.move(x_pos + (cell ~= 'null' and 1 or 0), y_pos + 6)
+  screen.level(cell == 'null' and 14 or 1)
+  screen.font_face(cell == 'null' and 0 or 25)
+  screen.font_size(cell == 'null' and 8 or 6)
+  screen.text(cell == 'null' and '@' or cell)
 end
 
 local function draw_bar()

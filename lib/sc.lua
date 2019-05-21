@@ -33,5 +33,4 @@ function orca_softcut.init()
   end
 end
 
-
 return orca_softcut
