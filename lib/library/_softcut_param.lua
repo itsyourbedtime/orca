@@ -6,7 +6,7 @@ local param_ids = {
   "sc_clear_region"
 } 
 
-softcut_param = function ( self, x, y, frame, grid )
+local softcut_param = function ( self, x, y, frame, grid )
   self.name = '\\'
   self.y = y
   self.x = x

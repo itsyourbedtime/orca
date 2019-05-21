@@ -1,4 +1,4 @@
-grid_write = function ( self, x, y, frame, _grid )
+local grid_write = function ( self, x, y, frame, _grid )
   self.name = '>'
   self.y = y
   self.x = x

@@ -1,4 +1,4 @@
-midi_out = function ( self, x, y, frame, grid )
+local midi_out = function ( self, x, y, frame, grid )
   self.name = ':'
   self.y = y
   self.x = x  

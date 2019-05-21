@@ -1,4 +1,4 @@
-S = function(self, x, y, frame, grid)
+local S = function(self, x, y, frame, grid)
   self.name = 'S'
   self.x = x
   self.y = y

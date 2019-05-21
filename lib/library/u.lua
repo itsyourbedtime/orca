@@ -1,7 +1,6 @@
 local euclid = require 'er'
 
-
-U  = function (self, x, y, frame, grid)
+local U  = function (self, x, y, frame, grid)
   self.name = 'U'
   self.y = y
   self.x = x

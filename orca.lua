@@ -20,7 +20,7 @@ local bar, help, map = false
 local dot_density, frame = 1, 1
 local copy_buffer = {cell = {}}
 g = grid.connect()
-field = { 
+local field = { 
   project = 'untitled',
   active = {},
   cell = {
@@ -34,7 +34,7 @@ field = {
   },
 }
 
-orca = {
+local orca = {
   XSIZE = 101,
   YSIZE = 41,
   bounds_x = bounds_x,
@@ -248,9 +248,8 @@ function orca:cleanup()
       end
     end
   elseif cell == '<' then
-    local col = util.clamp(self:listen( self.x - 2, self.y ) or 1 % g.cols, 1, g.cols)
-    local row = util.clamp(self:listen( self.x - 1, self.y ) or 1 % g.rows, 1, g.rows)
-    g:led(col, row, 0)
+    local col = util.clamp(self:listen( self.x - 2, self.y ) or 0 % g.cols, 1, g.cols)
+    local row = util.clamp(self:listen( self.x - 1, self.y ) or 0 % g.rows, 1, g.rows)
   elseif cell == '#' then
     for i = self.x, orca.XSIZE do params[self.y][i].lock = false params[self.y][i].dot = false end
   elseif cell == '/' then 
@@ -280,7 +279,7 @@ function orca:add_to_queue(x,y)
   local x = util.clamp(x, 0, orca.XSIZE)
   local y = util.clamp(y, 0, orca.YSIZE)
   local id = orca:id(x ,y)
-  if field.cell[y][x] ~= 'null' and orca.is_op(x, y) then
+  if orca.is_op(x, y) then
     field.active[id] = {x, y, field.cell[y][x]}
   end
 end
@@ -348,12 +347,10 @@ end
 function orca:clean_ports(t, x1, y1)
   if t ~= nil then
     for i=1,#t do
-      if t[i] ~= nil then
         for l=1,#t[i]-2 do
-          local x = (x1 ~= nil and x1 + t[i][l])  or self.x + t[i][l]
-          local y = (y1 ~= nil and y1 + t[i][l + 1]) or self.y + t[i][l+1]
+          local x = x1 ~= nil and x1 + t[i][l]  or self.x + t[i][l]
+          local y = y1 ~= nil and y1 + t[i][l + 1] or self.y + t[i][l+1]
           local is_op = orca.is_op(x, y)
-          if field.cell[y][x] ~= nil then
             if t[i][l + 2] == 'output' then
               field.cell.params[y][x].lit_out = false
               field.cell.params[y][x].lit = false
@@ -365,17 +362,15 @@ function orca:clean_ports(t, x1, y1)
               field.cell.params[y][x].lit = false
               field.cell.params[y][x].lock = false
               field.cell.params[y][x].dot = false
-              if is_op then self:add_to_queue(x, y) end
+              self:add_to_queue(x, y) 
             elseif t[i][l + 2] == 'output_op' then
               field.cell.params[y][x].lit = false
               field.cell.params[y][x].lock = false
               field.cell.params[y][x].dot = false
               field.cell.params[y][x].lit_out = false
-              if is_op then self:add_to_queue(x, y) end
+              self:add_to_queue(x, y)
             end
           end
-        end
-      end
     end
   end
 end
@@ -386,7 +381,7 @@ function orca:spawn(t)
     for l= 1, #t[i] - 2 do
       local x = util.clamp(self.x + t[i][l], 0, orca.XSIZE)
       local y = util.clamp(self.y + t[i][l+1], 0, orca.YSIZE)
-      local existing = field.cell[y][x] ~= nil and field.cell[y][x] or 'null'
+      local existing = field.cell[y][x]
       local port_type = t[i][l + 2]
       local out = t[i][2] == 1 and true or false
       

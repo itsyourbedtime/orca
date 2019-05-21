@@ -1,4 +1,4 @@
-rNote = function ( self, x, y, frame, grid )
+local rnote = function ( self, x, y, frame, grid )
   self.name = '^'
   self.y = y
   self.x = x
@@ -14,4 +14,4 @@ rNote = function ( self, x, y, frame, grid )
   end
 end
 
-return rNote
+return rnote

@@ -11,7 +11,7 @@ local param_ids = {
   
 }
 
-timber_param = function ( self, x, y, frame, grid )
+local timber_param = function ( self, x, y, frame, grid )
   self.name = '"'
   self.y = y
   self.x = x

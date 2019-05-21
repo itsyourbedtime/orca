@@ -1,4 +1,4 @@
-bang = function( self, x, y, frame, grid )
+local bang = function( self, x, y, frame, grid )
   self.x = x 
   self.y = y 
   if self:active() then 

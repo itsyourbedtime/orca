@@ -1,4 +1,4 @@
-D = function ( self, x, y, frame, grid )
+local D = function ( self, x, y, frame, grid )
   self.name = 'D'
   self.y = y
   self.x = x
@@ -16,7 +16,6 @@ D = function ( self, x, y, frame, grid )
     self:spawn(self.ports[self.name])
     grid[self.y + 1][self.x] = out
   elseif self.banged( self.x , self.y ) then
-    self:spawn(self.ports[self.name])
     grid[self.y + 1][self.x] = out
   end
 end

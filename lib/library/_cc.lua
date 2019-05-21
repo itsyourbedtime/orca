@@ -1,6 +1,4 @@
-    
-    
-midi_out = function ( self, x, y, frame, grid )
+local midi_cc = function ( self, x, y, frame, grid )
   self.name = '!'
   self.y = y
   self.x = x
@@ -15,4 +13,4 @@ midi_out = function ( self, x, y, frame, grid )
   end
 end
 
-return midi_out
+return midi_cc

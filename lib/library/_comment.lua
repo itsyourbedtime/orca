@@ -1,4 +1,4 @@
-comment = function ( self, x, y, frame, grid )
+local comment = function ( self, x, y, frame, grid )
   self.name = '#'
   self.x = x
   self.y = y

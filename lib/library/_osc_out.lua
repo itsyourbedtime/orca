@@ -1,4 +1,4 @@
-osc_out = function ( self, x, y, frame, grid )
+local osc_out = function ( self, x, y, frame, grid )
   self.name = '='
   self.x = x
   self.y = y
