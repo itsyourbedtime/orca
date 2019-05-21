@@ -42,13 +42,15 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
 
-
-## Norns operators
+## IO / Norns operators
 
 - `'` **timber engine**(sample octave note level position): Triggers sample player.
 - `"` **timber param**(sample param *value*): Sets timber param on bang.
 - `/` **softcut**(*playhead* *rec* *play* level rate position) 
 - `\` **softcut param**(playhead param *value* ): Sets softcut param on bang
 - `>` **g.write**(x y *value*): Sets grid led on bang.
-- `<` **g.read**(x y): Reads specific coordinates. If value > 6 outputs bang. 
+- `<` **g.read**(x y): Reads specific coordinates. If value > 6 outputs bang.
+- `:` **midi**(channel octave note velocity length): Sends a MIDI note.
+- `%` **mono**(channel octave note velocity length): Sends monophonic MIDI note.
+- `!` **cc**(channel knob value): Sends MIDI control change.
 - `^` **r.note**(rate scale): Outputs random note within scale. 
