@@ -147,23 +147,9 @@ function orca.cut_area()
     for x = x_index, x_index + selected_area_x do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
       copy_buffer.params[y -  y_index ][x -  x_index ] = orca.copy(field.cell.params[y][x])
-      
       field.cell[y][x] = 'null'
       field.cell.params[y][x] = { lit = false, lit_out = false, lock = false, cursor = false, dot = false }
       orca:remove_from_queue(x, y)
-    end
-  end
-end
-
-function orca.cut_are33a()
-  for y=y_index, y_index +  selected_area_y do
-    copy_buffer.cell[y -  y_index ] = {}
-    copy_buffer.params[y -  y_index ] = {}
-    for x = x_index, x_index + selected_area_x do
-      local to_copy = orca.copy(field.cell[y][x])
-      local to_copy_params = orca.copy(field.cell.params[y][x])
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = to_copy
-      copy_buffer.params[y -  y_index ][x -  x_index ] = to_copy_params
     end
   end
 end
