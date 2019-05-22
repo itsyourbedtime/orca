@@ -14,7 +14,7 @@ local L = function (self, x, y, frame, grid)
       self:shift(offset, length)
     end
     for i = 1, #self.chars do
-      local is_op = self.is_op(self.x + i, self.y)
+      local is_op = self.operate(self.x + i, self.y)
       if i <= length then
         grid.params[self.y][self.x + i] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
         grid.params[self.y + 1][self.x + i].lit_out = false

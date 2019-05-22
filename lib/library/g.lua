@@ -13,14 +13,14 @@ local G = function(self, x, y, frame, grid)
     self:spawn( self.ports[self.name] )
     for i = 1, #self.chars do
       local new = grid[self.y][(self.x + i)]
-      local is_op = self.is_op(self.x + i, self.y)
+      local is_op = self.operate(self.x + i, self.y)
       local existing = grid[offsety][(offsetx + i)]
-      local ex_is_op = self.is_op((offsetx + i), offsety ) 
+      local ex_is_op = self.operate((offsetx + i), offsety ) 
       if i <= length then
         grid.params[self.y][(self.x + i)] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
         grid.params[self.y + 1][(self.x + i)].lit_out = grid.params[self.y + 1][(self.x + i)].lit_out == true and false or false
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
-        if grid[self.y][self.x + i] == self.list[grid[self.y][self.x + i]] then 
+        if self.op(self.x + i, self.y) then 
           self:add_to_queue(offsetx + i, offsety)
         end
       else

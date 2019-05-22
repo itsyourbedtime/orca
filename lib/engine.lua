@@ -1,13 +1,13 @@
 local orca_engine = {}
 local NUM_SAMPLES = 36
---[[function unrequire(name)
+function unrequire(name)
   package.loaded[name] = nil
   _G[name] = nil
 end
 
 unrequire("timber/lib/timber_engine")
 
-]]
+
 engine.name = "Timber"
 
 local Timber = require "timber/lib/timber_engine"
