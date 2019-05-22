@@ -3,9 +3,7 @@ local L = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   local length = self:listen( self.x - 1, self.y, 0 ) or 0
-  local rate = self:listen( self.x - 2, self.y, 0 ) or 1 
-  local defaults
-  rate = rate == 0 and 1 or rate
+  local rate = util.clamp(self:listen( self.x - 2, self.y, 0 ) or 1, 1, #self.chars)
   local offset = 1
   length = util.clamp( length, 0, self.XSIZE - length)
   local l_start = util.clamp( self.x + offset, 1, self.XSIZE)
@@ -17,10 +15,10 @@ local L = function (self, x, y, frame, grid)
     end
     for i = 1, #self.chars do
       local is_op = self.is_op(self.x + i, self.y)
-      if i <= length + 1 then
-        grid.params[self.y][(self.x + i)] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
-        grid.params[self.y + 1][(self.x + i)].lit_out = false
-        if is_op and  grid.params[self.y][(self.x + i)].lock == true then 
+      if i <= length then
+        grid.params[self.y][self.x + i] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
+        grid.params[self.y + 1][self.x + i].lit_out = false
+        if is_op and  grid.params[self.y][self.x + i].lock == true then 
           self:clean_ports(self.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
           break
         end

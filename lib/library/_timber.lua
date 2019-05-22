@@ -1,4 +1,4 @@
-local stimber = function ( self, x, y, frame, grid )
+local timber = function ( self, x, y, frame, grid )
   self.name = "'"
   self.y = y
   self.x = x

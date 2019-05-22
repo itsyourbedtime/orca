@@ -5,7 +5,7 @@ local U  = function (self, x, y, frame, grid)
   self.y = y
   self.x = x
   local pulses = self:listen(self.x + 1, self.y) or 1
-  local steps = self:listen(self.x - 1, self.y) or 1
+  local steps = self:listen(self.x - 1, self.y) or 9
   local pattern = euclid.gen(steps, pulses)
   local pos = (frame  % (pulses ~= 0 and pulses or 1) + 1)
   local out = pattern[pos] and '*' or 'null'
