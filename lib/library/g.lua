@@ -20,7 +20,9 @@ local G = function(self, x, y, frame, grid)
         grid.params[self.y][(self.x + i)] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
         grid.params[self.y + 1][(self.x + i)].lit_out = grid.params[self.y + 1][(self.x + i)].lit_out == true and false or false
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
-        self:add_to_queue(offsetx + i, offsety)
+        if grid[self.y][self.x + i] == self.list[grid[self.y][self.x + i]] then 
+          self:add_to_queue(offsetx + i, offsety)
+        end
       else
         if grid[self.y][(self.x + i) + 2] == self.name then 
           break
@@ -32,8 +34,10 @@ local G = function(self, x, y, frame, grid)
     end
   elseif self.banged( self.x, self.y ) then
     for i=1,length do
-      grid[util.clamp(offsety,1, #self.chars)][(offsetx + i) - 1] = grid[self.y][self.x + i]
-      self:add_to_queue((offsetx + i) - 1, util.clamp( offsety, 1, #self.chars ))
+      grid[util.clamp(offsety,1, #self.chars)][offsetx + i] = grid[self.y][self.x + i]
+      if grid[self.y][self.x + i] == self.list[grid[self.y][self.x + i]] then 
+        self:add_to_queue(offsetx + i, offsety)
+      end
     end
   end
 end

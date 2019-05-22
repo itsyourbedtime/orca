@@ -11,10 +11,14 @@ local X = function(self, x, y, frame, grid)
     self.ports[self.name][4] = {a, b, 'output'}
     self:spawn(self.ports[self.name])
     grid[offsety][offsetx] = grid[self.y][self.x + 1]
-    self:add_to_queue(offsetx, offsety)
+    if grid[self.y][self.x + 1] == self.list[grid[self.y][self.x + 1]] then 
+      self:add_to_queue(self.x, self.y + 1)
+    end
   elseif self.banged( self.x, self.y ) then
     grid[offsety][offsetx] = grid[self.y][self.x + 1]
-    self:add_to_queue(offsetx, offsety)
+    if grid[self.y][self.x + 1] == self.list[grid[self.y][self.x + 1]] then 
+      self:add_to_queue(self.x, self.y + 1)
+    end
   end
 end
 

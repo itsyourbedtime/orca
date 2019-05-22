@@ -2,6 +2,7 @@ local comment = function ( self, x, y, frame, grid )
   self.name = '#'
   self.x = x
   self.y = y
+        local value = grid[y][x]
     for x = x + 1, self.XSIZE do
       grid.params[y][x].dot = true
       grid.params[y][x].lock = true

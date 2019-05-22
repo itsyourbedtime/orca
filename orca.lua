@@ -1,5 +1,5 @@
 -- ORCA
--- v0.9.3 @its_your_bedtime
+-- v0.9.4 @its_your_bedtime
 -- llllllll.co/t/orca
 
 local tab = require 'tabutil'
@@ -163,8 +163,8 @@ function orca.normalize(n)
 end
 
 function orca.transpose(n, o)
-  if n == nil or n == 'null' then n = 'C' else n = tostring(n) end 
-  if o == nil or o == 'null' then o = 3 end
+  n = n == nil or n == 'null' and 'C' or tostring(n)
+  o = o == nil or o == 'null' and 3 or o
   local note = orca.normalize(string.sub(transpose_table[n], 1, 1))
   local octave = util.clamp(orca.normalize(string.sub(transpose_table[n], 2)) + o,0,8)
   local value = tab.key(orca.notes, note)
@@ -178,45 +178,38 @@ function orca:listen(x,y)
 end 
 
 function orca.is_op(x,y)
-  local x = util.clamp(x, 0, orca.XSIZE)
-  local y = util.clamp(y, 0, orca.YSIZE)
-  local cell = field.cell[y][x]
-  --local lock = field.cell.params[y][x].lock
-  if orca.list[cell] and field.cell.params[y][x].lock == false then
-    return true
-  else
-    return false
-  end
+  local bounds = orca.inbounds(x, y)
+  local cell = string.upper(field.cell[y][x])
+  local lock = field.cell.params[y][x].lock
+  return bounds and (orca.list[cell] and not lock) and true 
 end
 
 function orca.banged(x,y)
-  if field.cell[y][x - 1] == '*' then
-    field.cell.params[y][x].lit = false
-    return true
-  elseif field.cell[y][x + 1] == '*' then
-    field.cell.params[y][x].lit = false
-    return true
-  elseif field.cell[y - 1][x] == '*' then
-    field.cell.params[y][x].lit = false
-    return true
-  elseif field.cell[y + 1][x] == '*' then 
-    field.cell.params[y][x].lit = false
-    return true
-  else
-    if field.cell[y][x] == string.upper(field.cell[y][x]) then
-      field.cell.params[y][x].lit = true
+  if orca.inbounds(x, y) then
+    if field.cell[y][x - 1] == '*' then
+      field.cell.params[y][x].lit = false
+      return true
+    elseif field.cell[y][x + 1] == '*' then
+      field.cell.params[y][x].lit = false
+      return true
+    elseif field.cell[y - 1][x] == '*' then
+      field.cell.params[y][x].lit = false
+      return true
+    elseif field.cell[y + 1][x] == '*' then 
+      field.cell.params[y][x].lit = false
+      return true
+    else
+      if field.cell[y][x] == string.upper(field.cell[y][x]) then
+        field.cell.params[y][x].lit = true
+      end
+      return false
     end
-    return false
   end
 end
 
 function orca:active()
   local cell = field.cell[self.y][self.x]
-  if cell == string.upper(cell) then
-    return true
-  elseif cell == string.lower(cell) then
-    return false
-  end
+  return cell == string.upper(cell) and true
 end
 
 function orca:replace(i)
@@ -237,7 +230,7 @@ function orca:cleanup()
   local params = field.cell.params
   local ops_to_clear = {P = true , p = true , L = true, l = true, T = true, t = true, G = true, g = true, K = true, k = true}
   params[self.y][self.x] = { lit = false, lit_out = false, lock = false, cursor = false, dot = false }
-  if orca.is_op(self.x,self.y) then self:clean_ports(orca.ports[string.upper(field.cell[self.y][self.x])]) end
+  if orca.is_op(self.x,self.y) then self:clean_ports(orca.ports[string.upper(cell)]) end
   if field.cell[self.y + 1][self.x] == '*' then field.cell[self.y + 1][self.x] = 'null' end
   if ops_to_clear[cell] then
     local offset = (cell == 'P' or cell == 'p') and 1 or 0 
@@ -262,8 +255,8 @@ end
 function orca:erase(x, y)
   self.x = x
   self.y = y
-  if self:active() then self:cleanup() end
-  orca:remove_from_queue(self.x,self.y)  
+  self:cleanup() 
+  if self:active(self.x, self.y) then orca:remove_from_queue(self.x,self.y)  end
   self:replace('null')
 end
 
@@ -277,10 +270,8 @@ function orca:id(x, y)
 end
 
 function orca:add_to_queue(x,y)
-  --local x = util.clamp( x, 0, orca.XSIZE )
-  --local y = util.clamp( y, 0, orca.YSIZE )
   local id = orca:id(x ,y)
-  if orca.is_op(x, y) then
+  if orca.is_op(x, y) and orca.inbounds(x, y) then
     field.active[id] = { x, y, field.cell[y][x] }
   end
 end
@@ -307,8 +298,9 @@ function orca:exec_queue()
     local y = field.active[k][2]
     local x = field.active[k][1]
     local op = field.active[k][3]
-    if orca.inbounds(x, y) and orca.is_op(x, y) then
-      operators[string.upper(op)](self, x, y, frame, field.cell) 
+    operators[string.upper(op)](self, x, y, frame, field.cell) 
+    if field.cell.params[y][x].lock == true then 
+      orca:remove_from_queue(x, y)
     end
   end
 end
