@@ -19,7 +19,8 @@ local bounds_x, bounds_y = 25, 8
 local bar, help, map = false
 local dot_density, frame = 1, 1
 local copy_buffer = {
-  cell = {}
+  cell = {},
+  params = {}
 }
 g = grid.connect()
 
@@ -61,7 +62,7 @@ function orca.copy(obj)
   if type(obj) ~= 'table' then return obj end
   local res = {}
   for k, v in pairs(obj) do
-    res[simplecopy(k)] = simplecopy(v)
+    res[orca.copy(k)] = orca.copy(v)
   end
   return res
 end
@@ -131,19 +132,38 @@ end
 function orca.copy_area()
   for y=y_index, y_index + selected_area_y do
     copy_buffer.cell[y -  y_index ] = {}
+    copy_buffer.params[y -  y_index ] = {}
     for x = x_index, x_index + selected_area_x do
       copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
+      copy_buffer.params[y -  y_index ][x -  x_index ] = orca.copy(field.cell.params[y][x])
     end
   end
 end
 
 function orca.cut_area()
+  for y=y_index, y_index + selected_area_y do
+    copy_buffer.cell[y -  y_index ] = {}
+    copy_buffer.params[y -  y_index ] = {}
+    for x = x_index, x_index + selected_area_x do
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
+      copy_buffer.params[y -  y_index ][x -  x_index ] = orca.copy(field.cell.params[y][x])
+      
+      field.cell[y][x] = 'null'
+      field.cell.params[y][x] = { lit = false, lit_out = false, lock = false, cursor = false, dot = false }
+      orca:remove_from_queue(x, y)
+    end
+  end
+end
+
+function orca.cut_are33a()
   for y=y_index, y_index +  selected_area_y do
-    copy_buffer.cell[util.clamp(y -  y_index, 0, orca.YSIZE) ] = {}
+    copy_buffer.cell[y -  y_index ] = {}
+    copy_buffer.params[y -  y_index ] = {}
     for x = x_index, x_index + selected_area_x do
       local to_copy = orca.copy(field.cell[y][x])
-      orca:erase(x, y)
+      local to_copy_params = orca.copy(field.cell.params[y][x])
       copy_buffer.cell[y -  y_index ][x -  x_index ] = to_copy
+      copy_buffer.params[y -  y_index ][x -  x_index ] = to_copy_params
     end
   end
 end
@@ -153,6 +173,7 @@ function orca.paste_area()
     for x = 0, #copy_buffer.cell[y] do
       orca:erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
       field.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
+      field.cell.params[y_index + y][(x_index + x)] = orca.copy(copy_buffer.params[y][x])
       orca:add_to_queue(x_index + x, y_index + y)
     end
   end
@@ -212,10 +233,6 @@ function orca:active()
   return cell == string.upper(cell) and true
 end
 
-function orca:replace(i)
-  field.cell[self.y][self.x] = i
-end
-
 function orca:shift(s, e)
   local data = field.cell[self.y][self.x + s]
   local params = field.cell.params[self.y][self.x + s]
@@ -257,11 +274,12 @@ function orca:erase(x, y)
   self.y = y
   self:cleanup() 
   if self:active(self.x, self.y) then orca:remove_from_queue(self.x,self.y)  end
-  self:replace('null')
+  field.cell[self.y][self.x] = 'null'
+  field.cell.params[self.y][self.x] = { lit = false, lit_out = false, lock = false, cursor = false, dot = false }
 end
 
 function orca:explode()
-  self:replace('*')
+  field.cell[self.y][self.x] = '*'
   self:add_to_queue( self.x, self.y)
 end
 
@@ -356,7 +374,7 @@ function orca:clean_ports(t, x1, y1)
             field.cell.params[y][x].lock = false
             field.cell.params[y][x].dot = false
             field.cell.params[y][x].cursor = false
-            self:add_to_queue(x, y) 
+            if orca.is_op(x, y) then self:add_to_queue(x, y) end
           end
         end
       end
