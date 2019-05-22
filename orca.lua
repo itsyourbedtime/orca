@@ -307,7 +307,7 @@ function orca:exec_queue()
     local y = field.active[k][2]
     local x = field.active[k][1]
     local op = field.active[k][3]
-    if orca.is_op(x, y) then
+    if orca.inbounds(x, y) and orca.is_op(x, y) then
       operators[string.upper(op)](self, x, y, frame, field.cell) 
     end
   end
