@@ -4,16 +4,13 @@ local comment = function ( self, x, y, frame, grid )
   self.y = y
         local value = grid[y][x]
     for x = x + 1, self.XSIZE do
-      grid.params[y][x].dot = true
-      grid.params[y][x].lock = true
-      grid.params[y][x].lit = false
+      self.lock(x, y, false, true)
       if grid[y][x] == self.name then
         for c = x + 1, self.XSIZE do
           if grid[y][c] == self.name then 
             break 
           else
-            grid.params[y][c].dot = false
-            grid.params[y][c].lock = false
+            self.lock(c, y, false, false)
           end
         end
         break

@@ -16,7 +16,7 @@ local L = function (self, x, y, frame, grid)
     for i = 1, #self.chars do
       local is_op = self.operate(self.x + i, self.y)
       if i <= length then
-        grid.params[self.y][self.x + i] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
+        self.lock(self.x + i, self.y, false, true)
         grid.params[self.y + 1][self.x + i].lit_out = false
         if is_op and  grid.params[self.y][self.x + i].lock == true then 
           self:clean_ports(self.ports[string.upper(grid[self.y][self.x + i])], self.x + i, self.y) 
@@ -26,8 +26,7 @@ local L = function (self, x, y, frame, grid)
         if grid[self.y][(self.x + i) + 2] == self.name then 
           break
         else
-          grid.params[self.y][(self.x + i)].lock = false
-          grid.params[self.y][(self.x + i)].dot = false
+        self.unlock(self.x + i, self.y, true)
         end
       end
       if grid.params[self.y][(self.x + i)].lock == false then 
