@@ -502,6 +502,10 @@ function keyb.event(typ, code, val)
     ctrl = true
   elseif ((code == hid.codes.KEY_LEFTCTRL or code == hid.codes.KEY_RIGHTCTRL) and val == 0) then
     ctrl = false
+  elseif ((code == hid.codes.KEY_LEFTMETA or code == hid.codes.KEY_RIGHTMETA ) and (val == 1 or val == 2)) then
+    ctrl = true
+  elseif ((code == hid.codes.KEY_LEFTMETA or code == hid.codes.KEY_RIGHTMETA ) and val == 0) then
+    ctrl = false
   elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
     orca:erase(x_index,y_index)
   elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
@@ -569,7 +573,6 @@ function keyb.event(typ, code, val)
   elseif (code == hid.codes.KEY_PAGEDOWN and val == 1) then
   elseif (code == hid.codes.KEY_INSERT and val == 1) then
   elseif (code == hid.codes.KEY_END and val == 1) then
-  elseif (code == hid.codes.KEY_LEFTMETA and val == 1) then
   elseif (code == hid.codes.KEY_RIGHTMETA and val == 1) then
   elseif (code == hid.codes.KEY_COMPOSE and val == 1) then
   elseif (code == 119 and val == 1) then
