@@ -205,12 +205,14 @@ end
 
 function orca:active(x, y)
   local x,y = x ~= nil and x or self.x, y ~= nil and y or self.y
-  local cell = field.cell[y][x] ~= nil and field.cell[y][x] 
-  return cell ~= nil and cell == string.upper(cell) and true
+  if orca.inbounds(x, y) then
+    local cell = field.cell[y][x] ~= nil and field.cell[y][x] 
+    return cell ~= nil and cell == string.upper(cell) and true
+  end
 end
 
 function orca.op(x, y)
-  local cell = field.cell[y][x] ~= nil and field.cell[y][x] 
+  local cell = field.cell[y][x]
   return cell ~= nil and string.upper(cell) == orca.list[string.upper(cell)] and true 
 end
 
