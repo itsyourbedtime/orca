@@ -13,6 +13,7 @@ local Z = function (self, x, y, frame, grid)
     grid[self.y + 1][self.x] = out
   elseif self.banged( self.x, self.y ) then
     grid[self.y + 1][self.x] = out
+  else
   end
 end
 

@@ -17,18 +17,16 @@ local G = function(self, x, y, frame, grid)
       local existing = grid[offsety][(offsetx + i)]
       local ex_is_op = self.operate((offsetx + i), offsety ) 
       if i <= length then
-        grid.params[self.y][(self.x + i)] = {lit = false, lit_out = false, lock = true, cursor = false, dot = true}
-        grid.params[self.y + 1][(self.x + i)].lit_out = grid.params[self.y + 1][(self.x + i)].lit_out == true and false or false
+        self.lock( self.x + i, self.y, false, true )
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
         if self.op(self.x + i, self.y) then 
           self:add_to_queue(offsetx + i, offsety)
         end
       else
-        if self.op((self.x + i) + 2, self.y) then --grid[self.y][(self.x + i) + 2] == self.name then 
+        if grid[self.y][(self.x + i) + 2] == self.name then 
           break
         else
-          grid.params[self.y][(self.x + i)].lock = false
-          grid.params[self.y][(self.x + i)].dot = false
+          self.unlock(self.x + i, self.y, false)
         end
       end
     end

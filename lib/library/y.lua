@@ -11,6 +11,7 @@ local Y = function(self, x, y, frame, grid)
   elseif self.banged( self.x, self.y ) then
     grid[self.y][self.x + 1] = a
     --if if_op then self:add_to_queue(self.y, self.x + 1) end 
+  else
   end
 end
 

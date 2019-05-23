@@ -8,8 +8,8 @@ local X = function(self, x, y, frame, grid)
   local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
   local input = grid[self.y][self.x + 1]
   if self:active() then
-    self:clean_ports(self.x, self.y)
-    self.ports[self.name][4] = {a, b, 'output'}
+    --self:clean_ports(self.x, self.y)
+    --self.ports[self.name][4] = {a, b, 'output'}
     self:spawn(self.name)
     grid[offsety][offsetx] = self.copy(input)
     if self.op(self.x + 1, self.y)  then 
@@ -20,6 +20,7 @@ local X = function(self, x, y, frame, grid)
     if self.op(self.x + 1, self.y) then 
       self:add_to_queue(offsetx, offsety)
     end
+  else
   end
 end
 

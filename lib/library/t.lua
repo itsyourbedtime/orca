@@ -21,6 +21,8 @@ local T = function (self, x, y, frame, grid)
       end
     end
     grid[self.y + 1][self.x] = val or '.'
+  else
+    
   end
   -- cleanups
   for i= length+1, #self.chars do

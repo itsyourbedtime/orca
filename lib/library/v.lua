@@ -33,6 +33,7 @@ local V = function (self,x,y,frame, grid)
         grid.params[self.y + 1][self.x].lit_out = false
       end
     end
+  else
   end
 end
 
