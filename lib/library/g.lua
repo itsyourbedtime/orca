@@ -24,7 +24,7 @@ local G = function(self, x, y, frame, grid)
           self:add_to_queue(offsetx + i, offsety)
         end
       else
-        if grid[self.y][(self.x + i) + 2] == self.name then 
+        if self.op((self.x + i) + 2, self.y) then --grid[self.y][(self.x + i) + 2] == self.name then 
           break
         else
           grid.params[self.y][(self.x + i)].lock = false
