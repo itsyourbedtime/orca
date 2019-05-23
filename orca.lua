@@ -406,7 +406,7 @@ function orca:exec_queue()
     local y = field.active[k][2]
     local x = field.active[k][1]
     local op = field.active[k][3]
-    if self.op(x, y) then
+    if op == self.list[up(op)]  then
       operators[up(op)](self, x, y, frame, field.cell) 
       if not self.operate(x, y) then 
         orca:remove_from_queue(x, y)
