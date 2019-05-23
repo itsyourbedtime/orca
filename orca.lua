@@ -14,8 +14,7 @@ local orca_engine = include("lib/engine")
 local keyb = hid.connect()
 local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
-local selected_area_y, selected_area_x = 1, 1
-local bounds_x, bounds_y = 25, 8
+local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map = false
 local dot_density, frame = 1, 1
 
@@ -305,25 +304,19 @@ function orca:move(x,y)
   end
 end
 
--- spawning and cleanups 
-
 function orca:spawn(op)
-  if self.list[op] ~= nil then
+  if self.list[op] ~= nil and self:active(self.x, self.y) then
+    if self:active(self.x + 2, self.y) then self.unlock(self.x + 2, self.y, false) end
+    if self:active(self.x + 1, self.y + 1) then self.unlock(self.x + 1, self.y + 1, false) end
     local ports = self.ports[op]
     field.cell.params[self.y][self.x].lit = true
     for i=1,#ports do
       for l= 1, #ports[i] - 2 do
         local x = self.x + ports[i][l]
         local y = self.y + ports[i][l+1]
-        local existing = field.cell[y][x]
+        local existing = self.op(x, y)
         self.port_type = ports[i][l + 2]
-        if existing ~= nil then
-          if self.port_type:find('out') ~= nil then 
-            self:clean_ports(x, y) 
-            self.lock(x, y, false, true)  
-          end
-          self.lock( x, y, self.port_type:find('out') ~= nil and true, self.port_type:find('op') ~= nil and true )
-        end
+        self.lock( x, y, self.port_type:find('out') ~= nil and true, self.port_type:find('op') ~= nil and true )
       end
     end
   end
@@ -351,7 +344,6 @@ function orca:cleanup(x, y)
   local x, y = x ~= nil and x or self.x, y ~= nil and y or self.y
   local cell, params = field.cell[y][x], field.cell.params
   local ops_to_clear = { P = true, L = true, T = true, G = true, K = true }
-  --self.unlock(self.x, self.y, false)
   self:clean_ports(x, y)
   if field.cell[y + 1][x] == '*' then 
     field.cell[y + 1][x] = 'null' 
@@ -376,7 +368,6 @@ function orca:cleanup(x, y)
 end
 
 -- execution
-
 function orca:add_to_queue(x,y)
   local id = orca:id(x ,y)
   if orca.operate(x, y) and orca.inbounds(x, y) then
@@ -403,13 +394,15 @@ end
 function orca:exec_queue()
   frame = (frame + 1) % 99999
   for k, _ in pairs( field.active ) do
-    local y = field.active[k][2]
-    local x = field.active[k][1]
-    local op = field.active[k][3]
-    if op == self.list[up(op)]  then
-      operators[up(op)](self, x, y, frame, field.cell) 
-      if not self.operate(x, y) then 
-        orca:remove_from_queue(x, y)
+    if _ ~= nil then 
+      local y = field.active[k][2]
+      local x = field.active[k][1]
+      local op = field.active[k][3]
+      if op == self.list[up(op)]  then
+        operators[up(op)](self, x, y, frame, field.cell) 
+        if not self.operate(x, y) then 
+          orca:remove_from_queue(x, y)
+        end
       end
     end
   end
