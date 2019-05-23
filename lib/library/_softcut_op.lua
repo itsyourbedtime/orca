@@ -8,7 +8,7 @@ local _softcut_op = function ( self, x, y, frame, grid)
     grid.sc_ops[self:id(self.x,self.y)] = self.sc_ops
     grid[self.y][self.x + 1] = grid.sc_ops[self:id(self.x,self.y)]
   end
-  self:spawn( self.ports[self.name] )
+  self:spawn(self.name)
   local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local rec = util.clamp( self:listen( self.x + 2, self.y ) or 0, 0, #self.chars ) -- rec 0 - off 1 - z on + rec_level
   local play = util.clamp( self:listen( self.x + 3, self.y ) or 0, 0, #self.chars ) -- play 0 - off 1 - fwd 2 - rev

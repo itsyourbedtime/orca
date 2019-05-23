@@ -7,22 +7,20 @@ local P = function (self, x, y, frame, grid)
   local val = grid[self.y][self.x + 1]
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
   if self:active() then
-    self:clean_ports(self.ports[self.name], self.x, self.y)
+    self:spawn(self.name)
     for i = 1, #self.chars do
       if i <= length then
-        grid.params[self.y + 1][(self.x + i) - 1 ].dot = true
-        grid.params[self.y + 1][(self.x + i) - 1 ].lock = true
+        self.lock((self.x + i) -1, self.y + 1, false, true)
       else
         if grid[self.y][(self.x + i)] == self.name then 
           break
         else
-          grid.params[self.y + 1][(self.x + i)].dot = false
-          grid.params[self.y + 1][(self.x + i) ].lock = false
+          self.unlock((self.x + i) -1, self.y + 1, false)
         end
       end
     end
     self.ports[self.name][4] = {((pos or 1)  % (length + 1)) - 1, 1, 'output_op'}
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     grid[self.y + 1][(self.x + ((pos or 1)  % (length + 1))) - 1] = val
   end
 end

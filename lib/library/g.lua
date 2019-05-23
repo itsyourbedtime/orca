@@ -10,7 +10,7 @@ local G = function(self, x, y, frame, grid)
   local offsety = util.clamp( b + self.y, 1, self.YSIZE) 
   local offsetx = util.clamp( a + self.x, 1, self.XSIZE)
   if self:active() then
-    self:spawn( self.ports[self.name] )
+    self:spawn(self.name)
     for i = 1, #self.chars do
       local new = grid[self.y][(self.x + i)]
       local is_op = self.operate(self.x + i, self.y)

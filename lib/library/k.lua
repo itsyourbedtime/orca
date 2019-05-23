@@ -8,7 +8,7 @@ local K = function (self, x, y, frame, grid)
   local l_start = self.x + offset
   local l_end = self.x + length
   if self:active() then
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     if length - offset  == 0 then
       for i=2,length do
         grid.params[self.y][self.x + i].op = true

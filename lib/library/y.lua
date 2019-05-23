@@ -2,10 +2,10 @@ local Y = function(self, x, y, frame, grid)
   self.name = 'Y'
   self.y = y
   self.x = x
-  local a = grid[self.y][self.x - 1]
+  local a = grid[self.y][self.x - 1] ~= nil and grid[self.y][self.x - 1] or 'null'
   --local is_op = self.is_op(self.x - 1, self.y)
   if self:active() then
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     grid[self.y][self.x + 1] = a
     --self:add_to_queue(self.y, self.x + 1)
   elseif self.banged( self.x, self.y ) then

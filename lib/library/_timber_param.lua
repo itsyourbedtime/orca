@@ -15,7 +15,7 @@ local timber_param = function ( self, x, y, frame, grid )
   self.name = '"'
   self.y = y
   self.x = x
-  self:spawn( self.ports[self.name] )
+  self:spawn(self.name)
   local sample = self:listen( self.x + 1, self.y ) or 0
   local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
   local val = self:listen( self.x + 3, self.y ) or 0

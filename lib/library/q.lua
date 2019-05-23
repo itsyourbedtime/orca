@@ -14,10 +14,10 @@ local Q = function (self, x, y, frame, grid)
     self:spawn(self.inputs)
     for i = 1, length do
       grid[self.y + 1][(offsetx  + i) - (length + 1)] = grid[offsety][(offsetx + i) -1]
-      self:clean_ports(self.ports[self.name], self.x, self.y)
+      self:clean_ports(self.x, self.y)
       self.ports[self.name] = self.inputs
       self.ports[self.name][4 + i] = {(a+i)-1, b, 'input'}
-      self:spawn(self.ports[self.name])
+      self:spawn(self.name)
     end
   end
 end

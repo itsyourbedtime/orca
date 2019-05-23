@@ -2,7 +2,7 @@ local timber = function ( self, x, y, frame, grid )
   self.name = "'"
   self.y = y
   self.x = x
-  self:spawn( self.ports[self.name] )
+  self:spawn(self.name)
   local sample = self:listen( self.x + 1, self.y ) or 0
   local octave = util.clamp( self:listen( self.x + 2, self.y ) or 3, 0, 8 )
   local level = self:listen( self.x + 4, self.y ) or 28

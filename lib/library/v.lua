@@ -5,7 +5,7 @@ local V = function (self,x,y,frame, grid)
   local a = self:listen(self.x - 1, self.y, 0) or 0
   local b = self:listen(self.x + 1, self.y, 0) or grid[self.y][self.x + 1]
   if self:active() then
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     if ((grid.vars[b] ~= nil and grid.vars[b] ~= 'null')  and a == 0) then
       if grid.vars[b] ~= nil then
        grid.params[self.y + 1][self.x].lit_out = true

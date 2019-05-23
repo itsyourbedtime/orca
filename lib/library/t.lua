@@ -8,13 +8,11 @@ local T = function (self, x, y, frame, grid)
   local val = grid[self.y][self.x + util.clamp(pos,1,length)]
   if self:active() then
     grid.params[y+1][x].lit_out  = true
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     for i = 1,length do
-      grid.params[self.y][(self.x + i)].dot = true
-      grid.params[self.y][(self.x + i)].lock = true
+      self.lock(self.x + i, self.y, false, true)
     end
     -- highliht pos
-    
     for l= 1, length do
       if pos == l then
         grid.params[self.y][(self.x + l)].cursor = true
@@ -26,9 +24,7 @@ local T = function (self, x, y, frame, grid)
   end
   -- cleanups
   for i= length+1, #self.chars do
-    grid.params[self.y][(self.x + i)].dot = false
-    grid.params[self.y][(self.x + i)].lock = false
-    grid.params[self.y][(self.x + i)].cursor = false
+    self.unlock(self.x + i, self.y, false)
   end
 end
 

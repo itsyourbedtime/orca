@@ -2,7 +2,7 @@ local midi_cc = function ( self, x, y, frame, grid )
   self.name = '!'
   self.y = y
   self.x = x
-  self:spawn(self.ports[self.name])
+  self:spawn(self.name)
   self.notes_off_metro.event = self.all_notes_off(channel)
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
   local knob = util.clamp( self:listen( self.x + 2, self.y ) or 0, 1, #self.chars )

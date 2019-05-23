@@ -11,7 +11,7 @@ local A = function ( self, x, y, frame, grid )
     sum = 0 
   end
   if self:active() then
-    self:spawn( self.ports[self.name] )
+    self:spawn( self.name )
       grid[self.y + 1][self.x] = sum
   elseif self.banged( self.x, self.y ) then
     grid[self.y + 1][self.x] = sum

@@ -9,7 +9,7 @@ local R = function (self, x, y, frame, grid)
   local val = self.chars[math.random(a,b)]
   local value = cap and string.upper(val) or val
   if self:active() then
-    self:spawn(self.ports[self.name])
+    self:spawn(self.name)
     grid[self.y + 1][self.x] = value
   elseif self.banged( self.x, self.y ) then
     grid[self.y + 1][self.x] = value

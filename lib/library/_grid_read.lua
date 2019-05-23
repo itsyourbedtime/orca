@@ -2,7 +2,9 @@ local grid_read = function ( self, x, y, frame, _grid )
   self.name = '<'
   self.y = y
   self.x = x
-  self:spawn(self.ports[self.name])
+  self:spawn(self.name)
+  local GRID_ROWS = self.g.rows
+  local GRID_COLS = self.g.cols
   local v
   local col = self:listen( self.x - 2, self.y ) 
   local row = self:listen( self.x - 1, self.y )
@@ -16,7 +18,7 @@ local grid_read = function ( self, x, y, frame, _grid )
         _grid[self.y + 1][self.x] = value
       end
     elseif mode == 1 then
-    for i = 1, g.cols do
+    for i = 1, GRID_COLS do
       if _grid.grid[row][i] ~= nil and _grid.grid[row][i] > 6 then 
         _grid[self.y + 1][self.x] = self.chars[i]
         break
@@ -25,7 +27,7 @@ local grid_read = function ( self, x, y, frame, _grid )
         end
       end
     elseif mode == 2 then
-      for i = 1, g.rows do 
+      for i = 1, GRID_ROWS do 
         if _grid.grid[i][col] ~= nil and _grid.grid[i][col] > 6 then
           _grid[self.y + 1][self.x] = self.chars[i]
           break
