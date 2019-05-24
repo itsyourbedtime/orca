@@ -11,16 +11,16 @@ local X = function(self, x, y, frame, grid)
     --self:clean_ports(self.x, self.y)
     --self.ports[self.name][4] = {a, b, 'output'}
     self:spawn(self.name)
-    grid[offsety][offsetx] = self.copy(input)
+    grid[offsety][offsetx] = input
     if self.op(self.x + 1, self.y)  then 
       self:add_to_queue(offsetx, offsety)
     end
+    --self.lock(offsetx, offsety, true, false)
   elseif self.banged( self.x, self.y ) then
-    grid[offsety][offsetx] = self.copy(input)
+    grid[offsety][offsetx] = input
     if self.op(self.x + 1, self.y) then 
       self:add_to_queue(offsetx, offsety)
     end
-  else
   end
 end
 
