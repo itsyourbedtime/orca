@@ -294,8 +294,8 @@ function orca:erase(x, y)
 end
 
 function orca:explode()
-  field.cell[self.y][self.x] = '*'
-  self:add_to_queue( self.x, self.y)
+  self:replace('*')
+  self:add_to_queue(self.x, self.y)
 end
 
 function orca:move_cell(x,y)
@@ -443,9 +443,7 @@ end
 function orca.remove_from_queue(x, y)
   if orca.inbounds(x, y) then
     local id = orca.id(x,y)
-    if orca.in_queue(x, y) then
-      field.active = orca.removeKey(field.active, id)
-    end
+    field.active = orca.removeKey(field.active, id)
   end
 end
 
