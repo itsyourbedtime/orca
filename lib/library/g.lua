@@ -1,7 +1,14 @@
 local G = function(self, x, y, frame, grid)
-  self.name = 'G'
+  
   self.y = y
   self.x = x
+  
+  self.name = 'generator'
+  self.info = 'Writes distant operators with offset.'
+  
+  self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}}
+  self.spawn(self.ports)
+  
   local a = self:listen(self.x - 3, self.y) or 0 -- x
   local b = self:listen(self.x - 2, self.y) or 1 -- y
   local length = self:listen(self.x - 1, self.y, 0) or 0
@@ -9,13 +16,9 @@ local G = function(self, x, y, frame, grid)
   length = util.clamp( length, 0, self.XSIZE - length)
   local offsety = util.clamp( b + self.y, 1, self.YSIZE) 
   local offsetx = util.clamp( a + self.x, 1, self.XSIZE)
+  
   if self:active() then
-    self:spawn(self.name)
     for i = 1, #self.chars do
-      local new = grid[self.y][(self.x + i)]
-      local is_op = self.operate(self.x + i, self.y)
-      local existing = grid[offsety][(offsetx + i)]
-      local ex_is_op = self.operate((offsetx + i), offsety ) 
       if i <= length then
         self.lock( self.x + i, self.y, false, true )
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
@@ -23,7 +26,7 @@ local G = function(self, x, y, frame, grid)
           self:add_to_queue(offsetx + i, offsety)
         end
       else
-        if grid[self.y][(self.x + i) + 2] == self.name then 
+        if self.operate((self.x + i) + 1, self.y) and self:active((self.x + i) + 1, self.y) then 
           break
         else
           self.unlock(self.x + i, self.y, false)
@@ -38,6 +41,7 @@ local G = function(self, x, y, frame, grid)
       end
     end
   end
+  
 end
 
 return G

@@ -8,14 +8,19 @@ local param_ids = {
   "filter_resonance", 
   "filter_type", 
   "quality" 
-  
 }
 
 local timber_param = function ( self, x, y, frame, grid )
-  self.name = '"'
+  
   self.y = y
   self.x = x
-  self:spawn(self.name)
+  
+  self.name = 'param'
+  self.info = 'Sets engine param on bang'
+  
+  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
+  self:spawn(self.ports)
+  
   local sample = self:listen( self.x + 1, self.y ) or 0
   local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
   local val = self:listen( self.x + 3, self.y ) or 0
@@ -27,9 +32,11 @@ local timber_param = function ( self, x, y, frame, grid )
               or param == 8 and (val % 2) + 1
               or param == 9 and (val % 4) + 1  
               or val_scaled
+  
   if self.banged( self.x, self.y ) then
     params:set( param_ids[param] .. "_" .. sample, value )
   end
+  
 end
 
 return timber_param

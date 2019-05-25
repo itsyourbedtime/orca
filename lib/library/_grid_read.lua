@@ -1,8 +1,14 @@
 local grid_read = function ( self, x, y, frame, _grid )
-  self.name = '<'
+  
   self.y = y
   self.x = x
-  self:spawn(self.name)
+  
+  self.name = 'g.read'
+  self.indo = 'Writes grid on bang.'
+  
+  self.ports = {{-2, 0, 'input'}, {-1, 0, 'input'}, {0, 1, 'output_op'}}
+  self:spawn(self.ports)
+  
   local GRID_ROWS = self.g.rows
   local GRID_COLS = self.g.cols
   local v
@@ -11,6 +17,7 @@ local grid_read = function ( self, x, y, frame, _grid )
   local mode = (row ~= false and col == false and 1 ) or (row == false and col ~= false and 2) or 0
   if mode == 0 then v = _grid.grid[not row and 1 or row][not col and 1 or col] end
   local value = (v ~= nil and v < 6 and 'null') or v == nil and 'null' or '*'
+  
   if self:active() then
     if mode == 0 then
       if row ~= false and col ~= false then
@@ -37,6 +44,7 @@ local grid_read = function ( self, x, y, frame, _grid )
       end
     end
   end
+  
 end
 
 return grid_read

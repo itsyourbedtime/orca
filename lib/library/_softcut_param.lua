@@ -7,14 +7,21 @@ local param_ids = {
 } 
 
 local softcut_param = function ( self, x, y, frame, grid )
-  self.name = '\\'
+  
   self.y = y
   self.x = x
-  self:spawn(self.name)
+  
+  self.name = 'sc.param'
+  self.info = 'Sets softcut param on bang'
+  
+  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
+  self:spawn(self.ports)
+  
   local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
   local val = self:listen( self.x + 3, self.y ) or 0
   local value = val / 1
+  
   if self.banged( self.x, self.y ) then
     if param == 1 then
       val = val % 4
@@ -28,6 +35,7 @@ local softcut_param = function ( self, x, y, frame, grid )
       softcut[param_ids[param]](playhead, value)
     end
   end
+  
 end
 
 return softcut_param

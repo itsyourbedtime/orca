@@ -1,14 +1,21 @@
 local K = function (self, x, y, frame, grid)
-  self.name = 'K'
+  
   self.y = y
   self.x = x
+  
+  self.name = 'konkat'
+  self.info = 'Otputs multiple variables.'
+  
+  self.ports = {{-1, 0, 'input'}}
+  self:spawn(self.ports)
+  
   local length = self:listen(self.x - 1, self.y, 0) or 0
   local offset = 1
   length = util.clamp(length, 0, self.XSIZE - self.bounds_x)
   local l_start = self.x + offset
   local l_end = self.x + length
+  
   if self:active() then
-    self:spawn(self.name)
     if length - offset  == 0 then
       for i=2,length do
         grid.params[self.y][self.x + i].op = true
@@ -40,6 +47,7 @@ local K = function (self, x, y, frame, grid)
       grid.params[self.y][util.clamp((self.x + i), 1, self.XSIZE)].lock = false
     end
   end
+  
 end
 
 return K
