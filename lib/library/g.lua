@@ -7,7 +7,7 @@ local G = function(self, x, y, frame, grid)
   self.info = 'Writes distant operators with offset.'
   
   self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}}
-  self.spawn(self.ports)
+  self:spawn(self.ports)
   
   local a = self:listen(self.x - 3, self.y) or 0 -- x
   local b = self:listen(self.x - 2, self.y) or 1 -- y
@@ -26,7 +26,7 @@ local G = function(self, x, y, frame, grid)
           self:add_to_queue(offsetx + i, offsety)
         end
       else
-        if self.operate((self.x + i) + 1, self.y) and self:active((self.x + i) + 1, self.y) then 
+        if self.operate((self.x + i) + 1, self.y) then 
           break
         else
           self.unlock(self.x + i, self.y, false)
@@ -36,7 +36,7 @@ local G = function(self, x, y, frame, grid)
   elseif self.banged( self.x, self.y ) then
     for i=1,length do
       grid[util.clamp(offsety,1, #self.chars)][offsetx + i] = grid[self.y][self.x + i]
-      if grid[self.y][self.x + i] == self.list[grid[self.y][self.x + i]] then 
+      if self.op(self.x + i, self.y) then 
         self:add_to_queue(offsetx + i, offsety)
       end
     end

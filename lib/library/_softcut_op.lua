@@ -10,11 +10,6 @@ local _softcut_op = function ( self, x, y, frame, grid)
   self:spawn(self.ports)
   
   -- default buffer vals
-  if grid.sc_ops[self:id(self.x,self.y)] == nil then 
-    self.sc_ops = util.clamp(self.sc_ops + 1, 1, self.max_sc_ops)
-    grid.sc_ops[self:id(self.x,self.y)] = self.sc_ops
-    grid[self.y][self.x + 1] = grid.sc_ops[self:id(self.x,self.y)]
-  end
   
   local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local rec = util.clamp( self:listen( self.x + 2, self.y ) or 0, 0, #self.chars )
@@ -28,6 +23,14 @@ local _softcut_op = function ( self, x, y, frame, grid)
   local pl = play % 3 
   grid.sc_ops_pos[playhead] = pos 
   
+  
+--[[  local id = self.id(self.x, self.y) 
+  if grid.sc_ops[id] == nil then 
+    self.sc_ops = util.clamp(self.sc_ops + 1, 1, self.max_sc_ops)
+    grid.sc_ops[id] = self.sc_ops
+    grid[self.y][self.x + 1] = grid.sc_ops[id]
+  end
+]]
   if grid[self.y][self.x + 2] == '*' then
     grid[self.y][self.x + 2] = 'null'
     softcut.buffer_clear_region( 0, #self.chars )

@@ -13,7 +13,7 @@ local J = function(self, x, y, frame, grid)
     grid[self.y + 1][self.x] = grid[self.y - 1][self.x]
   elseif self.banged(self.x, self.y) then
     grid[self.y + 1][self.x] = grid[self.y - 1][self.x]
-    if a == self.list[a] then 
+    if self.op(self.x, self.y + 1) then 
       self:add_to_queue(self.x, self.y + 1)
     end
   end

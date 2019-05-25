@@ -9,7 +9,7 @@ local bang = function( self, x, y, frame, grid )
   self.ports = {}
   
   if self:active() then 
-    self:erase( self.x, self.y )  
+    self:replace('null')  
   end
   
 end
