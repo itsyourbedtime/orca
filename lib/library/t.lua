@@ -13,7 +13,8 @@ local T = function (self, x, y, frame, grid)
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
   local pos = util.clamp(self:listen(self.x - 2, self.y, 0) or 1, 1, length)  
   local val = grid[self.y][self.x + util.clamp(pos, 1, length)]
-  
+  grid.params[self.y][self.x].seq = length
+
   if self:active() then
     for i = 1, #self.chars do
       if i <= length then

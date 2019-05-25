@@ -16,7 +16,8 @@ local Q = function (self, x, y, frame, grid)
   length = util.clamp(length,1, self.XSIZE - length)
   local offsety = util.clamp(b + self.y, 1, self.YSIZE)
   local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
-  
+  grid.params[self.y][self.x].seq = length
+
   if self:active() then
     for y = 1, #self.chars do
       for x = 1, #self.chars do

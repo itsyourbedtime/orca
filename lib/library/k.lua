@@ -14,7 +14,8 @@ local K = function (self, x, y, frame, grid)
   length = util.clamp(length, 0, self.XSIZE - self.bounds_x)
   local l_start = self.x + offset
   local l_end = self.x + length
-  
+  grid.params[self.y][self.x].seq = length
+
   if self:active() then
     if length - offset  == 0 then
       for i=2,length do

@@ -17,14 +17,10 @@ local X = function(self, x, y, frame, grid)
   
   if self:active() then
     grid[offsety][offsetx] = input
-    if self.op(self.x + 1, self.y)  then 
-      self:add_to_queue(offsetx, offsety)
-    end
+    self.unlock( offsetx, offsety )
   elseif self.banged( self.x, self.y ) then
     grid[offsety][offsetx] = input
-    if self.op(self.x + 1, self.y) then 
-      self:add_to_queue(offsetx, offsety)
-    end
+    self.unlock( offsetx, offsety )
   end
   
 end

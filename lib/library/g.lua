@@ -16,15 +16,14 @@ local G = function(self, x, y, frame, grid)
   length = util.clamp( length, 0, self.XSIZE - length)
   local offsety = util.clamp( b + self.y, 1, self.YSIZE) 
   local offsetx = util.clamp( a + self.x, 1, self.XSIZE)
-  
+  grid.params[self.y][self.x].seq = length
+
   if self:active() then
     for i = 1, #self.chars do
       if i <= length then
         self.lock( self.x + i, self.y, false, true )
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
-        if self.op(self.x + i, self.y) then 
-          self:add_to_queue(offsetx + i, offsety)
-        end
+        self.unlock( offsetx + i, offsety )
       else
         if self.operate((self.x + i) + 1, self.y) then 
           break
@@ -36,9 +35,7 @@ local G = function(self, x, y, frame, grid)
   elseif self.banged( self.x, self.y ) then
     for i=1,length do
       grid[util.clamp(offsety,1, #self.chars)][offsetx + i] = grid[self.y][self.x + i]
-      if self.op(self.x + i, self.y) then 
-        self:add_to_queue(offsetx + i, offsety)
-      end
+      self.unlock( offsetx + i, offsety )
     end
   end
   

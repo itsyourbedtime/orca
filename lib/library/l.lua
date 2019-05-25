@@ -15,7 +15,8 @@ local L = function (self, x, y, frame, grid)
   length = util.clamp( length, 0, self.XSIZE - length)
   local l_start = util.clamp( self.x + offset, 1, self.XSIZE)
   local l_end = util.clamp( self.x + length, 1, self.YSIZE)
-  
+  grid.params[self.y][self.x].seq = length
+
   if self:active() then
     if frame % rate == 0 and length ~= 0 then
       self:shift(offset, length)
