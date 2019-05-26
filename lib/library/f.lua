@@ -12,6 +12,7 @@ local F = function( self, x, y, frame, grid )
   local b = self:listen( self.x + 1, self.y)
   local a = self:listen( self.x - 1, self.y)
   local val = a == b and '*' or 'null'
+  val = a == false and b == false and 'null' or val
 
   if self:active() then
     grid[self.y + 1][self.x] = val
