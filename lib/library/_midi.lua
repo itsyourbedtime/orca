@@ -4,7 +4,7 @@ local midi_out = function ( self, x, y, frame, grid )
   self.x = x  
   
   self.name = 'midi'
-  self.info = 'Sends MIDI note.'
+  self.info = {'Sends MIDI note.', 'in-port', 'in-octave', 'in-note', 'in-velocity', 'in-length'} 
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}, {4, 0 , 'input_op'}, {5, 0, 'input_op'}}
   self:spawn(self.ports)

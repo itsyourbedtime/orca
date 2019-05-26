@@ -1,5 +1,5 @@
 local param_ids = {
-  "",  -- audio.level_adc_cut  1 - adc 2 - eng  3 - both
+  "source",  --  1 - adc 2 - eng  3 - both
   "pan", 
   "rate_slew_time", 
   "level_slew_time", 
@@ -12,7 +12,7 @@ local softcut_param = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'sc.param'
-  self.info = 'Sets softcut param on bang'
+  self.info = {'Sets softcut param on bang', 'in-playhead', 'in-param', 'in-value' }
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
   self:spawn(self.ports)

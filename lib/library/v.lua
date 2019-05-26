@@ -4,7 +4,7 @@ local V = function (self,x,y,frame, grid)
   self.x = x
 
   self.name = 'variable'
-  self.info = 'Reads and writes globally available variable'
+  self.info = {'Reads and writes globally available variable', 'in-write', 'in-read'}
   
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}}
   self:spawn(self.ports)

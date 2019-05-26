@@ -2,8 +2,8 @@ local osc_out = function ( self, x, y, frame, grid )
   self.x = x
   self.y = y
   
-  self.name = '='
-  self.info = "Sends OSC message."
+  self.name = 'osc'
+  self.info = { "Sends OSC message."}
   
   self.ports = {}
   

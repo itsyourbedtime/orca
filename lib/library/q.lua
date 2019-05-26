@@ -4,7 +4,7 @@ local Q = function (self, x, y, frame, grid)
   self.x = x
 
   self.name = 'query'
-  self.info = 'Reads distant operators with offset.'
+  self.info = {'Reads distant operators with offset.', 'in-y', 'in-x', 'in-lenght', 'query-out'}
 
   self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1 , 'output'}}
   self:spawn(self.ports)

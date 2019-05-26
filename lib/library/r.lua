@@ -4,7 +4,7 @@ local R = function (self, x, y, frame, grid)
   self.x = x
 
   self.name = 'random'
-  self.info = 'Outputs a random value.'
+  self.info = {'Outputs a random value.', 'in-a', 'in-b', 'rand-out'}
 
   self.ports = {{-1, 0, 'input'}, { 1, 0, 'input_op'}, {0, 1 , 'output_op'}}
   self:spawn(self.ports)

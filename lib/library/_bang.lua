@@ -4,7 +4,7 @@ local bang = function( self, x, y, frame, grid )
   self.y = y 
   
   self.name = 'bang'
-  self.info = 'Bangs neighboring operators.'
+  self.info = {'Bangs neighboring operators.'}
   
   self.ports = {}
   

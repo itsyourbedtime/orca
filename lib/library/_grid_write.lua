@@ -4,7 +4,7 @@ local grid_write = function ( self, x, y, frame, _grid )
   self.x = x
   
   self.name = 'g.write'
-  self.info = 'Reads grid x / y.'
+  self.info = {'Writes grid x / y.', 'in-g.col', 'in-g.row', 'in-brightness'}
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
   self:spawn(self.ports)

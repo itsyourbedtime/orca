@@ -4,7 +4,7 @@ local rnote = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'r.note'
-  self.info = 'Outputs random note within octave.'
+  self.info = {'Outputs random note within octave.', 'in-rate', 'in-scale', 'rnote-out'}
   
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output_op'}}
   self:spawn(self.ports)
@@ -19,7 +19,7 @@ local rnote = function ( self, x, y, frame, grid )
       grid[self.y + 1][self.x] =  self.notes[util.clamp( scales[math.random(#scales)] - 60, 1, 12 )]
     end
   end
-  
+
 end
 
 return rnote

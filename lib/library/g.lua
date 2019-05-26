@@ -4,7 +4,7 @@ local G = function(self, x, y, frame, grid)
   self.x = x
   
   self.name = 'generator'
-  self.info = 'Writes distant operators with offset.'
+  self.info = {'Writes distant operators with offset.', 'in-y', 'in-x'}
   
   self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}}
   self:spawn(self.ports)

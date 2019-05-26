@@ -3,8 +3,8 @@ local M  = function ( self, x, y, frame, grid )
   self.y = y
   self.x = x
 
-  self.name = 'M'
-  self.info = 'Outputs product of inputs.'
+  self.name = 'multiply'
+  self.info = {'Outputs product of inputs.', 'in-a', 'in-b', 'mult-out'}
 
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input'}, {0, 1 , 'output'}}
   self:spawn(self.ports)

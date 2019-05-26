@@ -4,7 +4,7 @@ local T = function (self, x, y, frame, grid)
   self.x = x
 
   self.name = 'track'
-  self.info = 'Reads an eastward operator with offset'
+  self.info = {'Reads an eastward operator with offset', 'in-length', 'in-pos', 'in-val', 'track-out'}
   
   self.ports = {{-1, 0, 'input'},  {-2, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output_op'}}
   self:spawn(self.ports)

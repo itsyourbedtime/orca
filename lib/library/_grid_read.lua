@@ -4,7 +4,7 @@ local grid_read = function ( self, x, y, frame, _grid )
   self.x = x
   
   self.name = 'g.read'
-  self.indo = 'Writes grid on bang.'
+  self.info = {'Reads grid on bang.', 'in-g.col', 'in-g.row', 'out-g.read'}
   
   self.ports = {{-2, 0, 'input'}, {-1, 0, 'input'}, {0, 1, 'output_op'}}
   self:spawn(self.ports)

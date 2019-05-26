@@ -4,7 +4,7 @@ local A = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'add'
-  self.info = 'Outputs the sum of inputs.'
+  self.info = {'Outputs the sum of inputs.', 'in-a', 'in-b', 'add-out'}
   
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1, 'output_op'}}
   self:spawn( self.ports )

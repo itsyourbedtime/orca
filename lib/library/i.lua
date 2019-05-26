@@ -4,7 +4,7 @@ local I = function (self, x, y, frame, grid)
   self.x = x
   
   self.name = 'increment'
-  self.info = 'Increments southward operator.'
+  self.info = {'Increments southward operator.', 'in-a', 'in-b', 'inc-out'}
   
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output'}}
   self:spawn(self.ports)

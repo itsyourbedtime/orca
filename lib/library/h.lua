@@ -4,7 +4,7 @@ local H = function(self, x, y, frame, grid)
   self.x = x
   
   self.name = 'halt'
-  self.info = 'Stops southward operator from operating.'
+  self.info = {'Stops southward operator from operating.'}
 
   self.ports = {{0, 1, 'output_op'}}
   self:spawn(self.ports)

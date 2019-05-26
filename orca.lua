@@ -1,5 +1,5 @@
 -- ORCA
--- v0.9.9 @its_your_bedtime
+-- v0.9.8 @its_your_bedtime
 -- llllllll.co/t/orca
 
 local tab = require 'tabutil'
@@ -52,24 +52,6 @@ local orca = {
 function orca.up(i)
   local l = tostring(i) 
   return string.upper(l) or 'null'
-end
-
-
--- grid 
-function orca.g.key(x, y, z)
-  local last = field.cell.grid[y][x]
-    field.cell.grid[y][x] = z == 1 and 15 or last < 6 and last or 0
-end
-
-function orca.g.redraw()
-  for y = 1, orca.g.rows do
-    for x = 1, orca.g.cols do
-      if field.cell.grid[y][x] ~= nil then
-        orca.g:led(x, y, field.cell.grid[y][x] )
-      end
-    end
-  end
-  orca.g:refresh()
 end
 
 -- midi / audio related
@@ -271,14 +253,16 @@ function orca.unspawn(x, y)
     field.cell.params[y][x].spawned = {}
     field.cell.params[y][x].info = {}
     field.cell.params[y][x].offsets = {}
+    --field.cell.params[y][x].seq = 0
   end
 end
 
 function orca.lock(x, y, lits, locks)
   local bounds = orca.inbounds(x, y)
   if bounds then 
-    if orca.spawned(x, y)  then
+    if orca.spawned(x, y) then
       orca.clean_ports(x, y) 
+      if locks then orca.unspawn( x, y ) end
     end
    field.cell.params[y][x] = {lit = false, lit_out = lits, lock = locks, cursor = lits, dot = true, seq = 0, spawned = {},  offsets = {}, info = {}}
   end
@@ -287,7 +271,7 @@ end
 function orca.unlock(x, y, locks)
   if orca.inbounds(x, y) then
     field.cell.params[y][x] = {lit = false, lit_out = false, lock = locks, cursor = false, dot = false, seq = 0, spawned = {},  offsets = {}, info = {}}
-    if not locks then orca:add_to_queue(x, y) end
+    if not locks and orca.op(x, y) then orca:add_to_queue(x, y) end
   end
 end
 
@@ -333,6 +317,7 @@ function orca:move(x,y)
   if not self.locked(b, a) and (collider ~= nil and collider ~= 'null') then
     if collider == '*' then
       self:move_cell(b,a)
+      --self:erase(self.x,self.y)
     elseif orca.op(b, a) or lock then
       self:explode()
     else
@@ -346,7 +331,7 @@ end
 function orca:spawn(ports)
   if (ports and orca:active(self.x, self.y)) then
     field.cell.params[self.y][self.x].spawned = ports
-    field.cell.params[self.y][self.x].info = { self.name, self.info }
+    field.cell.params[self.y][self.x].info = { self.name, self.info[1] }
     field.cell.params[self.y][self.x].lit = true
 
     for i=1,#ports do
@@ -354,6 +339,7 @@ function orca:spawn(ports)
       local y = self.y + ports[i][2]
       local port_type = ports[i][3]
       self.lock( x, y, port_type:find('out') ~= nil and true, (port_type:find('op') ~= nil or port_type:find('out') ~= nil) and true )
+      field.cell.params[y][x].info = { self.name, self.info[i + 1] }
     end
   end
 end
@@ -361,15 +347,18 @@ end
 function orca.clean_ports(x, y)
   local t = field.cell.params[y][x].spawned
   field.cell.params[y][x].lit = false
-  orca.unlock( x + 1, y + 1, false) 
-  if t ~= nil then
+  --orca.unlock( x + 2, y , false)
+  if orca.spawned(x, y) then
     for i= 1, #t do
       local x2 = x + t[i][1]
       local y2 =  y + t[i][2]
       local port_type = t[i][3]
       orca.unlock( x2, y2,  port_type:find('op') ~= nil  and false)
+      if orca.op(x2 + 2, y2 ) and not orca.locked(x2 + 2, y2) then orca.unlock( x2, y2, false) end
+
     end
   end
+--  if orca.op(x + 1, y + 1) then orca.unlock( x + 1, y + 1, false) end
 end
 
 function orca:cleanup()
@@ -493,6 +482,27 @@ function init()
   redraw_metro:start()
 end
 
+
+
+-- grid 
+function orca.g.key(x, y, z)
+  local last = field.cell.grid[y][x]
+    field.cell.grid[y][x] = z == 1 and 15 or last < 6 and last or 0
+end
+
+function orca.g.redraw()
+  for y = 1, orca.g.rows do
+    for x = 1, orca.g.cols do
+      if field.cell.grid[y][x] ~= nil then
+        orca.g:led(x, y, field.cell.grid[y][x] )
+      end
+    end
+  end
+  orca.g:refresh()
+end
+
+
+-- 
 local function update_offset()
   if x_index < bounds_x + (field_offset_x - 24)  then
     field_offset_x =  util.clamp(field_offset_x - (ctrl and 9 or 1),0,orca.XSIZE - field_offset_x)
@@ -720,29 +730,29 @@ local function draw_cursor(x,y)
   screen.level(cell == 'null' and 2 or 15)
   screen.rect(x_pos, y_pos, 5, 8)
   screen.fill()
-  screen.move(x_pos + ((cell ~= 'null' ) and 1 or 0), y_pos + 6)
-  screen.level(cell == 'null' and 14 or 1)
+
   screen.font_face(cell == 'null' and 0 or 25)
   screen.font_size(cell == 'null' and 8 or 6)
+
+  screen.level(cell == 'null' and 14 or 1)
+  screen.move(x_pos + ((cell ~= 'null' ) and 1 or 0), y_pos + 6)
   screen.text((cell == 'null' or cell == nil) and '@' or cell)
   
 end
 
 function orca:draw_bar()
+  local info = self.op(x_index, y_index) and field.cell.params[y_index][x_index].info[1] or field.cell.params[y_index][x_index].info[2] or 'empty'
   
   screen.level(0)
   screen.rect(0, 56, 128, 8)
   screen.fill()
-  screen.level(15)
+  screen.level(9)
   screen.move(2, 63)
   screen.font_face(25)
   screen.font_size(6)
-  screen.text(frame .. 'f')
+  screen.text(frame .. 'f  ' .. info)
   screen.stroke()
-  screen.move(44, 63)
-  screen.text_center(self.op(x_index, y_index) and field.cell.params[self.y][self.x].info[1] or 'empty')
-  screen.stroke()
-  screen.move(75,63)
+  screen.move(80,63)
   screen.text(params:get("bpm") .. (frame % 4 == 0 and ' *' or ''))
   screen.stroke()
   screen.move(123,63)
@@ -761,21 +771,9 @@ function orca:draw_help()
     screen.level(0)
     screen.rect(1, 30, 126, 23)
     screen.fill()
-    if bar then
-      screen.level(15)
-      screen.move(40, 53)
-      screen.line_rel(4, 4)
-      screen.move(48, 53)
-      screen.line_rel(-4, 4)
-      screen.stroke()
-      screen.level(0)
-      screen.move(41, 54)
-      screen.line_rel(6, 0)
-      screen.stroke()
-    end
     screen.font_face(25)
     screen.font_size(6)
-    local description = tab.split(field.cell.params[self.y][self.x].info[2], ' ')
+    local description = tab.split(field.cell.params[y_index][x_index].info[2], ' ')
     screen.level(9)
     screen.move(3, 38)
     local y = 40

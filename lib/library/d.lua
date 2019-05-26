@@ -4,7 +4,7 @@ local D = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'delay'
-  self.info = 'Bangs on a fraction of the runtime frame.'
+  self.info = {'Bangs on a fraction of the runtime frame.', 'in-rate', 'in-mod', 'delay-out'}
   
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1, 'output'}}
   self:spawn(self.ports)

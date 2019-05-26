@@ -4,7 +4,7 @@ local midi_cc = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'cc'
-  self.info = 'Sends MIDI control change.'
+  self.info = {'Sends MIDI control change.', 'in-channel', 'in-cc', 'in-value'}
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
   self:spawn(self.ports)

@@ -4,7 +4,7 @@ local _softcut_op = function ( self, x, y, frame, grid)
   self.x = x
   
   self.name = 'softcut'
-  self.info = 'Softcut operator.'
+  self.info = {'Softcut operator, resets pos on bang', 'in-playhead', 'in-rec', 'in-play', 'in-level', 'in-rate', 'in-pos' }
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}, {4, 0 , 'input_op'}, {5, 0 ,'input_op'}, {6, 0 ,'input_op'}}
   self:spawn(self.ports)

@@ -4,7 +4,7 @@ local Z = function (self, x, y, frame, grid)
   self.y = y
 
   self.name = 'zoom'
-  self.name = 'Transitions operand to input.'
+  self.name = {'Transitions operand to input.', 'in-rate', 'in-target'}
 
   self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output'}}
   self:spawn(self.ports)

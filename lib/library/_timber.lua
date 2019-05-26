@@ -4,7 +4,7 @@ local timber = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = "engine"
-  self.info = 'Plays sample on bang'
+  self.info = {'Plays sample on bang', 'in-sample', 'in-oct', 'in-note', 'in-level', 'in-pos'}
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}, {4, 0 , 'input_op'}, {5, 0, 'input_op'}}
   self:spawn(self.ports)

@@ -4,7 +4,7 @@ local K = function (self, x, y, frame, grid)
   self.x = x
   
   self.name = 'konkat'
-  self.info = 'Otputs multiple variables.'
+  self.info = {'Otputs multiple variables.', 'in-length'}
   
   self.ports = {{-1, 0, 'input'}}
   self:spawn(self.ports)

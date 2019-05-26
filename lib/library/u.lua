@@ -6,7 +6,7 @@ local U  = function (self, x, y, frame, grid)
   self.x = x
 
   self.name = 'uclid'
-  self.info = 'Bangs based on the Euclidean pattern'
+  self.info = {'Bangs based on the Euclidean pattern', 'in-pulses', 'in-steps', 'uclid-out'}
 
   self.ports = {{-1, 0, 'input'}, { 1, 0, 'input_op'}, {0, 1 , 'output'}}
   self:spawn(self.ports)

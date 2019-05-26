@@ -4,7 +4,7 @@ local W = function(self, x, y, frame, grid)
   self.y = y
   
   self.name = 'west'
-  self.info = 'Moves westward, or bangs.'
+  self.info = {'Moves westward, or bangs.'}
 
   self.ports = {}
   

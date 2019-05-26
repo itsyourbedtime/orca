@@ -4,7 +4,7 @@ local E = function( self, x, y, frame, grid )
   self.y = y
   
   self.name = 'east'
-  self.info = 'Moves eastward, or bangs.'
+  self.info = {'Moves eastward, or bangs.'}
   
   self.ports = {}
 

@@ -4,8 +4,8 @@ local L = function (self, x, y, frame, grid)
   self.x = x
 
   self.name = 'loop'
-  self.info = 'Loops a number of eastward operators.'
-
+  self.info = {'Loops a number of eastward operators.', 'in-length', 'in-rate'}
+    
   self.ports = {{-1, 0, 'input'}, {-2, 0, 'input'}}
   self:spawn(self.ports)
 

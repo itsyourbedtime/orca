@@ -4,7 +4,7 @@ local J = function(self, x, y, frame, grid)
   self.x = x
 
   self.name = 'jumper'
-  self.name = 'Outputs the northward operator.'
+  self.name = {'Outputs the northward operator.', 'jymper-in', 'jymper-out'}
 
   self.ports = {{0, -1, 'input'}, {0, 1, 'output_op'}}
   self:spawn(self.ports)

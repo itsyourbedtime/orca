@@ -4,7 +4,7 @@ local O = function(self, x, y, frame, grid)
   self.x = x
 
   self.name = 'offset'
-  self.info = 'Reads a distant operator with offset.'
+  self.info = {'Reads a distant operator with offset.', 'in-x', 'in-y', 'offset-out', 'o-read'}
   
   self.ports = {{-1, 0, 'input'}, {-2, 0, 'input'}, {0, 1, 'output'}, {1, 0 , 'input_op'}}
   self:spawn(self.ports)

@@ -16,7 +16,7 @@ local timber_param = function ( self, x, y, frame, grid )
   self.x = x
   
   self.name = 'param'
-  self.info = 'Sets engine param on bang'
+  self.info = { 'Sets engine param on bang', 'in-sample', 'in-param', 'in-value' }
   
   self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
   self:spawn(self.ports)
