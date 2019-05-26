@@ -27,7 +27,7 @@ local G = function(self, x, y, frame, grid)
         grid[offsety][offsetx + i] = grid[self.y][self.x + i]
         self.unlock( offsetx + i, offsety )
       else
-        if self.operate((self.x + i) + 1, self.y) then 
+        if self.operate((self.x + i), self.y) then 
           break
         else
           self.unlock(self.x + i, self.y, false)

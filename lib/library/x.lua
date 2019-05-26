@@ -18,11 +18,12 @@ local X = function(self, x, y, frame, grid)
   if self:active() then
     grid.params[self.y][self.x].offsets = {offsetx, offsety}
     grid[offsety][offsetx] = input
-    self.unlock( offsetx, offsety )
+    self.unlock( offsetx, offsety, false)
+    if input == 'null' then self:erase(offsetx, offsety)  end
   elseif self.banged( self.x, self.y ) then
     grid.params[self.y][self.x].offsets = {offsetx, offsety}
     grid[offsety][offsetx] = input
-    self.unlock( offsetx, offsety )
+    self.unlock( offsetx, offsety, false )
   end
   
 end
