@@ -13,7 +13,8 @@ local O = function(self, x, y, frame, grid)
   local b = self:listen(self.x - 1, self.y) or 0
   local offsety = util.clamp(b + self.y, 1, self.YSIZE)
   local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
-  
+  grid.params[self.y][self.x].offsets = {offsetx, offsety}
+
   if self:active() then
     grid[self.y + 1][self.x] = grid[offsety][offsetx]
     self.clean_ports(self.x, self.y)

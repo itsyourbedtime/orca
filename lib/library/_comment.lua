@@ -10,15 +10,15 @@ local comment = function ( self, x, y, frame, grid )
   
   for x = x + 1, self.XSIZE do
     self.lock(x, y, false, true )
-    if grid[y][x] == self.name then
+    if grid[y][x] == '#' then
       for c = x + 1, self.XSIZE - x do
-        if grid[y][c] == self.name then 
+        if grid[y][c] == '#' then 
           break 
         else
           self.unlock(c, y, false)
         end
       end
-      break
+    break
     else
     end
   end

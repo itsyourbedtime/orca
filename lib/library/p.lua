@@ -13,7 +13,9 @@ local P = function (self, x, y, frame, grid)
   local pos = util.clamp(self:listen(self.x - 2, self.y, 0) or 1, 1, length)
   local val = grid[self.y][self.x + 1]
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
+  
   grid.params[self.y][self.x].seq = length
+  grid.params[self.y][self.x].offsets = {0, 1}
   
   if self:active() then
     for i = 1, #self.chars do
