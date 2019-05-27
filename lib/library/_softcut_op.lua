@@ -1,15 +1,18 @@
-local _softcut_op = function ( self, x, y, frame, grid)
+local _softcut_op = function ( self, x, y)
   
   self.y = y
   self.x = x
   
+  self.glyph = '/'
   self.name = 'softcut'
-  self.info = {'Softcut operator, resets pos on bang', 'in-playhead', 'in-rec', 'in-play', 'in-level', 'in-rate', 'in-pos' }
+  self.info = 'Softcut, resets position on bang'
+  self.passive = false
   
-  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}, {4, 0 , 'input_op'}, {5, 0 ,'input_op'}, {6, 0 ,'input_op'}}
+  self.ports = {
+    input = {1, 0, 'in-playhead'}, {2, 0, 'in-rec'}, {3, 0, 'in-play'}, {4, 0, 'in-level'}, {5, 0, 'in-rate'},  {5, 0, 'in-position'}
+  }
+  
   self:spawn(self.ports)
-  
-  -- default buffer vals
   
   local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
   local rec = util.clamp( self:listen( self.x + 2, self.y ) or 0, 0, #self.chars )
@@ -21,29 +24,24 @@ local _softcut_op = function ( self, x, y, frame, grid)
   local level = util.round( l / #self.chars, 0.1 )
   local rate = util.round(( r / #self.chars) * 2, 0.1 )
   local pl = play % 3 
-  grid.sc_ops_pos[playhead] = pos 
   
-  
---[[  local id = self.id(self.x, self.y) 
-  if grid.sc_ops[id] == nil then 
-    self.sc_ops = util.clamp(self.sc_ops + 1, 1, self.max_sc_ops)
-    grid.sc_ops[id] = self.sc_ops
-    grid[self.y][self.x + 1] = grid.sc_ops[id]
+  self.operation = function ()
+    softcut.pre_level( playhead, rec / #self.chars) 
+    softcut.rec_level( playhead, rec / #self.chars ) 
+    softcut.play( playhead, play > 0 and 1 or 0 )
+    softcut.rec( playhead, rec > 0 and 1 or 0 )
+    softcut.rate( playhead, pl == 2 and -rate or rate )
+    softcut.level( playhead, level )
+    
+    if self.data.cell[self.y][self.x + 2] == '*' then
+      self.data.cell[self.y][self.x + 2] = 'null'
+      softcut.buffer_clear_region( 0, #self.chars )
+    end
   end
-]]
-  if grid[self.y][self.x + 2] == '*' then
-    grid[self.y][self.x + 2] = 'null'
-    softcut.buffer_clear_region( 0, #self.chars )
-  end
+
+  self.operation()
   
-  softcut.pre_level( playhead, rec / #self.chars) 
-  softcut.rec_level( playhead, rec / #self.chars ) 
-  softcut.play( playhead, play > 0 and 1 or 0 )
-  softcut.rec( playhead, rec > 0 and 1 or 0 )
-  softcut.rate( playhead, pl == 2 and -rate or rate )
-  softcut.level( playhead, level )
-  
-  if self.banged(self.x, self.y) then
+  if self:banged( ) then
     if play ~= 0 then
       softcut.position( playhead, pos )
     end

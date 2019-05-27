@@ -1,23 +1,28 @@
-local grid_write = function ( self, x, y, frame, _grid )
+local grid_write = function ( self, x, y )
   
   self.y = y
   self.x = x
   
+  self.glyph = '>'
   self.name = 'g.write'
-  self.info = {'Writes grid x / y.', 'in-g.col', 'in-g.row', 'in-brightness'}
+  self.info = 'Writes grid x / y.'
+  self.passive = false
+
+  self.ports = { 
+    input = {1, 0, 'in-g.col'}, {2, 0, 'in-g.row'}, {3, 0, 'in-brightness'}
+  }
   
-  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
   self:spawn(self.ports)
   
   local col = util.clamp(self:listen( self.x + 1, self.y ) or 0 % self.g.cols, 0, self.g.cols)
   local row = util.clamp(self:listen( self.x + 2, self.y ) or 0 % self.g.rows, 0, self.g.rows)
   local val = util.clamp(self:listen( self.x + 3, self.y ) or 0 % 16, 0, 16)
-  val = _grid[self.y][self.x + 3]  == '*' and 15 or val
+  val = self.data.cell[self.y][self.x + 3]  == '*' and 15 or val
   
-  if self.banged( self.x, self.y ) then
+  if self:banged( ) then
     for y = 1, self.g.rows do 
       for x = 1, self.g.cols do
-        _grid.grid[row == 0 and y or row][col == 0 and x or col] = val
+        self.data.cell.grid[row == 0 and y or row][col == 0 and x or col] = val
       end
     end
   end

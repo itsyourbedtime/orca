@@ -1,18 +1,24 @@
-local H = function(self, x, y, frame, grid)
+local H = function(self, x, y, glyph)
   
   self.y = y
   self.x = x
   
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'halt'
   self.info = {'Stops southward operator from operating.'}
 
-  self.ports = {{0, 1, 'output_op'}}
-  self:spawn(self.ports)
+  self.ports = {
+    output = {0, 1, 'h-output'}
+  }
 
-  if self:active() then
-    self.clean_ports(self.x, self.y + 1) 
-  elseif self.banged( self.x, self.y) then
-    self.lock(self.x, self.y + 1, false,  true)
+  if not self.passive then
+    self:spawn(self.ports)
+    self.lock(self.x, self.y + 1, false, false,  true)
+  elseif self:banged() then
+    self.lock(self.x, self.y + 1, false,  true, true)
+  else
+    self.unlock(self.x, self.y + 1,false, false, false)
   end
   
 end

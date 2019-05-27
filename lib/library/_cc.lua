@@ -1,12 +1,17 @@
-local midi_cc = function ( self, x, y, frame, grid )
+local midi_cc = function ( self, x, y )
   
   self.y = y
   self.x = x
   
+  self.glyph = '!'
   self.name = 'cc'
-  self.info = {'Sends MIDI control change.', 'in-channel', 'in-cc', 'in-value'}
-  
-  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
+  self.info = 'Sends MIDI control change.'
+  self.passive = false
+
+  self.ports = { 
+    input = {1, 0, 'in-channel' }, 
+    haste = {2, 0, 'in-knob'}, {3, 0, 'in-value'}
+  }
   self:spawn(self.ports)
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
@@ -14,7 +19,7 @@ local midi_cc = function ( self, x, y, frame, grid )
   local val = util.clamp( self:listen( self.x + 3, self.y ) or 0, 0, #self.chars )
   local val = math.floor(( val / #self.chars ) * 127 )
   
-  if self.banged( self.x, self.y ) then
+  if self:banged( ) then
     self.midi_out_device:cc(knob, val, channel)
   end
   

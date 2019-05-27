@@ -1,24 +1,32 @@
-local A = function ( self, x, y, frame, grid )
+local A = function ( self, x, y, glyph )
   
   self.y = y
   self.x = x
   
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'add'
-  self.info = {'Outputs the sum of inputs.', 'in-a', 'in-b', 'add-out'}
+  self.info = 'Outputs the sum of inputs.'
   
-  self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1, 'output_op'}}
-  self:spawn( self.ports )
+  self.ports = { 
+    haste = {-1, 0, 'input-a' },
+    input = {1, 0, 'input-b' }, 
+    output = {0, 1, 'add-output'} 
+  }
   
-  local b = self:listen( self.x + 1, self.y, 0 ) or 0
-  local a = self:listen( self.x - 1, self.y, 0 ) or 0
-  local sum  = a ~= 0 or b ~= 0 and self.chars[ ( a + b )  % ( #self.chars + 1 ) ] or 0
-  sum = 0 and 'null' or sum
-  if self:active() then
-    grid[self.y + 1][self.x] = sum 
-  elseif self.banged( self.x, self.y ) then
-    grid[self.y + 1][self.x] = sum
+  local b = self:listen( self.x + self.ports.haste[1], self.y + self.ports.haste[2]) or 0
+  local a = self:listen( self.x + self.ports.input[1], self.y + self.ports.input[2]) or 0
+  local sum  = self.chars[ ( a + b )  % ( #self.chars + 1 ) ]
+
+  sum = sum == '0' and 'null' or sum
+  
+  if not self.passive then
+    self:spawn(self.ports)
+    self.data.cell[self.y + self.ports.output[2]][self.x + self.ports.output[1]] = sum 
+  elseif self:banged() then
+    self.data.cell[self.y + self.ports.output[2]][self.x + self.ports.output[1]] = sum 
   end
-  
 end
+
 
 return A

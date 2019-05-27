@@ -1,5 +1,5 @@
 local ops = {}
-
+ops.__index = ops
 ops['#'] = include("orca/lib/library/_comment")
 ops['='] = include("orca/lib/library/_osc_out")
 ops['*'] = include("orca/lib/library/_bang")

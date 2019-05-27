@@ -1,26 +1,36 @@
-local Z = function (self, x, y, frame, grid)
+local Z = function (self, x, y, glyph)
 
   self.x = x
   self.y = y
-
+  
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'zoom'
-  self.name = {'Transitions operand to input.', 'in-rate', 'in-target'}
+  self.info = 'Transitions operand to input.'
 
-  self.ports = {{-1, 0, 'input'}, {1, 0, 'input_op'}, {0, 1 , 'output'}}
-  self:spawn(self.ports)
-
-  local rate = self:listen(self.x - 1, self.y) or 1
-  local target  = self:listen(self.x + 1, self.y) or 1
-  rate = rate == 0 and 1 or rate
-  local val = self:listen(x, y + 1) or 0
-  local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
+  self.ports = {
+    haste = {-1, 0 , 'in-rate' }, 
+    input = {1, 0, 'in-target'}, 
+    output = {0, 1, 'z-output'}
+  }
   
-  out = self.chars[val + mod]
+  self.operation = function()
+    local rate = self:listen(self.x - 1, self.y) or 1
+    local target  = self:listen(self.x + 1, self.y) or 1
+    rate = rate == 0 and 1 or rate
+    local val = self:listen(x, y + 1) or 0
+    local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
+    
+    return self.chars[val + mod]
+  end
   
-  if self:active() then
-    grid[self.y + 1][self.x] = out
-  elseif self.banged( self.x, self.y ) then
-    grid[self.y + 1][self.x] = out
+  if not self.passive then
+    self:spawn(self.ports)
+    self.write(self.x, self.y + 1, self.operation())
+  else
+    if self:banged() then
+    self.write(self.x, self.y + 1, self.operation())
+    end
   end
 
 end

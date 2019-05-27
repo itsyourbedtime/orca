@@ -1,5 +1,5 @@
 -- ORCA
--- v0.9.8 @its_your_bedtime
+-- v0.9.9.1 @its_your_bedtime
 -- llllllll.co/t/orca
 
 local tab = require 'tabutil'
@@ -13,40 +13,45 @@ local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map = false
-local dot_density, frame = 1, 1
+local dot_density = 1
 local copy_buffer = { cell = {} }
 
-local field = { 
-  project = 'untitled',
-  active = { __index = { 0, 0, 'null', false} },
-  cell = {
-    params = {},
-    vars = {},
-    active_notes = {},
-    grid = {},
-    sc_ops = {},  
-    sc_ops_pos = { 0, 0, 0, 0, 0, 0 },
-    defaults = { lit = false, lit_out = false, lock = false, cursor = false, dot = false, seq = 0, spawned = {}, offsets = {}, info = {}}
-  },
-}
-
-
-local orca = {
+orca = {
+  __index = orca,
   XSIZE = 101,
   YSIZE = 41,
+  frame = 0,
   bounds_x = bounds_x,
   bounds_y = bounds_y,
   g = grid.connect(),
   music = require( 'musicutil') ,
   operators = include( "lib/library" ),
   engines = include( "lib/engines" ),
+  euclid = require 'er',
   clock = beatclock.new(),
   sc_ops = 0,
   max_sc_ops = 6,
   chars = keycodes.chars,
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
   moving_ops = { w = true, e = true, s = true, n = true },
-  xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+  xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } },
+  data = {
+    __index = data,
+    project = 'untitled',
+    active = { __index = { 0, 0 } },
+    cell = {
+      __index = 'null',
+      params = {
+        __index = { lit = false, lit_out = false, lock = false, cursor = false, dot = false, spawned = {} }
+      },
+      vars = {},
+      active_notes = {},
+      grid = {},
+      sc_ops = {},  
+      sc_ops_pos = { 0, 0, 0, 0, 0, 0 },
+      defaults = { lit = false, lit_out = false, lock = false, cursor = false, dot = false, spawned = {}}
+    },
+  }
 }
 
 function orca.up(i)
@@ -66,42 +71,43 @@ function orca.transpose(n, o)
   local octave = util.clamp(orca.normalize(string.sub(transpose_table[n], 2)) + o, 0, 8)
   local value = tab.key(orca.notes, note)
   local id = math.ceil( util.clamp((octave * 12) + value, 0, 127) - 1)
-  
   return {id, value, note, octave, orca.music.note_num_to_name(id)}
 end
 
 function orca.sc_clear_region(p, l)
-  softcut.buffer_clear_region(field.cell.sc_ops_pos[p], l)
+  softcut.buffer_clear_region(orca.data.cell.sc_ops_pos[p], l)
 end
 
 function orca:add_note(ch, note, length)
-  local id = self.id(self.x,self.y) 
-  if field.cell.active_notes[id] == nil then 
-    field.cell.active_notes[id] = {}
+  local id = self.index_at(self.x,self.y) 
+  if orca.data.cell.active_notes[id] == nil then 
+    orca.data.cell.active_notes[id] = {}
   end
-  if field.cell.active_notes[id][note] == {note, length} then
+  if orca.data.cell.active_notes[id][note] == {note, length} then
     orca.midi_out_device:note_off(note, nil, ch)
   end
-  field.cell.active_notes[id][note] = {note, length}
+  orca.data.cell.active_notes[id][note] = {note, length}
 end
 
+
+
 function orca:add_note_mono(ch, note, length)
-  local id = self.id(self.x,self.y) 
-  if field.cell.active_notes[id] == nil then 
-    field.cell.active_notes[id] = {}
+  local id = self.index_at(self.x,self.y) 
+  if orca.data.cell.active_notes[id] == nil then 
+    orca.data.cell.active_notes[id] = {}
   end
-  field.cell.active_notes[id][ch] = {note, length}
+  orca.data.cell.active_notes[id][ch] = {note, length}
 end
 
 function orca:notes_off(ch)
-  local id = self.id(self.x,self.y)
-  if field.cell.active_notes[id] ~= nil then
-    for k, v in pairs(field.cell.active_notes[id]) do
-      local note = field.cell.active_notes[id][k][1]
-      local length = util.clamp(field.cell.active_notes[id][k][2], 1, #orca.chars)
-      if frame % length  == 0 then 
+  local id = self.index_at(self.x,self.y)
+  if orca.data.cell.active_notes[id] ~= nil then
+    for k, v in pairs(orca.data.cell.active_notes[id]) do
+      local note = orca.data.cell.active_notes[id][k][1]
+      local length = util.clamp(orca.data.cell.active_notes[id][k][2], 1, #orca.chars)
+      if self.frame % length  == 0 then 
         orca.midi_out_device:note_off(note, nil, ch)
-        field.cell.active_notes[id][k] = nil
+        orca.data.cell.active_notes[id][k] = nil
       end
     end
   end
@@ -113,9 +119,9 @@ function orca.load_project(pth)
     local saved = tab.load(pth)
     if saved ~= nil then
       print("data found")
-      field = saved
+      orca.data = saved
       local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)
-      field.project = name 
+      orca.data.project = name 
       softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
       params:read(norns.state.data .. name ..".pset")
       print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
@@ -127,8 +133,8 @@ end
 
 function orca.save_project(txt)
   if txt then
-    field.project = txt
-    tab.save(field, norns.state.data .. txt ..".orca")
+    orca.data.project = txt
+    tab.save(orca.data, norns.state.data .. txt ..".orca")
     softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#orca.chars, 1)
     params:write(norns.state.data .. txt .. ".pset")
     print ('saved ' .. norns.state.data .. txt .. '_buffer.aif')
@@ -143,7 +149,7 @@ function orca.copy_area()
   for y=y_index, y_index + selected_area_y - 1 do
     copy_buffer.cell[y -  y_index ] = {}
     for x = x_index - 1,( x_index + selected_area_x ) - 1 do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(orca.data.cell[y][x])
     end
   end
 end
@@ -153,7 +159,7 @@ function orca.cut_area()
   for y=y_index, y_index + selected_area_y - 1 do
     copy_buffer.cell[y -  y_index ] = {}
     for x = x_index, (x_index + selected_area_x) - 1 do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(field.cell[y][x])
+      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(orca.data.cell[y][x])
       orca:erase(x, y)
     end
   end
@@ -163,7 +169,7 @@ function orca.paste_area()
   for y=0, #copy_buffer.cell do
     for x = 0, #copy_buffer.cell[y] do
       orca:erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
-      field.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
+      orca.data.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
       orca:add_to_queue(x_index + x, y_index + y)
     end
   end
@@ -179,18 +185,13 @@ function orca.copy(obj)
   return res
 end
 
-function orca.id(x, y)
-  return tostring(x .. ":" .. y)
-end
-
 function orca.inbounds(x, y)
   local x, y = x or 0, y or 0
-  return ((x > 0 and x < orca.XSIZE) and (y > 0 and y < orca.YSIZE)) and true or false
+  return ((x > 0 and x < orca.XSIZE) and (y > 0 and y < orca.YSIZE)) and true
 end
 
-
 function orca:replace(i)
-  field.cell[self.y][self.x] = i
+  orca.data.cell[self.y][self.x] = i
 end
 
 function orca:explode()
@@ -199,126 +200,122 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local value = string.lower(tostring(field.cell[y][x]))
-  return (value ~= nil and value ~= 'null') and tab.key(orca.chars, value) or value == 0 and 0 or false
+  local value = string.lower(orca.data.cell[y][x] or 'null')
+  return tab.key(orca.chars, value) or false
 end 
 
 function orca:active(x, y)
   local x,y = x ~= nil and x or self.x, y ~= nil and y or self.y
-  if self.inbounds(x, y) then
-    local cell = field.cell[y][x]
-    return cell == self.up(cell) and true
+  return orca.data.cell[y][x] == self.up(orca.data.cell[y][x]) and true
+end
+
+function orca.write(x, y, g)
+  if g == nil then return false 
+  elseif string.len(g) ~= 1 then return false
+  elseif not orca.inbounds(x, y) then return false
+  elseif orca.glyph_at(x, y) == g then return false 
+  else
+    orca.cleanup(x, y)
+    orca.data.cell[y][x] = g
+    if orca.is_op(g) then 
+      orca:add_to_queue(x, y) 
+    end
+    return true
   end
 end
 
 function orca:erase(x, y)
   self.x, self.y = x, y
   if self.op(self.x, self.y) then
-    self:cleanup()
+    self.cleanup(x, y)
     self:replace('null')
-    self.remove_from_queue(self.x, self.y)
   else
     self:replace('null')
-    field.cell.params[self.y][self.x].lit_out = false
-    field.cell.params[self.y][self.x].lit = false
   end
 end
 
 --
 function orca.op(x, y)
-  local cell = tostring(field.cell[y][x])
-  if orca.operators[orca.up(cell)] ~= nil then
-    return true
-  else
-    return false
-  end
+  return (orca.operators[orca.up(orca.data.cell[y][x])] ~= nil) and true
 end
 
-function orca.operate(x, y)
-  return (orca.inbounds(x, y) and not orca.locked(x, y)) and true 
+function orca.is_op(op)
+  return (orca.operators[orca.up(op)] ~= nil) and true
 end
 
 function orca.locked(x, y)
-  return field.cell.params[y][x].lock
+  return orca.data.cell.params[y][x].lock
 end
 
 function orca.spawned(x, y)
-  if orca.inbounds(x, y) then
-    return (field.cell.params[y][x].spawned[1] ~= nil) and true
+  return orca.data.cell.params[y][x].spawned.info or false
+end
+
+function orca.lock(x, y, active, out, locks)
+  if orca.inbounds(x, y) then 
+    if locks and orca.spawned(x, y) then orca.cleanup(x, y) end
+    orca.data.cell.params[y][x].dot = not active
+    orca.data.cell.params[y][x].lock = locks
+    orca.data.cell.params[y][x].lit = active
+    orca.data.cell.params[y][x].lit_out = out
   end
 end
 
-function orca.unspawn(x, y)
+function orca.unlock(x, y, active, out, locks)
   if orca.inbounds(x, y) then
-    field.cell.params[y][x].spawned = {}
-    field.cell.params[y][x].info = {}
-    field.cell.params[y][x].offsets = {}
-    --field.cell.params[y][x].seq = 0
+    orca.data.cell.params[y][x].dot = false
+    orca.data.cell.params[y][x].lock = locks
+    orca.data.cell.params[y][x].lit = active
+    orca.data.cell.params[y][x].lit_out = out
+    orca.data.cell.params[y][x].spawned = {}
+    if orca.op(x, y) and not locks then orca:add_to_queue(x, y) end
   end
 end
 
-function orca.lock(x, y, lits, locks)
-  local bounds = orca.inbounds(x, y)
-  if bounds then 
-    if orca.spawned(x, y) then
-      orca.clean_ports(x, y) 
-      if locks then orca.unspawn( x, y ) end
-    end
-   field.cell.params[y][x] = {lit = false, lit_out = lits, lock = locks, cursor = lits, dot = true, seq = 0, spawned = {},  offsets = {}, info = {}}
-  end
-end
-
-function orca.unlock(x, y, locks)
-  if orca.inbounds(x, y) then
-    field.cell.params[y][x] = {lit = false, lit_out = false, lock = locks, cursor = false, dot = false, seq = 0, spawned = {},  offsets = {}, info = {}}
-    if not locks and orca.op(x, y) then orca:add_to_queue(x, y) end
-  end
-end
-
-function orca.banged(x,y)
-  local active = orca:active(x, y)
-  if orca.inbounds(x, y) then
-    for i = 1, #orca.xy do
-      if field.cell[y + orca.xy[i][2]][x + orca.xy[i][1]] == '*' then
-        field.cell.params[y][x].lit = false
-        field.cell.params[y + 1][x].lit_out = not active and not orca.moving_ops[cell] and true or false
-        return true
+function orca:banged()
+  for i = 1, #self.xy do
+    if orca.data.cell[self.y + self.xy[i][2]][self.x + self.xy[i][1]] == '*' then
+      orca.data.cell.params[self.y][self.x].lit = false
+      orca.data.cell.params[self.y + 1][self.x].lit_out = self.passive and not self.moving_ops[self.glyph] and true or false
+      return true
+    else
+      if not self.passive then
+        orca.data.cell.params[self.y][self.x].lit = true
       else
-        if active then
-          field.cell.params[y][x].lit = true
-        elseif not active then 
-          field.cell.params[y + 1][x].lit_out = false
-        end
-        return false
+        orca.data.cell.params[self.y + 1][self.x].lit_out = false
       end
+      return false
     end
   end
 end
 
 function orca:shift(s, e)
-  local data = field.cell[self.y][self.x + s]
-  local params = field.cell.params[self.y][self.x + s]
-  table.remove(field.cell[self.y], self.x + s)
-  table.remove(field.cell.params[self.y], self.x + s)
-  table.insert(field.cell[self.y], self.x + e, data)
-  table.insert(field.cell.params[self.y], self.x + e, params)
+  local data = orca.data.cell[self.y][self.x + s]
+  local params = orca.data.cell.params[self.y][self.x + s]
+  table.remove(orca.data.cell[self.y], self.x + s)
+  table.remove(orca.data.cell.params[self.y], self.x + s)
+  table.insert(orca.data.cell[self.y], self.x + e, data)
+  table.insert(orca.data.cell.params[self.y], self.x + e, params)
 end
 
 function orca:move_cell(x,y)
-  field.cell[y][x] = field.cell[self.y][self.x]
-  self:erase(self.x,self.y)
-  self:add_to_queue(x,y)
+  orca.data.cell[y][x] = orca.data.cell[self.y][self.x]
+  self:erase( self.x, self.y )
+  self.remove_from_queue(self.x, self.y)
+  self:add_to_queue(x , y)
 end
 
 function orca:move(x,y)
-  local a = util.clamp(self.y + y, 1, orca.YSIZE)
-  local b = util.clamp(self.x + x, 1, orca.XSIZE)
-  local collider = field.cell[a][b]
-  if not self.locked(b, a) and (collider ~= nil and collider ~= 'null') then
+  
+  local a = self.y + y
+  local b = self.x + x
+  
+  local collider = orca.data.cell[a][b]
+  
+  if not self.locked(b, a) and collider ~= 'null' then
     if collider == '*' then
       self:move_cell(b,a)
-      --self:erase(self.x,self.y)
-    elseif orca.op(b, a) or lock then
+    elseif orca.op(b, a) then
       self:explode()
     else
       self:explode()
@@ -326,72 +323,84 @@ function orca:move(x,y)
   else
     self:move_cell(b,a)
   end
+  
 end
 
 function orca:spawn(ports)
-  if (ports and orca:active(self.x, self.y)) then
-    field.cell.params[self.y][self.x].spawned = ports
-    field.cell.params[self.y][self.x].info = { self.name, self.info[1] }
-    field.cell.params[self.y][self.x].lit = true
+  if not self.passive then -- and not self.spawned(self.x, self.y) then
+    self.lock(self.x, self.y, true, false, false)
+    
+    orca.data.cell.params[self.y][self.x].spawned.ports = ports
+    orca.data.cell.params[self.y][self.x].spawned.info = { self.name, self.glyph }
+    orca.data.cell.params[self.y][self.x].lit = true
 
-    for i=1,#ports do
-      local x = self.x + ports[i][1]
-      local y = self.y + ports[i][2]
-      local port_type = ports[i][3]
-      self.lock( x, y, port_type:find('out') ~= nil and true, (port_type:find('op') ~= nil or port_type:find('out') ~= nil) and true )
-      field.cell.params[y][x].info = { self.name, self.info[i + 1] }
+    for k, _ in pairs(ports) do
+      local type = k
+      local x = self.x + ports[k][1]
+      local y = self.y + ports[k][2]
+      
+      if self.inbounds(x, y) then
+        self.lock(x, y, false, type == 'output' and true, type == 'haste' and true or false)
+        orca.data.cell.params[y][x].spawned.info = { ports[k][3], self.glyph }
+      end
+      
     end
   end
 end
 
-function orca.clean_ports(x, y)
-  local t = field.cell.params[y][x].spawned
-  field.cell.params[y][x].lit = false
-  --orca.unlock( x + 2, y , false)
+function orca.unspawn(x, y)
+  
   if orca.spawned(x, y) then
-    for i= 1, #t do
-      local x2 = x + t[i][1]
-      local y2 =  y + t[i][2]
-      local port_type = t[i][3]
-      orca.unlock( x2, y2,  port_type:find('op') ~= nil  and false)
-      if orca.op(x2 + 2, y2 ) and not orca.locked(x2 + 2, y2) then orca.unlock( x2, y2, false) end
-
+    local ports = orca.data.cell.params[y][x].spawned.ports or {}
+    
+    for k, _ in pairs(ports) do
+      local type = k
+      local X = x + ports[k][1]
+      local Y = y + ports[k][2]
+      
+      if orca.inbounds(X, Y) then
+        
+        orca.unlock( X, Y,  false, false, type == 'haste' or false ) 
+      end
+      
     end
+
+    orca.clean_len_inputs(x, y)
+    
+    orca.data.cell.params[y][x].lit = false
+    orca.data.cell.params[y][x].spawned = {}
+    
   end
---  if orca.op(x + 1, y + 1) then orca.unlock( x + 1, y + 1, false) end
 end
 
-function orca:cleanup()
-  local cell, params = field.cell[self.y][self.x], field.cell.params
-  local ops_to_clear = { P = true, L = true, T = true, G = true, K = true, Q = true }
+function orca.glyph_at(x, y)
+  return orca.inbounds(x, y) and orca.data.cell[y][x] ~= 'null' and orca.data.cell[y][x]
+end
+
+function orca.index_at(x, y)
+  return orca.inbounds(x, y) and tonumber(x + (orca.XSIZE * y))
+end
+
+function orca.clean_len_inputs(x, y)
+  local seqlen = orca.data.cell.params[y][x].spawned.seq or 0
+  if seqlen > 0 then
+    local offsets = orca.data.cell.params[y][x].spawned.offsets or { 0, 0 }
+    for i=1, seqlen do
+      orca.unlock( (x + i) + offsets[1], y + offsets[2], false, false, false)
+    end
+  end
+end
+
+function orca.cleanup(x, y)
+
+  orca.unspawn( x, y )
   
-  self.clean_ports( self.x, self.y )
-  self.unspawn( self.x, self.y )
-  
-  if field.cell[self.y + 1][self.x] == '*' then 
-    field.cell[self.y + 1][self.x] = 'null' 
+  if orca.data.cell[y + 1][x] == '*' then 
+    orca.data.cell[y + 1][x] = 'null' 
   end
   
-  
-  if ops_to_clear[cell] then
-    
-    --local offsets = (cell == 'P' or cell == 'p') and 1 or 0 
-    local seqlen = params[self.y][self.x].seq
-    local offsets = params[self.y][self.x].offsets[1] ~= nil and params[self.y][self.x].offsets or {0, 0}
-    
-    for i=0, seqlen do
-      self.unlock( (self.x + i) + offsets[1], self.y + offsets[2], false)
-    end
-    
-  elseif cell == '#' then
-    for i = self.x, orca.XSIZE do 
-      self.unlock(i + 1, self.y, false)
-      if field.cell[self.y][i + 1] == '#' then 
-        break 
-      end 
-    end
-  elseif cell == '/' then 
-    softcut.play(orca:listen(self.x + 1, self.y) or 1, 0) 
+  if orca.data.cell[y][x] == '/' then 
+    softcut.play(orca:listen(x + 1, y) or 1, 0) 
     orca.sc_ops = util.clamp(orca.sc_ops - 1, 0, orca.max_sc_ops)
   end
 end
@@ -399,8 +408,8 @@ end
 -- execution
 function orca:add_to_queue(x,y)
   if ( self.op(x, y) and self.inbounds(x, y)) then
-    local id = self.id(x ,y)
-    field.active[id] = { x, y, field.cell[y][x] }
+    local index = self.index_at(x ,y)
+    orca.data.active[index] = { x, y }
   end
 end
 
@@ -414,49 +423,44 @@ function orca.removeKey(t, k_to_remove)
 end
 
 function orca.remove_from_queue(x, y)
-  if orca.inbounds(x, y) then
-    local id = orca.id(x,y)
-    field.active = orca.removeKey(field.active, id)
-  end
+    local index = orca.index_at(x ,y)
+    orca.data.active = orca.removeKey(orca.data.active, index)
 end
 
 function orca:exec_queue()
-  frame = (frame + 1) % 99999
-  for k, _ in pairs( field.active ) do
-    if _ ~= nil then 
-      local y = field.active[k][2]
-      local x = field.active[k][1]
-      local op = field.active[k][3]
-      if ( self.op(x, y) and not self.locked(x, y) ) then
-        self.operators[self.up(op)](self, x, y, frame, field.cell) 
-      end
+  self.frame = (self.frame + 1) % 99999
+  for k in pairs( orca.data.active ) do
+    local x, y = orca.data.active[k][1], orca.data.active[k][2]
+    local op = orca.data.cell[y][x]
+    if ( self.op( x, y ) and not self.locked( x, y) ) then
+      self.operators[self.up(op)]( self, x, y, op, orca.data.cell ) 
     end
   end
 end
 
 function init()
-  -- field 
+  -- orca.data 
   for y = 0, orca.YSIZE + orca.YSIZE do
-    field.cell[y] = {}
-    field.cell.params[y] = {}
+    orca.data.cell[y] = {}
+    orca.data.cell.params[y] = {}
     for x = 0, orca.XSIZE + orca.XSIZE do
-      field.cell[y][x] = 'null'
-      field.cell.params[y][x] = orca.copy(field.cell.defaults)
+      orca.data.cell[y][x] = 'null'
+      orca.data.cell.params[y][x] = orca.copy(orca.data.cell.params.__index)
     end
   end
   -- grid 
   for i = 1, orca.g.rows do
-    field.cell.grid[i] = {}
+    orca.data.cell.grid[i] = {}
   end
   -- ops exec 
-  orca.clock.on_step = function() orca:exec_queue() end,
+  orca.clock.on_step = function() orca:exec_queue()  orca.g:redraw() end,
   orca.clock:add_clock_params()
   orca.clock:start()
   -- params
   params:set("bpm", 120)
   params:add_separator()
   params:add_trigger('save_p', "< Save project" )
-  params:set_action('save_p', function(x) textentry.enter(orca.save_project,  field.project) end)
+  params:set_action('save_p', function(x) textentry.enter(orca.save_project,  orca.data.project) end)
   params:add_trigger('load_p', "> Load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
   params:add_trigger('new', "+ New" )
@@ -478,7 +482,7 @@ function init()
     action = function(value) orca.midi_out_device = midi.connect(value) end 
   }
   -- redraw metro
-  redraw_metro = metro.init(function(stage) redraw() orca.g:redraw() end, 1/30)
+  redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
 end
 
@@ -486,16 +490,14 @@ end
 
 -- grid 
 function orca.g.key(x, y, z)
-  local last = field.cell.grid[y][x]
-    field.cell.grid[y][x] = z == 1 and 15 or last < 6 and last or 0
+  local last = orca.data.cell.grid[y][x]
+    orca.data.cell.grid[y][x] = z == 1 and 15 or last < 6 and last or 0
 end
 
 function orca.g.redraw()
   for y = 1, orca.g.rows do
     for x = 1, orca.g.cols do
-      if field.cell.grid[y][x] ~= nil then
-        orca.g:led(x, y, field.cell.grid[y][x] )
-      end
+      orca.g:led(x, y, orca.data.cell.grid[y][x] or 0  )
     end
   end
   orca.g:refresh()
@@ -640,21 +642,20 @@ function keyboard.event(typ, code, val)
         softcut.play(i,0)
       end
     else
-      frame = 0
       orca.clock:start()
     end
   else
     if val == 1 then
       keyinput = get_key(code, val, shift)
       if not ctrl then
-        if orca.operate(x_index,y_index) and keyinput ~= field.cell[y_index][x_index] then
+        if not orca.locked(x_index,y_index) and keyinput ~= orca.data.cell[y_index][x_index] then
           orca:erase(x_index,y_index)
-          if field.cell[y_index][x_index] == '/' then
+          if orca.data.cell[y_index][x_index] == '/' then
             orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
           end
         elseif keyinput == 'H' then
         end
-        field.cell[y_index][x_index] = keyinput
+        orca.data.cell[y_index][x_index] = keyinput
         orca:add_to_queue(x_index, y_index)
       end
       if ctrl then
@@ -683,15 +684,12 @@ local function draw_grid()
     for x = 1, bounds_x do
       local y = y + field_offset_y
       local x = x + field_offset_x
-      local f = field.cell.params[y][x]
-      local cell = field.cell[y][x] == nil and 'null' or field.cell[y][x]
+      local f = orca.data.cell.params[y][x]
+      local cell = orca.data.cell[y][x] == nil and 'null' or orca.data.cell[y][x]
       if f.lit then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 4) 
       end
-      if f.lit_out and field.cell.params[y - 1][x].lit then 
-        draw_op_frame(x - field_offset_x, y - field_offset_y, 1)
-      end
-      if f.cursor then 
+      if f.lit_out then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 1) 
       end
       if cell ~= 'null' or cell ~= nil then
@@ -699,7 +697,7 @@ local function draw_grid()
       elseif cell == 'null' then
         screen.level( f.dot and 9 or 1)
       end
-      screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( field.cell[y][x] and 2 or 3))
+      screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.data.cell[y][x] and 2 or 3))
       if cell == 'null' or cell == nil then
         screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
       elseif cell == tostring(cell) then
@@ -725,7 +723,7 @@ local function draw_cursor(x,y)
   local y_pos = ((y * 8) - 8)
   local x_index = x + field_offset_x
   local y_index = y + field_offset_y
-  local cell = tostring(field.cell[y_index][x_index])
+  local cell = tostring(orca.data.cell[y_index][x_index])
   
   screen.level(cell == 'null' and 2 or 15)
   screen.rect(x_pos, y_pos, 5, 8)
@@ -741,7 +739,8 @@ local function draw_cursor(x,y)
 end
 
 function orca:draw_bar()
-  local info = self.op(x_index, y_index) and field.cell.params[y_index][x_index].info[1] or field.cell.params[y_index][x_index].info[2] or 'empty'
+  local info = orca.data.cell.params[y_index][x_index].spawned.info or {}
+  local text = info[1] or 'empty'
   
   screen.level(0)
   screen.rect(0, 56, 128, 8)
@@ -750,10 +749,10 @@ function orca:draw_bar()
   screen.move(2, 63)
   screen.font_face(25)
   screen.font_size(6)
-  screen.text(frame .. 'f  ' .. info)
+  screen.text(text)
   screen.stroke()
   screen.move(80,63)
-  screen.text(params:get("bpm") .. (frame % 4 == 0 and ' *' or ''))
+  screen.text(params:get("bpm") .. (self.frame % 4 == 0 and ' *' or ''))
   screen.stroke()
   screen.move(123,63)
   screen.text_right(x_index .. ',' .. y_index)
@@ -773,7 +772,7 @@ function orca:draw_help()
     screen.fill()
     screen.font_face(25)
     screen.font_size(6)
-    local description = tab.split(field.cell.params[y_index][x_index].info[2], ' ')
+    local description = tab.split(orca.data.cell.params[y_index][x_index].spawned.info[2], ' ')
     screen.level(9)
     screen.move(3, 38)
     local y = 40
@@ -802,11 +801,11 @@ local function draw_map()
   
   for y = 1, orca.YSIZE do
     for x = 1, orca.XSIZE do
-      if field.cell[y][x] ~= 'null' then
+      if orca.data.cell[y][x] ~= 'null' then
         screen.level(1)
         screen.rect(((x / orca.XSIZE ) * 114) + 5, ((y / orca.YSIZE) * 48) + 7, 3,3 )
         screen.fill()
-      elseif field.cell.params[y][x].lit then
+      elseif orca.data.cell.params[y][x].lit then
         screen.level(4)
         screen.rect(((x / orca.XSIZE ) * 114) + 5, ((y / orca.YSIZE) * 48) + 7, 3,3 )
         screen.fill()
@@ -828,7 +827,7 @@ function enc(n, d)
   elseif n == 3 then
     y_index = util.clamp(y_index + d, 1, orca.YSIZE)
   end
-    update_offset()
+  update_offset()
 end
 
 function key(n, z)

@@ -1,30 +1,38 @@
-local param_ids = {
-  "source",  --  1 - adc 2 - eng  3 - both
-  "pan", 
-  "rate_slew_time", 
-  "level_slew_time", 
-  "sc_clear_region"
-} 
+local param_ids = { "source", "pan", "rate_slew_time", "level_slew_time", "sc_clear_region" } 
+local param_names = { "source", "pan","rate slew time", "level slew time", "clear region" } 
 
-local softcut_param = function ( self, x, y, frame, grid )
-  
+local softcut_param = function ( self, x, y )
+
   self.y = y
   self.x = x
   
+  self.glyph = '\\'
   self.name = 'sc.param'
-  self.info = {'Sets softcut param on bang', 'in-playhead', 'in-param', 'in-value' }
+  self.info = 'Sets softcut param on bang'
+  self.passive = false
+
+  self.ports = { 
+    input = {1, 0, 'in-playhead'}, {2, 0, 'in-param'}, {3, 0, 'in-value'}
+  }
+
   
-  self.ports = {{1, 0, 'input_op'}, {2, 0, 'input_op'}, {3, 0, 'input_op'}}
-  self:spawn(self.ports)
   
-  local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
-  local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
-  local val = self:listen( self.x + 3, self.y ) or 0
-  local value = val / 1
+  self.operation = function ()
+    local playhead = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, self.max_sc_ops )
+    local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
+    local val = self:listen( self.x + 3, self.y ) or 0
+    val = ( param == 1 and (val % 4) ) or val
+    local value = val
+    local source = (val == 1 and 'in 1' or val == 2 and 'in 2' or val == 3 and 'both' or val == 0 and 'off')  or 'off'
+    self.data.cell.params[self.y][self.x + 2].spawned.info[1] = param_names[param] .. ' ' .. (param == 1 and source ) or value 
+    self.data.cell.params[self.y][self.x + 3].spawned.info[1] = param_names[param] .. ' ' .. (param == 1 and source ) or value 
+  end
   
-  if self.banged( self.x, self.y ) then
+  if not self.passive then
+    self:spawn(self.ports)
+    self.operation()
+  elseif self:banged( ) then
     if param == 1 then
-      val = val % 4
       norns.audio.level_adc_cut(val == 0 and 0 or 1)
       norns.audio.level_eng_cut(val == 3 and 1 or 0)
     elseif param == #param_ids then

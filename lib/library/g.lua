@@ -1,13 +1,17 @@
-local G = function(self, x, y, frame, grid)
+local G = function(self, x, y, glyph)
   
   self.y = y
   self.x = x
   
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'generator'
   self.info = {'Writes distant operators with offset.', 'in-y', 'in-x'}
   
-  self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'}, {-1, 0, 'input'}}
-  self:spawn(self.ports)
+  self.ports = {
+    haste = {-3, 0 , 'in-y' }, {-2, 0, 'in-x'}, {-1, 0, 'in-length'}
+  }
+  
   
   local a = self:listen(self.x - 3, self.y) or 0 -- x
   local b = self:listen(self.x - 2, self.y) or 1 -- y
@@ -17,26 +21,28 @@ local G = function(self, x, y, frame, grid)
   local offsety = util.clamp( b + self.y, 1, self.YSIZE) 
   local offsetx = util.clamp( a + self.x, 1, self.XSIZE)
   
-  grid.params[self.y][self.x].seq = length
-  grid.params[self.y][self.x].offsets = {offsetx, offsety}
+  self.data.cell.params[self.y][self.x].spawned.seq = length
+  self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
 
-  if self:active() then
+  if not self.passive then
+    self:spawn(self.ports)
+  
     for i = 1, #self.chars do
       if i <= length then
         self.lock( self.x + i, self.y, false, true )
-        grid[offsety][offsetx + i] = grid[self.y][self.x + i]
+        self.data.cell[offsety][offsetx + i] = self.data.cell[self.y][self.x + i]
         self.unlock( offsetx + i, offsety )
       else
-        if self.operate((self.x + i), self.y) then 
+        if not self.locked((self.x + i), self.y) then 
           break
         else
           self.unlock(self.x + i, self.y, false)
         end
       end
     end
-  elseif self.banged( self.x, self.y ) then
+  elseif self:banged() then
     for i=1,length do
-      grid[util.clamp(offsety,1, #self.chars)][offsetx + i] = grid[self.y][self.x + i]
+      self.data.cell[util.clamp(offsety,1, #self.chars)][offsetx + i] = self.data.cell[self.y][self.x + i]
       self.unlock( offsetx + i, offsety )
     end
   end

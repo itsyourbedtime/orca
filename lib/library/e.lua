@@ -1,16 +1,18 @@
-local E = function( self, x, y, frame, grid )
+local E = function( self, x, y, glyph )
   
   self.x = x
   self.y = y
   
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'east'
-  self.info = {'Moves eastward, or bangs.'}
+  self.info = 'Moves eastward, or bangs.'
   
   self.ports = {}
 
-  if self:active() then
+  if not self.passive then
     self:move(1, 0)
-  elseif self.banged( self.x, self.y ) then
+  elseif self:banged() then
     self:move(1, 0)
   end
   

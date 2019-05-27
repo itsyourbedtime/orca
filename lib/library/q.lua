@@ -1,14 +1,18 @@
-local Q = function (self, x, y, frame, grid)
+local Q = function (self, x, y, glyph)
 
   self.y = y
   self.x = x
-
-  self.name = 'query'
-  self.info = {'Reads distant operators with offset.', 'in-y', 'in-x', 'in-lenght', 'query-out'}
-
-  self.ports = {{-3, 0, 'input'}, {-2, 0, 'input'},{-1, 0, 'input'}, {0, 1 , 'output'}}
-  self:spawn(self.ports)
   
+  self.glyph = glyph
+  self.passive = glyph == string.lower(glyph) and true 
+  self.name = 'query'
+  self.info = 'Reads distant operators with offset.'
+  
+  self.ports = {
+    haste = {-3, 0, 'in-y'}, {-2, 0, 'in-x'}, {-1, 0, 'in-length'}, 
+    output = {0, 1} 
+  }
+
   local a = self:listen(self.x - 3, self.y) or 1 -- x
   local b = self:listen(self.x - 2, self.y) or 0 -- y
   local length = self:listen(self.x - 1, self.y, 0) or 0
@@ -16,19 +20,20 @@ local Q = function (self, x, y, frame, grid)
   length = util.clamp(length,1, self.XSIZE - length)
   local offsety = util.clamp(b + self.y, 1, self.YSIZE)
   local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
-  grid.params[self.y][self.x].seq = length
-  grid.params[self.y][self.x].offsets = {offsetx, offsety}
+  self.data.cell.params[self.y][self.x].spawned.seq = length
+  self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
 
-  if self:active() then
+  if not self.passive then
+    self:spawn(self.ports)
     for y = 1, #self.chars do
       for x = 1, #self.chars do
         if (x <= length and y <= length) then
-          self.lock((offsetx + x) - 1, offsety, false, true)
+          self.lock((offsetx + x) - 1, offsety, false, false, true)
         else
-          if self.operate((offsetx + x) - 1, offsety) and self:active((offsetx + x) - 1, offsety) then 
+          if not self.locked((offsetx + x) - 1, offsety) and self:active((offsetx + x) - 1, offsety) then 
             break
           else
-            self.unlock((offsetx + x) - 1, offsety, false)
+            self.unlock((offsetx + x) - 1, offsety, false, false, false)
           end
         end
       end
@@ -40,7 +45,7 @@ end
     --[[for i = 1, #self.chars do
       if i <= length then
         self.lock((offsetx + i) -1, offsety, false, true)
-        grid[self.y + 1][(offsetx  + i) - (length + 1)] = grid[offsety][(offsetx + i) -1]
+        self.data.cell[self.y + 1][(offsetx  + i) - (length + 1)] = self.data.cell[offsety][(offsetx + i) -1]
         self.unlock((offsetx  + i) - (length + 1), self.y + 1 , false)
       else
         --if self.operate((self.x + i) + 1, self.y + 1) and self:active((self.x + i) + 1, self.y + 1) then 
@@ -52,7 +57,7 @@ end
     end]]
 
 --[[    for i = 1, length do
-      grid[self.y + 1][(offsetx  + i) - (length + 1)] = grid[offsety][(offsetx + i) -1]
+      self.data.cell[self.y + 1][(offsetx  + i) - (length + 1)] = self.data.cell[offsety][(offsetx + i) -1]
       --self:clean_ports(self.x, self.y)
       self.ports[self.name] = self.inputs
       self.ports[self.name][4 + i] = {(a+i)-1, b, 'input'}
