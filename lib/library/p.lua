@@ -14,7 +14,7 @@ local P = function (self, x, y, glyph)
   }
   
   local length = self:listen(self.x - 1, self.y, 1) or 1
-  local pos = util.clamp(self:listen(self.x - 2, self.y, 0) or 1, 1, length)
+  local pos = self:listen(self.x - 2, self.y, 0) or 1
   local val = self.data.cell[self.y][self.x + 1]
   length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
   
@@ -27,7 +27,7 @@ local P = function (self, x, y, glyph)
     for i = 1, length do
       self.ports[#self.ports + 1] = { i - 1, 1, 'in-value',  pos == i and  'output' or 'input' }
       if self.inbounds((self.x  + i) , self.y) then
-        self.unspawn((self.x  + i) , self.y)
+        self.cleanup((self.x  + i) , self.y)
       end
     end
     self:spawn(self.ports)

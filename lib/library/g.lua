@@ -27,7 +27,7 @@ local G = function(self, x, y, glyph)
     for i = 1, length do
       self.ports[#self.ports + 1] = { (b + i)  - 1, a , 'g-output',  'input' }
       if self.inbounds(offsetx + i, offsety) then
-        self.unspawn(offsetx + i , offsety)
+        self.cleanup(offsetx + i , offsety)
         self.data.cell[offsety][offsetx + i] = self.data.cell[self.y][ (self.x + i)]
       end
     end

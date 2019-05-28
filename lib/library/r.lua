@@ -21,7 +21,7 @@ local R = function (self, x, y, glyph)
     local cap = (l and l == self.up(l)) and true or false
     if b < a then a,b = b,a end
     local val = self.chars[math.random(a,b)]
-    local value = cap and self.glyph_at(self.x + 1, self.y) and self.up(val) or val
+    local value = cap and self.up(val) or val
     return value
   end
   

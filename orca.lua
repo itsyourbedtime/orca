@@ -20,7 +20,7 @@ local bar, help, map = false
 local dot_density = 1
 local copy_buffer = { cell = {} }
 
-orca = {
+local orca = {
   __index = orca,
   XSIZE = 60,
   YSIZE = 60,
@@ -85,8 +85,6 @@ function orca:add_note(ch, note, length)
   end
   orca.data.cell.active_notes[id][note] = {note, length}
 end
-
-
 
 function orca:add_note_mono(ch, note, length)
   local id = self.index_at(self.x,self.y) 
@@ -195,19 +193,16 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local value = string.lower(orca.data.cell[y][x] or '.')
-  return value ~= '.' and tab.key(orca.chars, value) or false
+  local cell = orca.data.cell[y][x] or 0
+  local v = cell == '0' and 0 or string.lower(cell) 
+  return v == '.' and false or v == 0 and 0 or tab.key(orca.chars, v) 
 end 
-
-function orca.active(x, y)
-  return orca.glyph_at(x,y) == orca.up(orca.glyph_at(x,y)) and true
-end
 
 function orca.write(x, y, g)
   if g == '.' then return false 
   elseif string.len(g) ~= 1 then return false
   elseif not orca.inbounds(x, y) then return false
-  elseif orca.glyph_at(x, y) == g then return false 
+  elseif orca.data.cell[y][x] == g then return false 
   else
     orca.cleanup(x, y)
     orca.data.cell[y][x] = g
@@ -228,10 +223,6 @@ end
 --
 function orca.op(x, y)
   return (library[orca.up(orca.data.cell[y][x])] ~= nil) and true
-end
-
-function orca.is_op(op)
-  return (library[orca.up(op)] ~= nil) and true
 end
 
 function orca.locked(x, y)
@@ -342,8 +333,23 @@ function orca:spawn(ports)
   end
 end
 
-function orca.unspawn(x, y)
-  
+
+function orca.index_at(x, y)
+  return orca.inbounds(x, y) and tonumber(x + (orca.XSIZE * y))
+end
+
+function orca.clean_len_inputs(x, y)
+  local seqlen = orca.data.cell.params[y][x].spawned.seq or 0
+  local offsets = orca.data.cell.params[y][x].spawned.offsets or { 0, 0 }
+  if seqlen > 0 then
+    for i=1, seqlen do
+      orca.unlock( (x + i) + offsets[1], y + offsets[2], false, false, false)
+    end
+  end
+end
+
+function orca.cleanup(x, y)
+
   if orca.spawned(x, y) then
     local ports = orca.data.cell.params[y][x].spawned.ports or {}
     
@@ -373,33 +379,7 @@ function orca.unspawn(x, y)
     orca.data.cell.params[y][x].spawned = {}
     
   end
-end
 
-function orca.glyph_at(x, y)
-  return orca.inbounds(x, y) and orca.data.cell[y][x] ~= '.' and orca.data.cell[y][x]
-end
-
-function orca.index_at(x, y)
-  return orca.inbounds(x, y) and tonumber(x + (orca.XSIZE * y))
-end
-
-function orca.clean_len_inputs(x, y)
-  local seqlen = orca.data.cell.params[y][x].spawned.seq or 0
-  local offsets = orca.data.cell.params[y][x].spawned.offsets or { 0, 0 }
-  if seqlen > 0 then
-    for i=1, seqlen do
-      orca.unlock( (x + i) + offsets[1], y + offsets[2], false, false, false)
-    end
-  end
-end
-
-function orca.cleanup(x, y)
-
-  orca.unspawn( x, y )
-  
-  if orca.data.cell[y + 1][x] == '*' then 
-    orca.data.cell[y + 1][x] = '.' 
-  end
   
   if orca.data.cell[y][x] == '/' then 
     softcut.play(orca:listen(x + 1, y) or 1, 0) 

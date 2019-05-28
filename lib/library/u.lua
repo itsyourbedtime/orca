@@ -14,11 +14,15 @@ local U  = function (self, x, y, glyph)
     {0, 1, 'u-output', 'output'}
   }
 
-  local pulses = self:listen(self.x + 1, self.y) or 8
-  local steps = self:listen(self.x - 1, self.y) or 1
-  local pattern = self.euclid.gen(steps, pulses)
-  local pos = (self.frame  % (pulses ~= 0 and pulses or 1) + 1)
+
+  local pulses = self:listen(self.x - 1, self.y) or 1
+  local steps = self:listen(self.x + 1, self.y) or 8
+  local pos = pulses > 0 and (self.frame  % (steps == 0 and 1 or steps) + 1) or 0
+  local pattern = self.euclid.gen(pulses, steps)
+
   local out = pattern[pos] and '*' or '.'
+  
+  
   
   if not self.passive then
     self:spawn(self.ports)

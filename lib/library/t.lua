@@ -26,7 +26,7 @@ local T = function (self, x, y, glyph)
     for i = 1, length do
       self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
       if self.inbounds((self.x  + i) , self.y) then
-        self.unspawn((self.x  + i) , self.y)
+        self.cleanup((self.x  + i) , self.y)
       end
     end
     self:spawn(self.ports)
