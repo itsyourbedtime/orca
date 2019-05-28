@@ -26,7 +26,6 @@ orca = {
   bounds_y = bounds_y,
   g = grid.connect(),
   music = require( 'musicutil') ,
-  --operators = include( "lib/library" ),
   engines = include( "lib/engines" ),
   euclid = require 'er',
   clock = beatclock.new(),
