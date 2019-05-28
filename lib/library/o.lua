@@ -1,5 +1,5 @@
 local O = function(self, x, y, glyph)
-
+  local a, b, offsetx, offsety
   self.y = y
   self.x = x
   
@@ -9,26 +9,23 @@ local O = function(self, x, y, glyph)
   self.info = 'Reads a distant operator with offset.'
   
   self.ports = {
-    haste = {-1, 0, 'in-x'}, {-2, 0, 'in-y'}, 
-    input = {0, 1, 'o-read'}, 
-    output = {1, 0, 'o-output'}
+    {-1, 0, 'in-x', 'haste'}, {-2, 0, 'in-y', 'haste'}, 
+    {offsetx or 1, offsety or 0, 'o-read', 'input'}, 
+    {0, 1, 'o-output', 'output'}
   }
   
 
-  local a = self:listen(self.x - 2, self.y) or 1 
-  local b = self:listen(self.x - 1, self.y) or 0
-  local offsety = util.clamp(b + self.y, 1, self.YSIZE)
-  local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
-  self.data.cell.params[self.y][self.x].spawned.seq = 1
-  self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
-  
+  a = self:listen(self.x - 2, self.y) or 1 
+  b = self:listen(self.x - 1, self.y) or 0
+  offsety = util.clamp(b + self.y, 1, self.YSIZE)
+  offsetx = util.clamp(a + self.x, 1, self.XSIZE)
+  self.clean_len_inputs(x, y)
+  self.ports[3][1] = b
+  self.ports[3][2] = a
   if not self.passive then
+    self.cleanup(self.x, self.y)
     self:spawn(self.ports)
-    self.lock(offsetx, offsety, false, false)
-    
-    self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
-    self.data.cell[self.y + 1][self.x] = self.data.cell[offsety][offsetx]
-    
+
   end
   
 end

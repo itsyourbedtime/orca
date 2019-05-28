@@ -9,7 +9,7 @@ local G = function(self, x, y, glyph)
   self.info = {'Writes distant operators with offset.', 'in-y', 'in-x'}
   
   self.ports = {
-    haste = {-3, 0 , 'in-y' }, {-2, 0, 'in-x'}, {-1, 0, 'in-length'}
+   {-3, 0 , 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'}
   }
   
   
@@ -29,21 +29,21 @@ local G = function(self, x, y, glyph)
   
     for i = 1, #self.chars do
       if i <= length then
-        self.lock( self.x + i, self.y, false, true )
+        self.lock( self.x + i, self.y, false,  false, true )
         self.data.cell[offsety][offsetx + i] = self.data.cell[self.y][self.x + i]
-        self.unlock( offsetx + i, offsety )
+        self.unlock( offsetx + i, offsety ,false, false, false)
       else
         if not self.locked((self.x + i), self.y) then 
           break
         else
-          self.unlock(self.x + i, self.y, false)
+          self.unlock(self.x + i, self.y, false, false, false)
         end
       end
     end
   elseif self:banged() then
     for i=1,length do
       self.data.cell[util.clamp(offsety,1, #self.chars)][offsetx + i] = self.data.cell[self.y][self.x + i]
-      self.unlock( offsetx + i, offsety )
+      self.unlock( offsetx + i, offsety , false, false, false )
     end
   end
   

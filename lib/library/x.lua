@@ -9,8 +9,9 @@ local X = function(self, x, y, glyph)
   self.info = 'Writes a distant operator with offset'
   
   self.ports = {
-    input = {-1, 0, 'in-x'}, {-2, 0, 'in-y'}, 
-    haste = {1, 0, 'x-val'}
+    {-1, 0, 'in-x', 'haste'}, {-2, 0, 'in-y', 'haste'}, 
+    {1, 0, 'x-val', 'input'},
+    {0, 1, 'x-output', 'output'}
   }
 
   local a = self:listen(self.x - 2, self.y) or 0 -- x
@@ -20,14 +21,14 @@ local X = function(self, x, y, glyph)
   local input = self.data.cell[self.y][self.x + 1]
 
   if not self.passive then
+    self.ports[4][1] = a
+    self.ports[4][2] = b
+    self.cleanup(self.x, self.y)
     self:spawn(self.ports)
-    
-    if input == 'null' then self:erase(offsetx, offsety)  end
-    self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
-    self.write(offsetx, offsety, input)
-    
+    self.data.cell[offsety][offsetx] = input
+    self.unlock(offsetx, offsety, false, false, false)
+
   elseif self:banged() then
-    self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
     self.data.cell[offsety][offsetx] = input
     self.unlock( offsetx, offsety, false )
   end

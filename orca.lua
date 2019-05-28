@@ -40,7 +40,7 @@ orca = {
     project = 'untitled',
     active = { __index = { 0, 0 } },
     cell = {
-      __index = 'null',
+      __index = '.',
       params = {
         __index = { lit = false, lit_out = false, lock = false, cursor = false, dot = false, spawned = {} }
       },
@@ -56,7 +56,7 @@ orca = {
 
 function orca.up(i)
   local l = tostring(i) 
-  return string.upper(l) or 'null'
+  return string.upper(l) or '.'
 end
 
 -- midi / audio related
@@ -65,8 +65,8 @@ function orca.normalize(n)
 end
 
 function orca.transpose(n, o)
-  local n = n == nil or n == 'null' and 'C' or tostring(n)
-  local o = o == nil or o == 'null' and 3 or o
+  local n = n == nil or n == '.' and 'C' or tostring(n)
+  local o = o == nil or o == '.' and 3 or o
   local note = orca.normalize(string.sub(transpose_table[n], 1, 1))
   local octave = util.clamp(orca.normalize(string.sub(transpose_table[n], 2)) + o, 0, 8)
   local value = tab.key(orca.notes, note)
@@ -200,8 +200,8 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local value = string.lower(orca.data.cell[y][x] or 'null')
-  return tab.key(orca.chars, value) or false
+  local value = string.lower(orca.data.cell[y][x] or '.')
+  return value ~= '.' and tab.key(orca.chars, value) or false
 end 
 
 function orca:active(x, y)
@@ -210,7 +210,7 @@ function orca:active(x, y)
 end
 
 function orca.write(x, y, g)
-  if g == nil then return false 
+  if g == '.' then return false 
   elseif string.len(g) ~= 1 then return false
   elseif not orca.inbounds(x, y) then return false
   elseif orca.glyph_at(x, y) == g then return false 
@@ -228,9 +228,9 @@ function orca:erase(x, y)
   self.x, self.y = x, y
   if self.op(self.x, self.y) then
     self.cleanup(x, y)
-    self:replace('null')
+    self:replace('.')
   else
-    self:replace('null')
+    self:replace('.')
   end
 end
 
@@ -248,7 +248,7 @@ function orca.locked(x, y)
 end
 
 function orca.spawned(x, y)
-  return orca.data.cell.params[y][x].spawned.info or false
+  return orca.data.cell.params[y][x].spawned.info and true or false
 end
 
 function orca.lock(x, y, active, out, locks)
@@ -312,10 +312,10 @@ function orca:move(x,y)
   
   local collider = orca.data.cell[a][b]
   
-  if not self.locked(b, a) and collider ~= 'null' then
-    if collider == '*' then
-      self:move_cell(b,a)
-    elseif orca.op(b, a) then
+  if not self.locked(b, a) and collider ~= '.' then
+    --if collider == '*' then
+      --self:move_cell(b,a)
+    if orca.op(b, a) then
       self:explode()
     else
       self:explode()
@@ -327,40 +327,61 @@ function orca:move(x,y)
 end
 
 function orca:spawn(ports)
-  if not self.passive then -- and not self.spawned(self.x, self.y) then
-    self.lock(self.x, self.y, true, false, false)
+  self.lock(self.x, self.y, true, false, false)
+  
+  orca.data.cell.params[self.y][self.x].spawned.ports = ports
+  orca.data.cell.params[self.y][self.x].spawned.info = { self.name, self.glyph }
+  orca.data.cell.params[self.y][self.x].lit = not self.passive
+  for k = 1, #ports do
+    local type = ports[k][4]
+    local x = self.x + ports[k][1]
+    local y = self.y + ports[k][2]
     
-    orca.data.cell.params[self.y][self.x].spawned.ports = ports
-    orca.data.cell.params[self.y][self.x].spawned.info = { self.name, self.glyph }
-    orca.data.cell.params[self.y][self.x].lit = true
-
-    for k, _ in pairs(ports) do
-      local type = k
-      local x = self.x + ports[k][1]
-      local y = self.y + ports[k][2]
-      
-      if self.inbounds(x, y) then
-        self.lock(x, y, false, type == 'output' and true, type == 'haste' and true or false)
-        orca.data.cell.params[y][x].spawned.info = { ports[k][3], self.glyph }
+    if self.inbounds(x, y) then
+      if type == 'haste' then
+        self.lock(x, y, false, false, false)
+      elseif   type == 'input' then
+        self.lock(x, y, false, false, true)
+        orca.unlock(x + 1, y, false, false, false)
+      elseif type == 'output' then
+        self.lock(x, y, false, true,  true)
+        orca.unlock(x + 1, y, false, false, false)
       end
-      
+      orca.data.cell.params[y][x].spawned.info = { ports[k][3], self.glyph }
     end
   end
 end
+
+
+
 
 function orca.unspawn(x, y)
   
   if orca.spawned(x, y) then
     local ports = orca.data.cell.params[y][x].spawned.ports or {}
     
-    for k, _ in pairs(ports) do
-      local type = k
+  for k = 1, #ports do
+      local type = ports[k][4]
       local X = x + ports[k][1]
       local Y = y + ports[k][2]
       
       if orca.inbounds(X, Y) then
         
-        orca.unlock( X, Y,  false, false, type == 'haste' or false ) 
+        
+        if type == 'haste' then
+          orca.unlock(X, Y, false, false, false)
+          orca.data.cell.params[Y][X].spawned.info = nil
+        elseif  type == 'input' then
+          orca.unlock(X, Y, false, false, true)
+          orca.data.cell.params[Y][X].spawned.info = nil
+        elseif type == 'output' then
+          orca.unlock(X, Y, false, false,  true)
+          --orca.unlock(X + 1, Y, false, false, false)
+          orca.data.cell.params[Y][X].spawned.info = nil
+          
+        end
+
+        
       end
       
     end
@@ -374,7 +395,7 @@ function orca.unspawn(x, y)
 end
 
 function orca.glyph_at(x, y)
-  return orca.inbounds(x, y) and orca.data.cell[y][x] ~= 'null' and orca.data.cell[y][x]
+  return orca.inbounds(x, y) and orca.data.cell[y][x] ~= '.' and orca.data.cell[y][x]
 end
 
 function orca.index_at(x, y)
@@ -383,8 +404,8 @@ end
 
 function orca.clean_len_inputs(x, y)
   local seqlen = orca.data.cell.params[y][x].spawned.seq or 0
+  local offsets = orca.data.cell.params[y][x].spawned.offsets or { 0, 0 }
   if seqlen > 0 then
-    local offsets = orca.data.cell.params[y][x].spawned.offsets or { 0, 0 }
     for i=1, seqlen do
       orca.unlock( (x + i) + offsets[1], y + offsets[2], false, false, false)
     end
@@ -396,7 +417,7 @@ function orca.cleanup(x, y)
   orca.unspawn( x, y )
   
   if orca.data.cell[y + 1][x] == '*' then 
-    orca.data.cell[y + 1][x] = 'null' 
+    orca.data.cell[y + 1][x] = '.' 
   end
   
   if orca.data.cell[y][x] == '/' then 
@@ -406,37 +427,36 @@ function orca.cleanup(x, y)
 end
 
 -- execution
-function orca:add_to_queue(x,y)
-  if ( self.op(x, y) and self.inbounds(x, y)) then
-    local index = self.index_at(x ,y)
-    orca.data.active[index] = { x, y }
+function orca:parse()
+  local a = {}
+  for y = 0, self.YSIZE do
+    for x = 0, self.XSIZE do
+        if (self.op(x, y) and not self.locked(x, y) and self.inbounds(x, y)) then
+          local g, t = self.data.cell[y][x]
+          local operator =  self.operators[self.up(g)]
+          local x, y, g = x, y, g
+          a[#a + 1] = { operator, x, y, g } 
+      end
+    end
   end
+  return a
 end
 
-function orca.removeKey(t, k_to_remove)
-  local new = {}
-  for k, v in pairs(t) do
-    new[k] = v
-  end
-  new[k_to_remove] = nil
-  return new
-end
 
-function orca.remove_from_queue(x, y)
-    local index = orca.index_at(x ,y)
-    orca.data.active = orca.removeKey(orca.data.active, index)
-end
-
-function orca:exec_queue()
+function orca:operate()
   self.frame = (self.frame + 1) % 99999
-  for k in pairs( orca.data.active ) do
-    local x, y = orca.data.active[k][1], orca.data.active[k][2]
-    local op = orca.data.cell[y][x]
-    if ( self.op( x, y ) and not self.locked( x, y) ) then
-      self.operators[self.up(op)]( self, x, y, op, orca.data.cell ) 
+  local l = self.frame % 1 == 0 and self:parse() or {}
+  for i = 1, #l do
+    local op = l[i][1]
+    local x,y,g = l[i][2], l[i][3], l[i][4]
+    if not self.locked(x, y) then -- this breaks
+        op(self, x, y, g)
     end
   end
 end
+
+
+
 
 function init()
   -- orca.data 
@@ -444,7 +464,7 @@ function init()
     orca.data.cell[y] = {}
     orca.data.cell.params[y] = {}
     for x = 0, orca.XSIZE + orca.XSIZE do
-      orca.data.cell[y][x] = 'null'
+      orca.data.cell[y][x] = '.'
       orca.data.cell.params[y][x] = orca.copy(orca.data.cell.params.__index)
     end
   end
@@ -453,7 +473,7 @@ function init()
     orca.data.cell.grid[i] = {}
   end
   -- ops exec 
-  orca.clock.on_step = function() orca:exec_queue()  orca.g:redraw() end,
+  orca.clock.on_step = function() orca:operate()  orca.g:redraw() end,
   orca.clock:add_clock_params()
   orca.clock:start()
   -- params
@@ -685,20 +705,20 @@ local function draw_grid()
       local y = y + field_offset_y
       local x = x + field_offset_x
       local f = orca.data.cell.params[y][x]
-      local cell = orca.data.cell[y][x] == nil and 'null' or orca.data.cell[y][x]
+      local cell = orca.data.cell[y][x] == nil and '.' or orca.data.cell[y][x]
       if f.lit then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 4) 
       end
       if f.lit_out then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 1) 
       end
-      if cell ~= 'null' or cell ~= nil then
+      if cell ~= '.' or cell ~= nil then
         screen.level( orca.op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out or f.dot) and 12 or 1 )
-      elseif cell == 'null' then
+      elseif cell == '.' then
         screen.level( f.dot and 9 or 1)
       end
       screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.data.cell[y][x] and 2 or 3))
-      if cell == 'null' or cell == nil then
+      if cell == '.' or cell == nil then
         screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
       elseif cell == tostring(cell) then
         screen.text(cell)
@@ -725,16 +745,16 @@ local function draw_cursor(x,y)
   local y_index = y + field_offset_y
   local cell = tostring(orca.data.cell[y_index][x_index])
   
-  screen.level(cell == 'null' and 2 or 15)
+  screen.level(cell == '.' and 2 or 15)
   screen.rect(x_pos, y_pos, 5, 8)
   screen.fill()
 
-  screen.font_face(cell == 'null' and 0 or 25)
-  screen.font_size(cell == 'null' and 8 or 6)
+  screen.font_face(cell == '.' and 0 or 25)
+  screen.font_size(cell == '.' and 8 or 6)
 
-  screen.level(cell == 'null' and 14 or 1)
-  screen.move(x_pos + ((cell ~= 'null' ) and 1 or 0), y_pos + 6)
-  screen.text((cell == 'null' or cell == nil) and '@' or cell)
+  screen.level(cell == '.' and 14 or 1)
+  screen.move(x_pos + ((cell ~= '.' ) and 1 or 0), y_pos + 6)
+  screen.text((cell == '.' or cell == nil) and '@' or cell)
   
 end
 
@@ -801,7 +821,7 @@ local function draw_map()
   
   for y = 1, orca.YSIZE do
     for x = 1, orca.XSIZE do
-      if orca.data.cell[y][x] ~= 'null' then
+      if orca.data.cell[y][x] ~= '.' then
         screen.level(1)
         screen.rect(((x / orca.XSIZE ) * 114) + 5, ((y / orca.YSIZE) * 48) + 7, 3,3 )
         screen.fill()

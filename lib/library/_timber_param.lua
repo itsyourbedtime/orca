@@ -64,6 +64,7 @@ local param_names = {
   
 }
 
+local helper = false
 local timber_param = function ( self, x, y )
   
   self.y = y
@@ -75,7 +76,7 @@ local timber_param = function ( self, x, y )
   self.passive = false
   
   self.ports = { 
-    input = {1, 0, 'in-sample'}, {2, 0, 'in-param'}, {3, 0, 'in-value'}
+    {1, 0, 'in-sample', 'input'}, {2, 0, helper or 'in-param', 'input'}, {3, 0, helper or 'in-value', 'input'}
   }
   
   self:spawn(self.ports)
@@ -93,10 +94,8 @@ local timber_param = function ( self, x, y )
               or param > 11 and ( val / #self.chars ) -- other
               or val_scaled
               
-  local helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))
+  helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))
 
-  self.data.cell.params[self.y][self.x + 2].spawned.info = { helper }
-  self.data.cell.params[self.y][self.x + 3].spawned.info = { helper }
 
   if self:banged( ) then
     params:set( param_ids[param] .. "_" .. sample, value )

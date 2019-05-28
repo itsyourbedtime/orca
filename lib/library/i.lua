@@ -9,9 +9,9 @@ local I = function (self, x, y, glyph)
   self.info = {'Increments southward operator.', 'in-a', 'in-b', 'inc-out'}
   
   self.ports = {
-    haste = {-1, 0 , 'in-a' }, 
-    input = {1, 0, 'in-b'}, 
-    output = {0, 1, 'i-out'}
+    {-1, 0 , 'in-a', 'haste'}, 
+    {1, 0, 'in-b', 'input'}, 
+    {0, 1, 'i-out', 'output'}
   }
 
   local a = self:listen(self.x - 1, self.y, 0) or 0

@@ -9,7 +9,7 @@ local K = function (self, x, y, glyph)
   self.info = 'Otputs multiple variables.'
   
   self.ports = {
-    haste = {-1, 0, 'in-length'}
+    {-1, 0, 'in-length', 'haste'}
   }
   
 
@@ -35,7 +35,7 @@ local K = function (self, x, y, glyph)
           if not self.locked((self.x + i), self.y) then 
             break
           else
-            self.unlock(self.x + i, self.y, false)
+            self.unlock(self.x + i, self.y, false, false, false)
           end
         end
       end

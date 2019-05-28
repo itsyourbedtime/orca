@@ -9,9 +9,9 @@ local M  = function ( self, x, y, glyph )
   self.info = 'Outputs product of inputs.'
 
   self.ports = {
-    haste = {-1, 0 , 'in-a' }, 
-    input = {1, 0, 'in-b'}, 
-    output = {0, 1, 'm-output'}
+    {-1, 0 , 'in-a', 'haste'}, 
+    {1, 0, 'in-b', 'input'}, 
+    {0, 1, 'm-output', 'output'}
   }
   
 

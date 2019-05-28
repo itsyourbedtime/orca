@@ -9,8 +9,8 @@ local grid_read = function ( self, x, y )
   self.passive = false
 
   self.ports = {
-    haste = {-2, 0, 'in-g.col'}, {-1, 0, 'in-g.row'}, 
-    output = {0, 1, 'out-g.read'}
+    {-2, 0, 'in-g.col', 'haste'}, {-1, 0, 'in-g.row', 'haste'}, 
+    {0, 1, 'out-g.read', 'output'}
   }
   
   self:spawn(self.ports)
@@ -22,7 +22,7 @@ local grid_read = function ( self, x, y )
   local row = self:listen( self.x - 1, self.y )
   local mode = (row ~= false and col == false and 1 ) or (row == false and col ~= false and 2) or 0
   if mode == 0 then v = self.data.grid[not row and 1 or row][not col and 1 or col] end
-  local value = (v ~= nil and v < 6 and 'null') or v == nil and 'null' or '*'
+  local value = (v ~= nil and v < 6 and '.') or v == nil and '.' or '*'
   
   if self:banged( ) then
     if mode == 0 then

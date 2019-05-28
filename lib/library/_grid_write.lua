@@ -9,7 +9,7 @@ local grid_write = function ( self, x, y )
   self.passive = false
 
   self.ports = { 
-    input = {1, 0, 'in-g.col'}, {2, 0, 'in-g.row'}, {3, 0, 'in-brightness'}
+    {1, 0, 'in-g.col', 'input'}, {2, 0, 'in-g.row', 'input'}, {3, 0, 'in-brightness', 'input'}
   }
   
   self:spawn(self.ports)

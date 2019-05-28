@@ -9,9 +9,9 @@ local rnote = function ( self, x, y )
   self.passive = false
 
   self.ports = { 
-    haste = {-1, 0, 'in-rate'}, 
-    input = {1, 0, 'in-scale'}, 
-    output = {0, 1, 'r.note-output'}
+    {-1, 0, 'in-rate', 'haste'}, 
+    {1, 0, 'in-scale', 'input'}, 
+    {0, 1, 'r.note-output', 'output'}
   }
   
   self:spawn(self.ports)

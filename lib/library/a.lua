@@ -9,16 +9,16 @@ local A = function ( self, x, y, glyph )
   self.info = 'Outputs the sum of inputs.'
   
   self.ports = { 
-    haste = {-1, 0, 'input-a' },
-    input = {1, 0, 'input-b' }, 
-    output = {0, 1, 'add-output'} 
+    {-1, 0, 'input-a', 'haste'},
+    {1, 0, 'input-b', 'input'}, 
+    {0, 1, 'add-output', 'output'} 
   }
   
-  local b = self:listen( self.x + self.ports.haste[1], self.y + self.ports.haste[2]) or 0
-  local a = self:listen( self.x + self.ports.input[1], self.y + self.ports.input[2]) or 0
+  local b = self:listen( self.x + self.ports[1][1], self.y + self.ports[1][2]) or 0
+  local a = self:listen( self.x + self.ports[2][1], self.y + self.ports[2][2]) or 0
   local sum  = self.chars[ ( a + b )  % ( #self.chars + 1 ) ]
 
-  sum = sum == '0' and 'null' or sum
+  sum = sum == '0' and '.' or sum
   
   if not self.passive then
     self:spawn(self.ports)

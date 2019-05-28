@@ -9,9 +9,9 @@ local B = function ( self, x, y, glyph )
   self.info = 'Bounces between two values based on the runtime frame.'
 
   self.ports = {
-    haste = {-1, 0 , 'in-rate' }, 
-    input = {1, 0, 'in-to' }, 
-    output = {0, 1, 'b-out' }
+    {-1, 0, 'in-rate', 'haste'}, 
+    {1, 0, 'in-to', 'input'}, 
+    {0, 1, 'b-out', 'output'}
   }
   
   local to = self:listen( self.x + 1, self.y ) or 1

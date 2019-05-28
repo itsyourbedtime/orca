@@ -9,21 +9,29 @@ local Q = function (self, x, y, glyph)
   self.info = 'Reads distant operators with offset.'
   
   self.ports = {
-    haste = {-3, 0, 'in-y'}, {-2, 0, 'in-x'}, {-1, 0, 'in-length'}, 
-    output = {0, 1} 
+    {-3, 0, 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'}, 
+    {0, 1, 'output'} 
   }
 
   local a = self:listen(self.x - 3, self.y) or 1 -- x
   local b = self:listen(self.x - 2, self.y) or 0 -- y
-  local length = self:listen(self.x - 1, self.y, 0) or 0
+  local length = self:listen(self.x - 1, self.y, 0) or 1
   local offset = 1
   length = util.clamp(length,1, self.XSIZE - length)
   local offsety = util.clamp(b + self.y, 1, self.YSIZE)
   local offsetx = util.clamp(a + self.x, 1, self.XSIZE)
   self.data.cell.params[self.y][self.x].spawned.seq = length
-  self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
-
+    
+    for i = 1, length do
+        table.insert(self.ports, { (b + i) - 1 , a , 'in-q',  'haste' })
+    end
+  
   if not self.passive then
+    self.cleanup(self.x, self.y)
+    self:spawn(self.ports)
+  end
+end
+--[[  if not self.passive then
     self:spawn(self.ports)
     for y = 1, #self.chars do
       for x = 1, #self.chars do
@@ -40,7 +48,7 @@ local Q = function (self, x, y, glyph)
     end
   end
   
-end
+end]]
     
     --[[for i = 1, #self.chars do
       if i <= length then

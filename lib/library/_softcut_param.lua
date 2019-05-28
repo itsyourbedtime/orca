@@ -12,7 +12,9 @@ local softcut_param = function ( self, x, y )
   self.passive = false
 
   self.ports = { 
-    input = {1, 0, 'in-playhead'}, {2, 0, 'in-param'}, {3, 0, 'in-value'}
+    {1, 0, 'in-playhead', 'input'}, 
+    {2, 0, 'in-param', 'input' }, 
+    {3, 0, 'in-value', 'input'}
   }
 
   
@@ -24,13 +26,13 @@ local softcut_param = function ( self, x, y )
     val = ( param == 1 and (val % 4) ) or val
     local value = val
     local source = (val == 1 and 'in 1' or val == 2 and 'in 2' or val == 3 and 'both' or val == 0 and 'off')  or 'off'
-    self.data.cell.params[self.y][self.x + 2].spawned.info[1] = param_names[param] .. ' ' .. (param == 1 and source ) or value 
-    self.data.cell.params[self.y][self.x + 3].spawned.info[1] = param_names[param] .. ' ' .. (param == 1 and source ) or value 
+    local helper = param_names[param] .. ' ' .. param == 1 and source  or value 
   end
+
+  self.operation()
   
   if not self.passive then
     self:spawn(self.ports)
-    self.operation()
   elseif self:banged( ) then
     if param == 1 then
       norns.audio.level_adc_cut(val == 0 and 0 or 1)
@@ -47,4 +49,3 @@ local softcut_param = function ( self, x, y )
 end
 
 return softcut_param
-

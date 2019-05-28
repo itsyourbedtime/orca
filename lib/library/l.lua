@@ -9,7 +9,7 @@ local L = function (self, x, y, glyph)
   self.info = 'Loops a number of eastward operators.'
     
   self.ports = { 
-    haste = {-1, 0, 'in-length'}, {-2, 0, 'in-rate'}
+    {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-rate', 'haste'}
   }
 
   local length = self:listen( self.x - 1, self.y, 0 ) or 0

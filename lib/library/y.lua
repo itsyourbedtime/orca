@@ -9,8 +9,8 @@ local Y = function(self, x, y, glyph)
   self.info = 'Outputs the westward operator'
 
   self.ports = { 
-    input = {-1, 0, 'j-input'}, 
-    output = {1, 0, 'j-output'}
+    {-1, 0, 'j-input', 'haste'}, 
+    {1, 0, 'j-output', 'output'}
   }
 
   if not self.passive then

@@ -9,7 +9,7 @@ local H = function(self, x, y, glyph)
   self.info = {'Stops southward operator from operating.'}
 
   self.ports = {
-    output = {0, 1, 'h-output'}
+    {0, 1, 'h-output', 'output'}
   }
 
   if not self.passive then

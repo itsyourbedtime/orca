@@ -9,7 +9,8 @@ local _softcut_op = function ( self, x, y)
   self.passive = false
   
   self.ports = {
-    input = {1, 0, 'in-playhead'}, {2, 0, 'in-rec'}, {3, 0, 'in-play'}, {4, 0, 'in-level'}, {5, 0, 'in-rate'},  {5, 0, 'in-position'}
+    {1, 0, 'in-playhead', 'input'}, {2, 0, 'in-rec', 'input'}, {3, 0, 'in-play', 'input'}, 
+    {4, 0, 'in-level', 'input'}, {5, 0, 'in-rate', 'input'},  {5, 0, 'in-position', 'input'}
   }
   
   self:spawn(self.ports)
@@ -34,7 +35,7 @@ local _softcut_op = function ( self, x, y)
     softcut.level( playhead, level )
     
     if self.data.cell[self.y][self.x + 2] == '*' then
-      self.data.cell[self.y][self.x + 2] = 'null'
+      self.data.cell[self.y][self.x + 2] = '.'
       softcut.buffer_clear_region( 0, #self.chars )
     end
   end

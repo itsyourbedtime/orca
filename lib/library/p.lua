@@ -9,9 +9,9 @@ local P = function (self, x, y, glyph)
   self.info = 'Writes an eastward operator with offset.'
 
   self.ports = {
-    haste = {-1, 0, 'in-length'}, {-2, 0, 'in-position'}, 
-    input = {1, 0, 'in-value'}, 
-    output = {0, 1, 'p-output'}
+    {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-position', 'haste'}, 
+    {1, 0, 'in-value', 'input'}, 
+    {0, 1, 'p-output', 'output'}
   }
   
   local length = self:listen(self.x - 1, self.y, 1) or 1

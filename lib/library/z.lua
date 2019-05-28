@@ -9,9 +9,9 @@ local Z = function (self, x, y, glyph)
   self.info = 'Transitions operand to input.'
 
   self.ports = {
-    haste = {-1, 0 , 'in-rate' }, 
-    input = {1, 0, 'in-target'}, 
-    output = {0, 1, 'z-output'}
+    {-1, 0 , 'in-rate' , 'haste'}, 
+    {1, 0, 'in-target', 'input'}, 
+    {0, 1, 'z-output', 'output'}
   }
   
   self.operation = function()

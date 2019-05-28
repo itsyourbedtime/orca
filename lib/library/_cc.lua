@@ -9,8 +9,9 @@ local midi_cc = function ( self, x, y )
   self.passive = false
 
   self.ports = { 
-    input = {1, 0, 'in-channel' }, 
-    haste = {2, 0, 'in-knob'}, {3, 0, 'in-value'}
+    {1, 0, 'in-channel','input' }, 
+    {2, 0, 'in-knob', 'input' }, 
+    {3, 0, 'in-value', 'input'}
   }
   self:spawn(self.ports)
   

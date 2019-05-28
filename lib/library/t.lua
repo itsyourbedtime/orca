@@ -9,9 +9,9 @@ local T = function (self, x, y, glyph)
   self.info = 'Reads an eastward operator with offset'
   
   self.ports = { 
-    haste = {-1, 0, 'in-length'}, {-2, 0, 'in-position'}, 
-    input = {1, 0, 'in-value'}, 
-    output = {0, 1, 't-output'}
+    {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-position', 'haste'}, 
+    {1, 0, 'in-value', 'input'}, 
+    {0, 1, 't-output', 'output'}
   }
 
   local length = self:listen(self.x - 1, self.y, 1) or 1
@@ -24,12 +24,12 @@ local T = function (self, x, y, glyph)
     self:spawn(self.ports)
     for i = 1, #self.chars do
       if i <= length then
-        self.lock( self.x + i, self.y, pos == i and true, true )
+        self.lock( self.x + i, self.y, false,  pos == i and true, true )
       else
         if not self.locked((self.x + i) + 1, self.y) and self:active((self.x + i) + 1, self.y) then 
           break
         else
-          self.unlock(self.x + i, self.y, false)
+          self.unlock(self.x + i, self.y, false, false, false)
         end
       end
     end

@@ -9,8 +9,8 @@ local J = function(self, x, y, glyph)
   self.name = 'Outputs the northward operator.'
 
   self.ports = {
-    input = {0, -1, 'j-input'}, 
-    output = {0, 1, 'j-output'}
+    {0, -1, 'j-input', 'haste'}, 
+    {0, 1, 'j-output', 'output'}
   }
   
 
