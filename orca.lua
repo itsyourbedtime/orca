@@ -6,6 +6,7 @@ local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local beatclock = require 'beatclock'
+local clock = beatclock.new()
 local keycodes = include("lib/keycodes")
 local transpose_table = include("lib/transpose")
 local library = include( "lib/library" )
@@ -27,7 +28,7 @@ orca = {
   bounds_x = bounds_x,
   bounds_y = bounds_y,
   g = grid.connect(),
-  music = require( 'musicutil') ,
+  music = require 'musicutil',
   euclid = require 'er',
   sc_ops = 0,
   max_sc_ops = 6,
@@ -37,17 +38,14 @@ orca = {
   data = {
     __index = data,
     project = 'untitled',
-    active = { __index = { 0, 0 } },
     cell = {
       __index = '.',
-      params = {
-        __index = { lit = false, lit_out = false, lock = false, dot = false, spawned = {} }
-      },
       vars = {},
       active_notes = {},
       grid = {},
       sc_ops = {},  
       sc_ops_pos = { 0, 0, 0, 0, 0, 0 },
+      params = { __index = { lit = false, lit_out = false, lock = false, dot = false, spawned = {} } },
       defaults = { lit = false, lit_out = false, lock = false, dot = false, spawned = {}}
     },
   }
@@ -456,7 +454,6 @@ function init()
     orca.data.cell.grid[i] = {}
   end
   -- ops exec 
-  local clock = beatclock.new()
   clock.on_step = function() orca:operate()  orca.g:redraw() end,
   clock:add_clock_params()
   clock:start()
@@ -619,6 +616,7 @@ function keyboard.event(typ, code, val)
     end
   elseif (code == hid.codes.KEY_CAPSLOCK and val == 1) then
      map = not map
+     redraw_metro.time = map and 0.1 or 1/30
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
     if clock.playing then
       clock:stop()
@@ -638,7 +636,6 @@ function keyboard.event(typ, code, val)
           if orca.data.cell[y_index][x_index] == '/' then
             orca.sc_ops = util.clamp(orca.sc_ops - 1, 1, orca.max_sc_ops)
           end
-        elseif keyinput == 'H' then
         end
         orca.data.cell[y_index][x_index] = keyinput or '.'
       end
@@ -670,24 +667,30 @@ local function draw_grid()
       local x = x + field_offset_x
       local f = orca.data.cell.params[y][x]
       local cell = orca.data.cell[y][x] == nil and '.' or orca.data.cell[y][x]
+      
       if f.lit then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 4) 
       end
       if f.lit_out then 
         draw_op_frame(x - field_offset_x, y - field_offset_y, 1) 
       end
+      
       if cell ~= '.' or cell ~= nil then
-        screen.level( orca.op( x, y ) and 15 or ( f.lit or f.cursor or f.lit_out or f.dot) and 12 or 1 )
+        screen.level( orca.op( x, y ) and 15 or ( f.lit or f.lit_out or f.dot) and 12 or 1 )
       elseif cell == '.' then
         screen.level( f.dot and 9 or 1)
       end
+      
       screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.data.cell[y][x] and 2 or 3))
+      
       if cell == '.' or cell == nil then
         screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
       elseif cell == tostring(cell) then
         screen.text(cell)
       end
+      
       screen.stroke()
+      
     end
   end
 end
@@ -787,21 +790,20 @@ local function draw_map()
   screen.level(0)
   screen.rect(5,6,118,53)
   screen.fill()
-  
-  for y = 1, orca.YSIZE do
-    for x = 1, orca.XSIZE do
-      if orca.data.cell[y][x] ~= '.' then
-        screen.level(1)
-        screen.rect(map_x(x), map_y(y), 3,3 )
-        screen.fill()
-      elseif orca.data.cell.params[y][x].lit then
-        screen.level(4)
-        screen.rect(map_x(x), map_y(y), 3,3 )
-        screen.fill()
+    for y = 1, orca.YSIZE do
+      for x = 1, orca.XSIZE do
+        if orca.data.cell[y][x] ~= '.' then
+          screen.level(1)
+          screen.rect(map_x(x), map_y(y), 3,3 )
+          screen.fill()
+        elseif orca.data.cell.params[y][x].lit then
+          screen.level(4)
+          screen.rect(map_x(x), map_y(y), 3,3 )
+          screen.fill()
+        end
       end
     end
-  end
-  
+
   screen.level(2)
   screen.rect(map_x(x_index), map_y(y_index), 24,14 )
   screen.stroke()
