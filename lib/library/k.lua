@@ -21,26 +21,21 @@ local K = function (self, x, y, glyph)
   self.data.cell.params[self.y][self.x].spawned.seq = length
 
   if not self.passive then
-    self:spawn(self.ports)
-    
-      for i = 1, #self.chars do
-        if i <= length then
-          local var = self:listen(x + i, y)
-          self.lock(self.x + i, self.y, false, false, true)
-          if self.data.cell.vars[var] ~= nil then
-          self.lock(self.x + i, self.y + 1 , false, false, true)
-            self.data.cell[self.y + 1][(self.x + i)] = self.data.cell.vars[var]
-          end
-        else
-          if not self.locked((self.x + i), self.y) then 
-            break
-          else
-            self.unlock(self.x + i, self.y, false, false, false)
-          end
+    self.cleanup(self.x, self.y)
+    for i = 1, length do
+      self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
+      if self.inbounds((self.x  + i) , self.y) then
+        local var = self:listen(x + i, y)
+        if self.data.cell.vars[var] ~= nil then
+          self.data.cell[self.y + 1][(self.x + i)] = self.data.cell.vars[var]
         end
       end
+    end
+    self:spawn(self.ports)
+  end
+
 
 end
-end
+
 
 return K

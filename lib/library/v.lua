@@ -38,7 +38,7 @@ local V = function (self, x, y, glyph)
        self.data.cell.params[self.y + 1][self.x].lit_out = true
        self.data.cell[self.y + 1][self.x] = self.data.cell.vars[b] 
       end 
-    elseif self:active() and b ~= 0 and  a ~= 0  then
+    elseif self.active() and b ~= 0 and  a ~= 0  then
       self.data.cell.vars[a] = self.data.cell[self.y][self.x + 1]
     else 
       self.data.cell[self.y + 1][self.x] = '.'

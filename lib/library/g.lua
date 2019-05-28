@@ -21,32 +21,19 @@ local G = function(self, x, y, glyph)
   local offsety = util.clamp( b + self.y, 1, self.YSIZE) 
   local offsetx = util.clamp( a + self.x, 1, self.XSIZE)
   
-  self.data.cell.params[self.y][self.x].spawned.seq = length
-  self.data.cell.params[self.y][self.x].spawned.offsets = {offsetx, offsety}
 
   if not self.passive then
-    self:spawn(self.ports)
-  
-    for i = 1, #self.chars do
-      if i <= length then
-        self.lock( self.x + i, self.y, false,  false, true )
-        self.data.cell[offsety][offsetx + i] = self.data.cell[self.y][self.x + i]
-        self.unlock( offsetx + i, offsety ,false, false, false)
-      else
-        if not self.locked((self.x + i), self.y) then 
-          break
-        else
-          self.unlock(self.x + i, self.y, false, false, false)
-        end
+    self.cleanup(self.x, self.y)
+    for i = 1, length do
+      self.ports[#self.ports + 1] = { (b + i)  - 1, a , 'g-output',  'input' }
+      if self.inbounds(offsetx + i, offsety) then
+        self.unspawn(offsetx + i , offsety)
+        self.data.cell[offsety][offsetx + i] = self.data.cell[self.y][ (self.x + i)]
       end
     end
-  elseif self:banged() then
-    for i=1,length do
-      self.data.cell[util.clamp(offsety,1, #self.chars)][offsetx + i] = self.data.cell[self.y][self.x + i]
-      self.unlock( offsetx + i, offsety , false, false, false )
-    end
+    self:spawn(self.ports)
   end
-  
 end
+
 
 return G

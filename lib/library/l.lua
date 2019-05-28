@@ -18,31 +18,23 @@ local L = function (self, x, y, glyph)
   length = util.clamp( length, 0, self.XSIZE - length)
   local l_start = util.clamp( self.x + offset, 1, self.XSIZE)
   local l_end = util.clamp( self.x + length, 1, self.YSIZE)
-  self.data.cell.params[self.y][self.x].spawned.seq = length
 
   if not self.passive then
-    self:spawn(self.ports)
-    for i = 1, #self.chars do
-      if i <= length then
-        self.lock(self.x + i, self.y, false, false, true)
-      else
-        if not self.locked((self.x + i) , self.y) and self:active((self.x + i), self.y) then 
-          break
-        else
-          self.unlock(self.x + i, self.y, false, false, false)
-        end
-      end
+    self.cleanup(self.x, self.y)
+    for i = 1, length do
+      self.ports[#self.ports + 1] = { i , 0, 'in-value',  'input' }
     end
-  if (self.frame % rate == 0 and length ~= 0) then
+    self:spawn(self.ports)
+    
+    if (self.frame % rate == 0 and length ~= 0) then
       self:shift(offset, length)
+    end
+
+    
   end
-  elseif self:banged() then
-    --if frame % rate == 0 and length ~= 0 then
-      --self:shift(offset, length)
-    --end
-  end
-  
+
 end
+
 
 return L
 

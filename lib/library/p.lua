@@ -11,7 +11,6 @@ local P = function (self, x, y, glyph)
   self.ports = {
     {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-position', 'haste'}, 
     {1, 0, 'in-value', 'input'}, 
-    {0, 1, 'p-output', 'output'}
   }
   
   local length = self:listen(self.x - 1, self.y, 1) or 1
@@ -22,24 +21,20 @@ local P = function (self, x, y, glyph)
   self.data.cell.params[self.y][self.x].spawned.seq = length
   self.data.cell.params[self.y][self.x].spawned.offsets = {0, 1}
   
-  if not self.passive then
-    self:spawn(self.ports)
-    for i = 1, #self.chars do
-      if i <= length then
-        self.lock((self.x + i) -1, self.y + 1, false,  i == pos and true, true)
-      else
-        if not self.locked((self.x + i) + 1, self.y) and self:active((self.x + i) + 1, self.y) then 
-          break
-        else
-          self.unlock((self.x + i) -1, self.y + 1, false, false, false)
-        end
+  
+   if not self.passive then
+    self.cleanup(self.x, self.y)
+    for i = 1, length do
+      self.ports[#self.ports + 1] = { i - 1, 1, 'in-value',  pos == i and  'output' or 'input' }
+      if self.inbounds((self.x  + i) , self.y) then
+        self.unspawn((self.x  + i) , self.y)
       end
     end
-    self.data.cell[self.y + 1][(self.x + ((pos or 1)  % (length + 1))) - 1] = val
-  elseif self:banged( ) then
-    self.data.cell[self.y + 1][(self.x + ((pos or 1)  % (length + 1))) - 1] = val
+    self:spawn(self.ports)
+    self.data.cell[self.y + 1][(self.x + ((pos or 1)  % (length + 1))) - 1] = val or '.'
   end
-  
 end
 
+  
+  
 return P

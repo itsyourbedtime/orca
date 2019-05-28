@@ -19,9 +19,6 @@ local J = function(self, x, y, glyph)
     self.data.cell[self.y + 1][self.x] = self.data.cell[self.y - 1][self.x]
   elseif self:banged() then
     self.data.cell[self.y + 1][self.x] = self.data.cell[self.y - 1][self.x]
-    if self.op(self.x, self.y + 1) then 
-      self:add_to_queue(self.x, self.y + 1)
-    end
   end
   
 end

@@ -10,7 +10,7 @@ local bang = function( self, x, y )
   
   self.ports = {}
   
-  if self:active() then 
+  if not self.passive then 
     self:erase(self.x, self.y)  
   end
   

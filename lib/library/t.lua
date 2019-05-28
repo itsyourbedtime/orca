@@ -20,22 +20,22 @@ local T = function (self, x, y, glyph)
   local val = self.data.cell[self.y][self.x + util.clamp(pos, 1, length)]
   self.data.cell.params[self.y][self.x].seq = length
 
-  if not self.passive then
-    self:spawn(self.ports)
-    for i = 1, #self.chars do
-      if i <= length then
-        self.lock( self.x + i, self.y, false,  pos == i and true, true )
-      else
-        if not self.locked((self.x + i) + 1, self.y) and self:active((self.x + i) + 1, self.y) then 
-          break
-        else
-          self.unlock(self.x + i, self.y, false, false, false)
-        end
+ 
+   if not self.passive then
+    self.cleanup(self.x, self.y)
+    for i = 1, length do
+      self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
+      if self.inbounds((self.x  + i) , self.y) then
+        self.unspawn((self.x  + i) , self.y)
       end
     end
+    self:spawn(self.ports)
     self.data.cell[self.y + 1][self.x] = val or '.'
   end
-  
 end
 
+ 
+ 
+ 
+ 
 return T
