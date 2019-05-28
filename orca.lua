@@ -9,6 +9,8 @@ local beatclock = require 'beatclock'
 local keycodes = include("lib/keycodes")
 local transpose_table = include("lib/transpose")
 local library = include( "lib/library" )
+local engines = include( "lib/engines" )
+
 local keyboard = hid.connect()
 local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
@@ -26,14 +28,11 @@ orca = {
   bounds_y = bounds_y,
   g = grid.connect(),
   music = require( 'musicutil') ,
-  engines = include( "lib/engines" ),
   euclid = require 'er',
-  clock = beatclock.new(),
   sc_ops = 0,
   max_sc_ops = 6,
   chars = keycodes.chars,
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
-  moving_ops = { w = true, e = true, s = true, n = true },
   xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } },
   data = {
     __index = data,
@@ -331,12 +330,12 @@ function orca:spawn(ports)
         self.lock(x, y, false, true,  true)
       end
    
-      if x + 1 > self.x or y > self.y then
-        if self.op(x + 1, y ) then 
-          --self.unspawn(x + 1, y )
-          self.unlock(x + 1, y, false, false, false ) 
-        end
-      end
+      --if x + 1 > self.x or y > self.y then
+        --if self.op(x + 1, y ) then 
+          --------self.unspawn(x + 1, y )
+          --self.unlock(x + 1, y, false, false, false ) 
+        --end
+      --end
         
         
       orca.data.cell.params[y][x].spawned.info = { ports[k][3], self.glyph }
@@ -363,7 +362,7 @@ function orca.unspawn(x, y)
         elseif  type == 'input' then
           orca.unlock(X, Y, false, false, false)
         elseif type == 'output' then
-          orca.unlock(X, Y, false, false, true)
+          orca.unlock(X, Y, false, false, false) --!
         end
         
         orca.data.cell.params[Y][X].spawned.info = nil
@@ -457,9 +456,10 @@ function init()
     orca.data.cell.grid[i] = {}
   end
   -- ops exec 
-  orca.clock.on_step = function() orca:operate()  orca.g:redraw() end,
-  orca.clock:add_clock_params()
-  orca.clock:start()
+  local clock = beatclock.new()
+  clock.on_step = function() orca:operate()  orca.g:redraw() end,
+  clock:add_clock_params()
+  clock:start()
   -- params
   params:set("bpm", 120)
   params:add_separator()
@@ -475,7 +475,7 @@ function init()
   params:add_control("ENG", "/ Engine level", controlspec.new(0, 1, 'lin', 0, 1, ""))
   params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
   params:add_separator()
-  orca.engines.init()
+  engines.init()
   -- midi
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
@@ -620,14 +620,14 @@ function keyboard.event(typ, code, val)
   elseif (code == hid.codes.KEY_CAPSLOCK and val == 1) then
      map = not map
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
-    if orca.clock.playing then
-      orca.clock:stop()
+    if clock.playing then
+      clock:stop()
       engine.noteKillAll()
       for i=1, orca.max_sc_ops do
         softcut.play(i,0)
       end
     else
-      orca.clock:start()
+      clock:start()
     end
   else
     if val == 1 then
