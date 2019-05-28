@@ -170,7 +170,6 @@ function orca.paste_area()
     for x = 0, #copy_buffer.cell[y] do
       orca:erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
       orca.data.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
-      orca:add_to_queue(x_index + x, y_index + y)
     end
   end
 end
@@ -196,7 +195,6 @@ end
 
 function orca:explode()
   self:replace('*')
-  self:add_to_queue(self.x, self.y)
 end
 
 function orca:listen(x, y)
@@ -217,9 +215,6 @@ function orca.write(x, y, g)
   else
     orca.cleanup(x, y)
     orca.data.cell[y][x] = g
-    if orca.is_op(g) then 
-      orca:add_to_queue(x, y) 
-    end
     return true
   end
 end
@@ -268,7 +263,6 @@ function orca.unlock(x, y, active, out, locks)
     orca.data.cell.params[y][x].lit = active
     orca.data.cell.params[y][x].lit_out = out
     orca.data.cell.params[y][x].spawned = {}
-    if orca.op(x, y) and not locks then orca:add_to_queue(x, y) end
   end
 end
 
@@ -276,13 +270,13 @@ function orca:banged()
   for i = 1, #self.xy do
     if orca.data.cell[self.y + self.xy[i][2]][self.x + self.xy[i][1]] == '*' then
       orca.data.cell.params[self.y][self.x].lit = false
-      orca.data.cell.params[self.y + 1][self.x].lit_out = self.passive and not self.moving_ops[self.glyph] and true or false
+      --orca.data.cell.params[self.y + 1][self.x].lit_out = self.passive and not self.moving_ops[self.glyph] and true or false
       return true
     else
       if not self.passive then
         orca.data.cell.params[self.y][self.x].lit = true
       else
-        orca.data.cell.params[self.y + 1][self.x].lit_out = false
+        --orca.data.cell.params[self.y + 1][self.x].lit_out = false
       end
       return false
     end
@@ -298,40 +292,47 @@ function orca:shift(s, e)
   table.insert(orca.data.cell.params[self.y], self.x + e, params)
 end
 
-function orca:move_cell(x,y)
-  orca.data.cell[y][x] = orca.data.cell[self.y][self.x]
-  self:erase( self.x, self.y )
-  self.remove_from_queue(self.x, self.y)
-  self:add_to_queue(x , y)
-end
 
 function orca:move(x,y)
-  
   local a = self.y + y
   local b = self.x + x
-  
   local collider = orca.data.cell[a][b]
-  
-  if not self.locked(b, a) and collider ~= '.' then
-    --if collider == '*' then
-      --self:move_cell(b,a)
-    if orca.op(b, a) then
-      self:explode()
-    else
-      self:explode()
-    end
-  else
-    self:move_cell(b,a)
+  if collider == '.' then
+    local l = orca.data.cell[self.y][self.x]
+    
+    self.cleanup(self.x, self.y)
+    self:replace('.')
+    orca.data.cell[a][b] = l
   end
-  
+end   
+    
+--[[    if not self.locked(b, a) then
+      self:explode()--and collider ~= '.' then
+      --if orca.op(b, a) then
+      --  self:explode()
+    --  else
+        --self:explode()
+      ---end
+    --else
+    elseif self.op(b,a) then
+      self:explode()
+      
+    else  
+      local l = orca.data.cell[self.y][self.x]
+      self.cleanup(self.x, self.y)
+      self:replace('.')
+      orca.data.cell[a][b] = l
+    end
+  end
 end
-
+]]
 function orca:spawn(ports)
   self.lock(self.x, self.y, true, false, false)
   
   orca.data.cell.params[self.y][self.x].spawned.ports = ports
   orca.data.cell.params[self.y][self.x].spawned.info = { self.name, self.glyph }
   orca.data.cell.params[self.y][self.x].lit = not self.passive
+  
   for k = 1, #ports do
     local type = ports[k][4]
     local x = self.x + ports[k][1]
@@ -352,9 +353,6 @@ function orca:spawn(ports)
   end
 end
 
-
-
-
 function orca.unspawn(x, y)
   
   if orca.spawned(x, y) then
@@ -370,24 +368,19 @@ function orca.unspawn(x, y)
         
         if type == 'haste' then
           orca.unlock(X, Y, false, false, false)
-          orca.data.cell.params[Y][X].spawned.info = nil
         elseif  type == 'input' then
           orca.unlock(X, Y, false, false, true)
-          orca.data.cell.params[Y][X].spawned.info = nil
         elseif type == 'output' then
-          orca.unlock(X, Y, false, false,  true)
-          --orca.unlock(X + 1, Y, false, false, false)
-          orca.data.cell.params[Y][X].spawned.info = nil
-          
+          orca.unlock(X, Y, false, false, true)
         end
-
         
+        orca.data.cell.params[Y][X].spawned.info = nil
+     
       end
       
     end
 
     orca.clean_len_inputs(x, y)
-    
     orca.data.cell.params[y][x].lit = false
     orca.data.cell.params[y][x].spawned = {}
     
@@ -676,7 +669,6 @@ function keyboard.event(typ, code, val)
         elseif keyinput == 'H' then
         end
         orca.data.cell[y_index][x_index] = keyinput
-        orca:add_to_queue(x_index, y_index)
       end
       if ctrl then
         if code == 45 then -- cut
