@@ -20,7 +20,6 @@ local Z = function (self, x, y, glyph)
     rate = rate == 0 and 1 or rate
     local val = self:listen(x, y + 1) or 0
     local mod = val <= target - rate and rate or val >= target + rate and  -rate  or target - val
-    
     return self.chars[val + mod]
   end
   

@@ -15,20 +15,12 @@ local T = function (self, x, y, glyph)
   }
 
   local length = self:listen(self.x - 1, self.y, 1) or 1
-  length = util.clamp(length, 1, self.XSIZE - self.bounds_x)
-  local pos = util.clamp(self:listen(self.x - 2, self.y, 0) or 1, 1, length)  
+  local position = self:listen(self.x - 2, self.y) or 1
+  local pos = util.clamp((position or 1 ) % ( length + 1 ), 1, 35)
   local val = self.data.cell[self.y][self.x + util.clamp(pos, 1, length)]
-  self.data.cell.params[self.y][self.x].seq = length
 
- 
    if not self.passive then
-    self.cleanup(self.x, self.y)
-    for i = 1, length do
-      self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
-      if self.inbounds((self.x  + i) , self.y) then
-        self.cleanup((self.x  + i) , self.y)
-      end
-    end
+    for i = 1, length do self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' } end
     self:spawn(self.ports)
     self.data.cell[self.y + 1][self.x] = val or '.'
   end

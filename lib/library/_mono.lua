@@ -24,7 +24,7 @@ local midi_out = function ( self, x, y )
   local l = self.data.cell[self.y][self.x + 3] ~= '.' and self.data.cell[self.y][self.x + 3] or 'C'
   local note_in = self:listen( self.x + 3, self.y ) or 0
   local note = self.chars[note_in]
-  if l == string.upper(l) then note = string.upper(note) end
+  if l == self.up(l) then note = self.up(note) end
   local transposed = self.transpose( note, octave )
   local n, oct, velocity = transposed[1], transposed[4], math.floor(( vel / 16 ) * 127 )
   

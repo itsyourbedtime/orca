@@ -14,15 +14,16 @@ local grid_write = function ( self, x, y )
   
   self:spawn(self.ports)
   
-  local col = util.clamp(self:listen( self.x + 1, self.y ) or 0 % self.g.cols, 0, self.g.cols)
-  local row = util.clamp(self:listen( self.x + 2, self.y ) or 0 % self.g.rows, 0, self.g.rows)
-  local val = util.clamp(self:listen( self.x + 3, self.y ) or 0 % 16, 0, 16)
+  local col = self:listen( self.x + 1, self.y ) or 0
+  local row = self:listen( self.x + 2, self.y ) or 0 
+  local val = self:listen( self.x + 3, self.y ) or 0 
+  row, col, val = row % self.g.rows, col % self.g.cols, val % 16
   val = self.data.cell[self.y][self.x + 3]  == '*' and 15 or val
   
   if self:banged( ) then
     for y = 1, self.g.rows do 
       for x = 1, self.g.cols do
-        self.data.cell.grid[row == 0 and y or row][col == 0 and x or col] = val
+        self.grid[row == 0 and y or row][col == 0 and x or col] = val
       end
     end
   end

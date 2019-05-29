@@ -23,7 +23,6 @@ local X = function(self, x, y, glyph)
 
 
   if not self.passive then
-    self.cleanup(self.x, self.y)
     self.ports[4][1] = a
     self.ports[4][2] = b
     self:spawn(self.ports)
@@ -31,7 +30,6 @@ local X = function(self, x, y, glyph)
 
   elseif self:banged() then
     self.data.cell[offsety][offsetx] = input
-    self.unlock( offsetx, offsety, false )
   end
   
 end

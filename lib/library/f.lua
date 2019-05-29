@@ -14,8 +14,6 @@ local F = function( self, x, y, glyph )
     {0, 1, 'f-output', 'output'}
   }
   
-
-
   local b = self:listen( self.x + 1, self.y)
   local a = self:listen( self.x - 1, self.y)
   local val = a == b and '*' or '.'

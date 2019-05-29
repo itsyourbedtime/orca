@@ -14,23 +14,20 @@ local R = function (self, x, y, glyph)
     {0, 1, 'r-output', 'output'}
   }
   
-  self.operation = function()
-    local a = util.clamp(self:listen(self.x - 1, self.y) or 0, 0, #self.chars)
-    local b = util.clamp(self:listen(self.x + 1, self.y) or #self.chars, 1, #self.chars)
-    l = tostring(self.data.cell[self.y][self.x + 1])
-    local cap = (l and l == self.up(l)) and true or false
+    local a = self:listen(self.x - 1, self.y) or 0
+    local b = self:listen(self.x + 1, self.y) or 35
+    local l = self.data.cell[self.y][self.x + 1] ~= '.' and self.data.cell[self.y][self.x + 1]
+    local cap = l == self.up(l) and true
     if b < a then a,b = b,a end
-    local val = self.chars[math.random(a,b)]
+    local val = self.chars[math.random(a, b)]
     local value = cap and self.up(val) or val
-    return value
-  end
-  
+
   if not self.passive then
     self:spawn(self.ports)
-    self.write(self.x, self.y + 1, self.operation())
+    self.data.cell[self.y + 1][self.x] = value
   else
     if self:banged() then
-      self.write(self.x, self.y + 1, self.operation())
+      self.data.cell[self.y + 1][self.x] = value
     end
   end
   

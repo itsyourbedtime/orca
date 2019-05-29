@@ -19,11 +19,9 @@ local Q = function (self, x, y, glyph)
   local x_port = a + self.x
   
   if not self.passive then
-    self.cleanup(self.x, self.y)
     for i = 1, length do
       self.ports[#self.ports + 1] = { (b + i) , a - 1 , 'in-q',  'input' }
       if self.inbounds((self.x  + i) - length , self.y + 1) then
-        self.cleanup((self.x  + i) - length , self.y + 1)
         self.data.cell[self.y + 1][(self.x  + i) - length] = self.data.cell[y_port][ (x_port + i) - 1]
       end
     end

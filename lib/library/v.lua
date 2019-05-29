@@ -12,11 +12,21 @@ local V = function (self, x, y, glyph)
     {-1, 0, 'in-write', 'haste'}, 
     {1, 0, 'in-read', 'input'}
   }
-
-  local a = self:listen(self.x - 1, self.y, 0) or 0
-  local b = self:listen(self.x + 1, self.y, 0) or self.data.cell[self.y][self.x + 1]
   
+  local a = self:listen(self.x - 1, self.y, 0) 
+  local b = self:listen(self.x + 1, self.y, 0) 
+  local var_a, var_b 
+  
+
   if not self.passive then
+    self:spawn(self.ports)
+
+  elseif self:banged() then
+    
+  end
+
+
+--[[  if not self.passive then
     self:spawn(self.ports)
     
     if ((self.data.cell.vars[b] ~= nil and self.data.cell.vars[b] ~= '.')  and a == 0) then
@@ -45,7 +55,7 @@ local V = function (self, x, y, glyph)
       self.data.cell.params[self.y + 1][self.x].lit_out = false
     end
   end
-  
+]]  
 end
 
 return V

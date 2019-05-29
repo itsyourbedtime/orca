@@ -6,7 +6,7 @@ local I = function (self, x, y, glyph)
   self.glyph = glyph
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'increment'
-  self.info = {'Increments southward operator.', 'in-a', 'in-b', 'inc-out'}
+  self.info = 'Increments southward operator.'
   
   self.ports = {
     {-1, 0 , 'in-a', 'haste'}, 
@@ -14,8 +14,8 @@ local I = function (self, x, y, glyph)
     {0, 1, 'i-out', 'output'}
   }
 
-  local a = self:listen(self.x - 1, self.y, 0) or 0
-  local b = self:listen(self.x + 1, self.y, 9)
+  local a = self:listen(self.x - 1, self.y) or 0
+  local b = self:listen(self.x + 1, self.y) or 9
   
   b = b ~= a and b or a + 1
   if b < a then 

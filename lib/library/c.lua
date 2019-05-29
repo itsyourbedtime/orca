@@ -14,7 +14,6 @@ local C = function ( self, x, y, glyph )
     {0, 1, 'c-output', 'output'}
   }
   
-  
   local mod = self:listen( self.x + 1, self.y ) or 9
   local rate = self:listen( self.x - 1, self.y ) or 1
   mod = mod == 0 and 1 or mod

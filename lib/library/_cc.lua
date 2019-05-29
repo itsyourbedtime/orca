@@ -16,8 +16,8 @@ local midi_cc = function ( self, x, y )
   self:spawn(self.ports)
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
-  local knob = util.clamp( self:listen( self.x + 2, self.y ) or 0, 1, #self.chars )
-  local val = util.clamp( self:listen( self.x + 3, self.y ) or 0, 0, #self.chars )
+  local knob = self:listen( self.x + 2, self.y ) or 0
+  local val = self:listen( self.x + 3, self.y ) or 0
   local val = math.floor(( val / #self.chars ) * 127 )
   
   if self:banged( ) then

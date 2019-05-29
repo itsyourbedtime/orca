@@ -17,40 +17,29 @@ local grid_read = function ( self, x, y )
   
   local GRID_ROWS = self.g.rows
   local GRID_COLS = self.g.cols
-  local v
-  local col = self:listen( self.x - 2, self.y ) 
-  local row = self:listen( self.x - 1, self.y )
+  local col = self:listen( self.x - 2, self.y )
+  local row = self:listen( self.x - 1, self.y ) 
   local mode = (row ~= false and col == false and 1 ) or (row == false and col ~= false and 2) or 0
-  if mode == 0 then v = self.data.grid[not row and 1 or row][not col and 1 or col] end
-  local value = (v ~= nil and v < 6 and '.') or v == nil and '.' or '*'
-  
-  if self:banged( ) then
-    if mode == 0 then
-      if row ~= false and col ~= false then
-        self.data.cell.grid[ row ][ col ] = 5
-        self.data.cell[self.y + 1][self.x] = value
-      end
-    elseif mode == 1 then
-    for i = 1, GRID_COLS do
-      if self.data.cell.grid[row][i] ~= nil and self.data.cell.grid[row][i] > 6 then 
+  local v = self.grid[not row and 1 or row][not col and 1 or col] 
+  local value = v and v < 6 and '.' or '*'
+
+
+  if mode == 0 then
+    self.grid[ row or 1 ][ col or 1 ] = 5
+    self.data.cell[self.y + 1][self.x] = value
+  else 
+    for i= 1,( mode == 1 and GRID_COLS or GRID_ROWS ) do
+      local y, x = mode == 1 and row or i, mode == 1 and i or col
+      if self.grid[y][x] ~= nil and self.grid[y][x] > 6 then 
         self.data.cell[self.y + 1][self.x] = self.chars[i]
-        break
-      else
-        self.data.cell.grid[row][i] = 5
-        end
-      end
-    elseif mode == 2 then
-      for i = 1, GRID_ROWS do 
-        if self.data.cell.grid[i][col] ~= nil and self.data.cell.grid[i][col] > 6 then
-          self.data.cell[self.y + 1][self.x] = self.chars[i]
-          break
-        else
-          self.data.cell.grid[i][col] = 5
-        end
+      break
+    else
+      self.grid[y][x] = 5
       end
     end
   end
-  
 end
+
+  
 
 return grid_read

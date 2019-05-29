@@ -20,9 +20,9 @@ local M  = function ( self, x, y, glyph )
 
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = self.chars[( l * m ) % #self.chars]
+    self.data.cell[self.y + 1][self.x] = self.chars[( l * m ) % 35]
   elseif self:banged() then
-    self.data.cell[self.y + 1][self.x] = self.chars[( l * m ) % #self.chars]
+    self.data.cell[self.y + 1][self.x] = self.chars[( l * m ) % 35]
   end
   
 end

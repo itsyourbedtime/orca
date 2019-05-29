@@ -17,12 +17,12 @@ local midi_out = function ( self, x, y )
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )
   local octave = util.clamp( self:listen( self.x + 2, self.y ) or 3, 0, 8 )
-  local vel = util.clamp( self:listen( self.x + 4, self.y ) or 10, 0, 16 )
-  local length = util.clamp( self:listen( self.x + 5, self.y ) or 1, 0, #self.chars )
-  local l = self.data.cell[self.y][self.x + 3] ~= '.' and self.data.cell[self.y][self.x + 3] or 'C'
   local note_in = self:listen( self.x + 3, self.y ) or 0
+  local l = self.data.cell[self.y][self.x + 3] ~= '.' and self.data.cell[self.y][self.x + 3] or 'C'
+  local vel = util.clamp( self:listen( self.x + 4, self.y ) or 10, 0, 16 )
+  local length = self:listen( self.x + 5, self.y ) or 1
   local note = self.chars[note_in]
-  if l == string.upper(l) then note = string.upper(note) end
+  if l == self.up(l) then note = self.up(note) end
   local transposed = self.transpose( note, octave )
   local n, oct, velocity = transposed[1], transposed[4], math.floor(( vel / 16 ) * 127 )
   
