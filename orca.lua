@@ -20,13 +20,11 @@ local bar, help, map = false
 local dot_density = 1
 local copy_buffer = { cell = {} }
 
-local orca = {
+orca = {
   __index = orca,
   XSIZE = 60,
   YSIZE = 60,
   frame = 0,
-  bounds_x = bounds_x,
-  bounds_y = bounds_y,
   g = grid.connect(),
   music = require 'musicutil',
   euclid = require 'er',
@@ -193,9 +191,8 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local cell = orca.data.cell[y][x] or 0
-  local v = cell == '0' and 0 or string.lower(cell) 
-  return v == '.' and false or v == 0 and 0 or tab.key(orca.chars, v) 
+  local v = string.lower(orca.data.cell[y][x]) 
+  return v == '.' and false or orca.chars[v] 
 end 
 
 function orca.write(x, y, g)
