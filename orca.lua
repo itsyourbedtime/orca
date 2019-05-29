@@ -11,7 +11,6 @@ local keycodes = include("lib/keycodes")
 local transpose_table = include("lib/transpose")
 local library = include( "lib/library" )
 local engines = include( "lib/engines" )
-
 local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
@@ -19,7 +18,7 @@ local bar, help, map = false
 local dot_density = 1
 local copy_buffer = { cell = {} }
 
-orca = {
+local orca = {
   XSIZE = 60,
   YSIZE = 60,
   frame = 0,
@@ -39,10 +38,6 @@ orca = {
   data = { project = 'untitled', cell = { params = { } } }
 }
 
-function orca.up(i)
-  local l = tostring(i) 
-  return string.upper(l) or '.'
-end
 
 -- midi / audio related
 function orca.normalize(n)
@@ -158,6 +153,11 @@ function orca.paste_area()
 end
 
 -- core
+function orca.up(i)
+  local l = tostring(i) 
+  return string.upper(l) or '.'
+end
+
 function orca.copy(obj)
   if type(obj) ~= 'table' then return obj end
   local res = {}
@@ -326,12 +326,12 @@ function orca:parse()
   for y = 0, self.YSIZE do
     for x = 0, self.XSIZE do
       if (self.op(x, y) and not self.locked(x, y)) then
-        local g, t = self.data.cell[y][x]
+        local g = self.data.cell[y][x]
         local o =  library[self.up(g)]
         local x, y, g = x, y, g
         a[#a + 1] = { o, x, y, g } 
-      else
-        self.unlock(x, y, false,false,false)
+      elseif self.locked(x, y) then
+        self.unlock(x, y, false, false, false)
       end
     end
   end
@@ -681,7 +681,7 @@ local function draw_map()
     end
 
   screen.level(2)
-  screen.rect(map_x(x_index), map_y(y_index), 24,14 )
+  screen.rect(map_x(x_index), map_y(y_index), 24, 14 )
   screen.stroke()
 end
 
