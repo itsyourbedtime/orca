@@ -27,6 +27,7 @@ local U  = function (self, x, y, glyph)
     self:spawn(self.ports)
     self:write(self.ports[3][1], self.ports[3][2], out)
   elseif self:banged() then
+    self:spawn({{0, 1, self.glyph, 'output'}})
     self:write(self.ports[3][1], self.ports[3][2], out)
   end
 end

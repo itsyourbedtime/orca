@@ -16,10 +16,11 @@ local K = function (self, x, y, glyph)
 
   if not self.passive then
     for i = 1, length do
-        self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
+        self.ports[#self.ports + 1] = { i , 0, 'in-var', 'input' }
         local var = self.vars[self:listen(x + i, y) or '']
         if var then
           self:write(i,1, var)
+          self.ports[#self.ports + 1] = { i , 1, 'out-var', 'input' }
         end
       
     end

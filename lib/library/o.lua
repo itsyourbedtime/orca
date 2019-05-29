@@ -28,6 +28,7 @@ local O = function(self, x, y, glyph)
     self:spawn(self.ports)
     self:write(self.ports[4][1], self.ports[4][2], self:glyph_at(offset_x, offset_y))
   elseif self:banged() then
+    self:spawn({{0, 1, self.glyph, 'output'}})
     self:write(self.ports[4][1], self.ports[4][2], self:glyph_at(offset_x, offset_y))
   end
   

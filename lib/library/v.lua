@@ -28,7 +28,9 @@ local V = function (self, x, y, glyph)
     if b and not a then self:write(self.ports[1][1], self.ports[1][2], self.vars[b])
     elseif a then self.vars[a] = var end
   elseif self:banged() then
-    if b and not a then self:write(self.ports[1][1], self.ports[1][2], self.vars[b])
+    
+    if b and not a then self:spawn({{0, 1, self.glyph, 'output'}}) 
+    self:write(self.ports[1][1], self.ports[1][2], self.vars[b])
     elseif a then self.vars[a] = var end
   end
 

@@ -14,11 +14,8 @@ local H = function(self, x, y, glyph)
 
   if not self.passive then
     self:spawn(self.ports)
-    self.lock(self.x, self.y, false, false,  true)
   elseif self:banged() then
-    self.lock(self.x, self.y + 1, false,  true, true)
-  else
-    self.unlock(self.x, self.y + 1,false, false, false)
+    self:spawn({{0, 1, self.glyph, 'output'}})
   end
   
 end

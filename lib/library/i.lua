@@ -16,14 +16,18 @@ local I = function (self, x, y, glyph)
 
   local a = self:listen(self.x - 1, self.y) or 0
   local b = self:listen(self.x + 1, self.y) or 9
+  local l = self:glyph_at(self.x + 1, self.y)
   b = b ~= a and b or a + 1 if b < a then a,b = b,a end
-  val = util.clamp(( self.frame  % (b + 1)), a, b )
-  
+  val = ( math.floor( self.frame ) % b ) + 1
+  local cap = l ~= '.' and l == self.up(l) and true
+  local value = cap and self.up(self.chars[val]) or self.chars[val]
+
   if not self.passive then
     self:spawn(self.ports)
-    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
+    self:write(self.ports[3][1], self.ports[3][2], value)
   elseif self:banged(  ) then
-    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
+    self:spawn({{0, 1, self.glyph, 'output'}})
+    self:write(self.ports[3][1], self.ports[3][2], value)
   end
   
 end
