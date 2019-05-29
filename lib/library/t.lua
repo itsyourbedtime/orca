@@ -17,12 +17,14 @@ local T = function (self, x, y, glyph)
   local length = self:listen(self.x - 1, self.y, 1) or 1
   local position = self:listen(self.x - 2, self.y) or 1
   local pos = util.clamp((position or 1 ) % ( length + 1 ), 1, 35)
-  local val = self.data.cell[self.y][self.x + util.clamp(pos, 1, length)]
+  local val = self:glyph_at(self.x + util.clamp(pos, 1, length), self.y)
 
    if not self.passive then
-    for i = 1, length do self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' } end
+    for i = 1, length do 
+      self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' } 
+    end
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = val or '.'
+    self:write(self.ports[4][1], self.ports[4][2],  val  )
   end
 end
 

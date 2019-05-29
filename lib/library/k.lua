@@ -16,13 +16,12 @@ local K = function (self, x, y, glyph)
 
   if not self.passive then
     for i = 1, length do
-      self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
-      if self.inbounds((self.x  + i) , self.y) then
+        self.ports[#self.ports + 1] = { i , 0, 'in-value',  pos == i and  'output' or 'input' }
         local var = self.vars[self:listen(x + i, y) or '']
         if var then
-          self.data.cell[self.y + 1][(self.x + i)] = var
+          self:write(i,1, var)
         end
-      end
+      
     end
     self:spawn(self.ports)
   end

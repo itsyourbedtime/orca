@@ -23,9 +23,9 @@ local D = function ( self, x, y, glyph )
   
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = out
+    self:write(self.ports[3][1], self.ports[3][2], out)
   elseif self:banged( ) then
-    self.data.cell[self.y + 1][self.x] = out
+    self:write(self.ports[3][1], self.ports[3][2], out)
   end
   
 end

@@ -24,8 +24,11 @@ local O = function(self, x, y, glyph)
   self.ports[3][2] = b
   
   if not self.passive then
+    self.cleanup(self.x,self.y)
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = self.data.cell[offset_y][offset_x]
+    self:write(self.ports[4][1], self.ports[4][2], self:glyph_at(offset_x, offset_y))
+  elseif self:banged() then
+    self:write(self.ports[4][1], self.ports[4][2], self:glyph_at(offset_x, offset_y))
   end
   
 end

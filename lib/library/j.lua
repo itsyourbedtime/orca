@@ -13,12 +13,13 @@ local J = function(self, x, y, glyph)
     {0, 1, 'j-output', 'output'}
   }
   
-
+  local input = self:glyph_at(self.x, self.y + 1)
+  
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = self.data.cell[self.y - 1][self.x]
+    self:write(self.ports[2][1], self.ports[2][2], input)
   elseif self:banged() then
-    self.data.cell[self.y + 1][self.x] = self.data.cell[self.y - 1][self.x]
+    self:write(self.ports[2][1], self.ports[2][2], input)
   end
   
 end

@@ -16,10 +16,8 @@ local G = function(self, x, y, glyph)
   local b = util.clamp(self:listen(self.x - 3, self.y) or 1, 1, 35)
   local length = self:listen(self.x - 1, self.y, 0) or 0
   local op = self:listen(self.x + 1, self.y, 0)
-  local offset = 1
-  local offset_y = b + self.y 
-  local offset_x = a + self.x - 1
-    
+  local offset_x, offset_y = a + self.x - 1, b + self.y 
+
     
   for i = 1, length do
     self.ports[#self.ports + 1] = { i , 0 , 'g-value ' .. i,  'input' }
@@ -29,12 +27,14 @@ local G = function(self, x, y, glyph)
     
   local function operate()
     for i = 1, length do
-      self.data.cell[offset_y][(offset_x + i)] = self.data.cell[self.y][ (self.x + i)]
+      local input = self:glyph_at(self.x + i, self.y)
+      self:write( (a + i) - 1 , b, input)
     end
   end
     
 
   if not self.passive then
+    self.cleanup(self.x, self.y)
     self:spawn(self.ports)
     operate()
   elseif self:banged() then

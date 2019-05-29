@@ -25,10 +25,10 @@ local Z = function (self, x, y, glyph)
   
   if not self.passive then
     self:spawn(self.ports)
-    self.write(self.x, self.y + 1, self.operation())
+    self:write(self.ports[3][1], self.ports[3][2], self.operation())
   else
     if self:banged() then
-    self.write(self.x, self.y + 1, self.operation())
+    self:write(self.ports[3][1], self.ports[3][2], self.operation())
     end
   end
 

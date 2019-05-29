@@ -14,7 +14,7 @@ local H = function(self, x, y, glyph)
 
   if not self.passive then
     self:spawn(self.ports)
-    self.lock(self.x, self.y + 1, false, false,  true)
+    self.lock(self.x, self.y, false, false,  true)
   elseif self:banged() then
     self.lock(self.x, self.y + 1, false,  true, true)
   else

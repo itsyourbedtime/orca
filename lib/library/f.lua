@@ -18,13 +18,12 @@ local F = function( self, x, y, glyph )
   local a = self:listen( self.x - 1, self.y)
   local val = a == b and '*' or '.'
   val = a == false and b == false and '.' or val
-  self.data.cell[self.y + 1][self.x] = val
 
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = val
+    self:write(self.ports[3][1], self.ports[3][2], val)
   elseif self:banged( ) then
-    self.data.cell[self.y + 1][self.x] = val
+    self:write(self.ports[3][1], self.ports[3][2], val)
   end
   
 end

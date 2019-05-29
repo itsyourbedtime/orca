@@ -16,18 +16,18 @@ local R = function (self, x, y, glyph)
   
     local a = self:listen(self.x - 1, self.y) or 0
     local b = self:listen(self.x + 1, self.y) or 35
-    local l = self.data.cell[self.y][self.x + 1] ~= '.' and self.data.cell[self.y][self.x + 1]
-    local cap = l == self.up(l) and true
+    local l = self:glyph_at(self.x + 1, self.y)
+    local cap = l ~= '.' and l == self.up(l) and true
     if b < a then a,b = b,a end
     local val = self.chars[math.random(a, b)]
     local value = cap and self.up(val) or val
 
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = value
+    self:write(self.ports[3][1], self.ports[3][2], value)
   else
     if self:banged() then
-      self.data.cell[self.y + 1][self.x] = value
+      self:write(self.ports[3][1], self.ports[3][2], value)
     end
   end
   

@@ -25,7 +25,9 @@ local L = function (self, x, y, glyph)
     self:spawn(self.ports)
   
     if (self.frame % rate == 0 and length ~= 0) then
-      self:shift(offset, length)
+      if self.inbounds(self.x + length + 1, self.y) then
+        self:shift(offset, length)
+      end
     end
   end
 

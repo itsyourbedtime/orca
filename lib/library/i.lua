@@ -16,19 +16,14 @@ local I = function (self, x, y, glyph)
 
   local a = self:listen(self.x - 1, self.y) or 0
   local b = self:listen(self.x + 1, self.y) or 9
-  
-  b = b ~= a and b or a + 1
-  if b < a then 
-    a,b = b,a 
-  end
-  
+  b = b ~= a and b or a + 1 if b < a then a,b = b,a end
   val = util.clamp(( self.frame  % (b + 1)), a, b )
   
   if not self.passive then
     self:spawn(self.ports)
-    self.data.cell[self.y + 1][self.x] = self.chars[val]
+    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
   elseif self:banged(  ) then
-    self.data.cell[self.y + 1][self.x] = self.chars[val]
+    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
   end
   
 end

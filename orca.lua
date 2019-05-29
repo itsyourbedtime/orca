@@ -181,16 +181,19 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local v = orca.data.cell[y][x] and string.lower(orca.data.cell[y][x]) or false
-  return v and orca.base36[v] or false
-end 
+  return self.data.cell[y] ~= nil and (self.data.cell[y][x] ~= nil and orca.base36[string.lower(self.data.cell[y][x])] or false) or false
+end
 
-function orca.write(x, y, g)
-  if g == '.' then return false 
-  elseif string.len(g) ~= 1 then return false
-  elseif not orca.inbounds(x, y) then return false
-  elseif orca.data.cell[y][x] == g then return false 
-  else orca.data.cell[y][x] = g return true
+function orca:glyph_at(x, y)
+  if not self.inbounds(x, y) then return '.' 
+  else l = self.data.cell[y][x] return l end 
+end
+
+
+function orca:write(x, y, g)
+  if not self.inbounds(self.x + x, self.y + y) then return false
+  elseif self.data.cell[self.y + y][self.x + x] == g then return false 
+  else self.data.cell[self.y + y][self.x + x] = g return true
   end
 end
 
@@ -232,53 +235,36 @@ end
 function orca:banged()
   for i = 1, #self.around do
     if orca.data.cell[self.y + self.around[i][2]][self.x + self.around[i][1]] == '*' then
-      orca.data.cell.params[self.y][self.x].lit = false
-      return true
-    else
-      if not self.passive then
-        orca.data.cell.params[self.y][self.x].lit = true
-      end
-      return false
-    end
+    orca.data.cell.params[self.y][self.x].lit = false return true
+    else if not self.passive then orca.data.cell.params[self.y][self.x].lit = true end return false end
   end
 end
 
 function orca:shift(s, e)
-  if orca.inbounds(self.x, self.y) then
+  if orca.inbounds(self.x + e, self.y) then
     local data = orca.data.cell[self.y][self.x + s]
-    local params = orca.data.cell.params[self.y][self.x + s]
     table.remove(orca.data.cell[self.y], self.x + s)
-    table.remove(orca.data.cell.params[self.y], self.x + s)
     table.insert(orca.data.cell[self.y], self.x + e, data)
-    table.insert(orca.data.cell.params[self.y], self.x + e, params)
   end
 end
 
 
-function orca:move(x,y)
+function orca:move(x, y)
   local a = self.y + y
   local b = self.x + x
+  if self.inbounds(b,a) then
   local collider = orca.data.cell[a][b]
-  if a >= self.YSIZE or b >= self.XSIZE then
-    self:explode()
-  elseif collider ~= '.'then
-    if orca.op(b, a) and not self.locked(b, a) then 
-      self:explode()
-    else
-      self:explode()
-    end
-  else
-    local l = orca.data.cell[self.y][self.x]
-    self:replace('.')
-    orca.data.cell[a][b] = l
-  end
+  if collider ~= '.' and collider ~= '*' then self:explode()
+  else local l = orca.data.cell[self.y][self.x]
+  self:replace('.') orca.data.cell[a][b] = l end
+  else self:explode() end
 end
 
 function orca:spawn(ports)
-  orca.data.cell.params[self.y][self.x].spawned.ports = ports or {}
-  orca.data.cell.params[self.y][self.x].spawned.info = { self.name, self.info }
-  orca.data.cell.params[self.y][self.x].lit = not self.passive
-  
+  local cell = orca.data.cell.params[self.y][self.x]
+  cell.spawned.ports = ports or {}
+  cell.spawned.info = { self.name, self.info }
+  cell.lit = not self.passive
   for k = 1, #ports do
     local type = ports[k][4]
     local x = self.x + ports[k][1]
@@ -288,9 +274,7 @@ function orca:spawn(ports)
       orca.data.cell.params[y][x].spawned.info = { ports[k][3] }
     end
   end
-  
 end
-
 
 function orca.index_at(x, y)
   return orca.inbounds(x, y) and tonumber(x + (orca.XSIZE * y))
@@ -303,21 +287,15 @@ function orca.cleanup(x, y)
         local type = ports[k][4]
         local X = x + ports[k][1]
         local Y = y + ports[k][2]
-        
-        if orca.inbounds(X, Y) then
-          orca.unlock(X, Y, false, false, false)
-        end
+        orca.unlock(X, Y, false, false, false)
       end
     end
-    
   if orca.data.cell[y][x] == '/' then 
     softcut.play(orca:listen(x + 1, y) or 1, 0) 
     orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max)
   end
-  
   orca.data.cell.params[y][x].lit = false
-  orca.data.cell.params[y][x].spawned = {}
-
+  orca.data.cell.params[y][x].spawned = { }
 end
 
 -- execution
@@ -330,7 +308,7 @@ function orca:parse()
         local o =  library[self.up(g)]
         local x, y, g = x, y, g
         a[#a + 1] = { o, x, y, g } 
-      elseif self.locked(x, y) then
+      else-- if self.locked(x, y) then
         self.unlock(x, y, false, false, false)
       end
     end
