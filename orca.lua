@@ -393,10 +393,10 @@ local function get_key(code, val, shift)
   end
 end
 
-local kb = {s = {[42] = true, [54] = true }, c = {[29] = true, [125] = true, [127] = true, [96] = true}}
+local kb = {s = {[42] = true, [54] = true }, c = {[29] = true, [125] = true, [127] = true, [97] = true}}
 function orca.keyboard.event(typ, code, val)
   local menu = norns.menu.status()
-  print("hid.event ", typ, code, val)
+  --print("hid.event ", typ, code, val)
   if kb.s[code] then
     shift  =  (val == 1 or val == 2) and true
   elseif kb.c[code] then
