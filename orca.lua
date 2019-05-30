@@ -15,10 +15,10 @@ local keyinput = ""
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map = false
-local dot_density = 1
+local dot_density = 7
 local copy_buffer = { }
 
-orca = {
+local orca = {
   project = 'untitled',
   XSIZE = 60,
   YSIZE = 60,
@@ -252,10 +252,10 @@ end
 -- exec
 function orca:parse()
   local a = {} for y = 0, self.YSIZE do for x = 0, self.XSIZE do
-  if (self.op(x, y) and not self.locked(x, y)) then
+  if self.op(x, y) then
   local g = self.cell[y][x] local o =  library[self.up(g)]
   local x, y, g = x, y, g a[#a + 1] = { o, x, y, g } 
-  else end end end
+  end end end
   self.locks = {}
   self.inf = {}
   return a
@@ -405,13 +405,13 @@ local function draw_grid()
     local x = x + field_offset_x
     local f = orca.locks[orca.index_at(x,y)] or {}
     local cell = orca.cell[y][x] or '.'
+    local ofst = ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 )
     if f[3] then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
     if f[4] then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
     if cell ~= '.' or cell ~= nil then screen.level( orca.op(x, y) and 15 or ( f[2] or f[3] or f[4]) and 12 or 1 )
     elseif cell == '.' then screen.level( f[2] and 9 or 1) end
-    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
-    if cell == '.' or cell == nil then
-      screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
+    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3) - (ofst and -2 or 0))
+    if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
     elseif cell == tostring(cell) then screen.text(cell) end
     screen.stroke()
     end
@@ -433,8 +433,7 @@ local function draw_cursor(x,y)
   screen.level(cell == '.' and 14 or 1) screen.move(x_pos + ((cell ~= '.' ) and 1 or 0), y_pos + 6)
   screen.text((cell == '.' or cell == nil) and '@' or cell) screen.stroke()
 end
-
-function draw_bar()
+local function draw_bar()
   local text = orca.inf[orca.index_at(x_index, y_index)]
   screen.level(0) screen.rect(0, 56, 128, 8) screen.fill()
   screen.level(9) screen.move(2, 63) 
@@ -443,19 +442,19 @@ function draw_bar()
   screen.move(123,63) screen.text_right(x_index .. ',' .. y_index) screen.stroke()
 end
 
-local function map_y (p)  return ((p / orca.YSIZE) * 48) + 7 end
-local function map_x (p)  return ((p / orca.XSIZE) * 114) + 7 end
-local function map_index_x (p)  return ((util.clamp(p,2,30) / orca.YSIZE) * 48) + 5 end
-local function map_index_y (p)  return (((util.clamp(p,1, 60) / orca.XSIZE) ) * 114) + 5 end
+local function map_y (p)  return ((p / orca.YSIZE) * 53) + 8 end
+local function map_x (p)  return ((p / orca.XSIZE) * 117) + 5 end
 
 
-local function draw_map()
-  screen.level(15) screen.rect(4,5,120,55) screen.fill()
-  screen.level(0) screen.rect(5,6,118,53) screen.fill()
-  for y = 1, orca.YSIZE do for x = 1, orca.XSIZE do
-  local f = orca.locks[orca.index_at(x,y)] or '.'
-  if f[2] then screen.level(4) screen.rect(map_x(x), map_y(y), 3,3 ) screen.fill() end end end
-  screen.level(2) screen.rect(map_x(x_index), map_y(y_index), 24, 14 ) screen.stroke()
+local function draw_sliders()
+  screen.level(1)
+  screen.move(map_x(x_index), bar and 57 or 64)
+  screen.line_rel(-4,0)
+  screen.stroke()
+  screen.level(1)
+  screen.move( 128, map_y(y_index))
+  screen.line_rel(0,-4)
+  screen.stroke()
 end
 
 function enc(n, d)
@@ -474,6 +473,6 @@ function redraw()
   draw_grid()
   draw_cursor(x_index - field_offset_x , y_index - field_offset_y)
   if bar then draw_bar() end
-  if map then draw_map() end
+  draw_sliders ()
   screen.update()
 end

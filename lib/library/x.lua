@@ -19,6 +19,7 @@ local X = function(self, x, y, glyph)
 
   if not self.passive or self:banged() then
     self:spawn(self.ports)
+    self.unlock(offset_x, offset_y, false, false, false, true)
     self:write(a, b, input)
   end
   
