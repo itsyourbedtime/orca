@@ -22,7 +22,7 @@ local grid_read = function ( self, x, y )
 
   if mode == 0 then
     self.grid[ row or 1 ][ col or 1 ] = 5
-    self.data.cell[self.y + 1][self.x] = value
+    self:write(0, 1, value)
   else 
     for i= 1,( mode == 1 and GRID_COLS or GRID_ROWS ) do
       local y, x = mode == 1 and row or i, mode == 1 and i or col

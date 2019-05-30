@@ -33,8 +33,8 @@ local _softcut_op = function ( self, x, y)
     softcut.rate( playhead, pl == 2 and -rate or rate )
     softcut.level( playhead, level )
     
-    if self.data.cell[self.y][self.x + 2] == '*' then
-      self.data.cell[self.y][self.x + 2] = '.'
+    if self.cell[self.y][self.x + 2] == '*' then
+      self.cell[self.y][self.x + 2] = '.'
       softcut.buffer_clear_region( 0, #self.chars )
     end
     

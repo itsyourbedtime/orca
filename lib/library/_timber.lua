@@ -18,7 +18,7 @@ local timber = function ( self, x, y )
   local octave = util.clamp( self:listen( self.x + 2, self.y ) or 3, 0, 8 )
   local level = self:listen( self.x + 4, self.y ) or 28
   local start = self:listen( self.x + 5, self.y ) or 0
-  local l = self.data.cell[self.y][self.x + 3] ~= '.' and self.data.cell[self.y][self.x + 3] or 'C'
+  local l = self.cell[self.y][self.x + 3] ~= '.' and self.cell[self.y][self.x + 3] or 'C'
   local note_in = self:listen( self.x + 3, self.y ) or 0
   local note = self.chars[note_in]
   if l == string.upper(l) then note = string.upper(note) end
