@@ -100,7 +100,7 @@ function orca.load_project(pth)
     local saved = tab.load(pth)
     if saved ~= nil then
       print("data found")
-      orca.data = saved
+      orca.cell = saved
       local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)
       orca.project = name 
       softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
@@ -114,7 +114,7 @@ end
 
 function orca.save_project(txt)
   if txt then orca.project = txt
-    tab.save(orca.data, norns.state.data .. txt ..".orca")
+    tab.save(orca.cell, norns.state.data .. txt ..".orca")
     softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#orca.chars, 1)
     params:write(norns.state.data .. txt .. ".pset")
     print ('saved ' .. norns.state.data .. txt .. '_buffer.aif')
@@ -410,7 +410,7 @@ local function draw_grid()
     if f[4] then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
     if cell ~= '.' or cell ~= nil then screen.level( orca.op(x, y) and 15 or ( f[2] or f[3] or f[4]) and 12 or 1 )
     elseif cell == '.' then screen.level( f[2] and 9 or 1) end
-    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3) - (ofst and -2 or 0))
+    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
     if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
     elseif cell == tostring(cell) then screen.text(cell) end
     screen.stroke()
