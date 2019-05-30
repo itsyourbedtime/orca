@@ -14,21 +14,12 @@ local L = function (self, x, y, glyph)
 
   local length = util.clamp(self:listen( self.x - 1, self.y, 0 ) or 0, 1, self.XSIZE - self.x)
   local rate = util.clamp(self:listen( self.x - 2, self.y, 0 ) or 1, 1, #self.chars)
-  local offset = 1
-  local l_start = self.x + offset
-  local l_end =  self.x + length
+  local l_start, l_end = self.x + 1, self.x + length
+  for i = 1, length do self.ports[#self.ports + 1] = { i , 0, 'in-value',  'input' } end
 
   if not self.passive then
-    for i = 1, length do
-      self.ports[#self.ports + 1] = { i , 0, 'in-value',  'input' }
-    end
     self:spawn(self.ports)
-  
-    if (self.frame % rate == 0 and length ~= 0) then
-      if self.inbounds(self.x + length + 1, self.y) then
-        self:shift(offset, length)
-      end
-    end
+    if (self.frame % rate == 0 and length ~= 0) then self:shift(1, length) end
   end
 
 end

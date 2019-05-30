@@ -299,7 +299,7 @@ function orca:parse()
         local o =  library[self.up(g)]
         local x, y, g = x, y, g
         a[#a + 1] = { o, x, y, g } 
-      else-- if self.locked(x, y) then
+      else
         self.unlock(x, y, false, false, false)
       end
     end
@@ -310,8 +310,7 @@ end
 function orca:operate()
   self.frame = self.frame + 1
   local l = self:parse()
-  for i = 1, #l do
-    local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
+  for i = 1, #l do local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
     if not self.locked(x, y) then op(self, x, y, g) end
   end
 end
@@ -394,119 +393,61 @@ local function get_key(code, val, shift)
   end
 end
 
+local kb = {s = {[42] = true, [54] = true }, c = {[29] = true, [125] = true, [127] = true, [96] = true}}
 function orca.keyboard.event(typ, code, val)
   local menu = norns.menu.status()
-   print("hid.event ", typ, code, val)
-  if ((code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 1 or val == 2)) then
-    shift  = true;
-  elseif (code == hid.codes.KEY_LEFTSHIFT or code == hid.codes.KEY_RIGHTSHIFT) and (val == 0) then
-    shift = false;
-    elseif ((code == hid.codes.KEY_LEFTCTRL or code == hid.codes.KEY_RIGHTCTRL) and (val == 1 or val == 2)) then
-    ctrl = true
-  elseif ((code == hid.codes.KEY_LEFTCTRL or code == hid.codes.KEY_RIGHTCTRL) and val == 0) then
-    ctrl = false
-  elseif ((code == hid.codes.KEY_LEFTMETA or code == hid.codes.KEY_RIGHTMETA ) and (val == 1 or val == 2)) then
-    ctrl = true
-  elseif ((code == hid.codes.KEY_LEFTMETA or code == hid.codes.KEY_RIGHTMETA ) and val == 0) then
-    ctrl = false
-  elseif (code == hid.codes.KEY_BACKSPACE or code == hid.codes.KEY_DELETE) then
-    orca.erase(x_index,y_index)
-  elseif code == 58 or code == 56 then -- caps/alt 
+  print("hid.event ", typ, code, val)
+  if kb.s[code] then
+    shift  =  (val == 1 or val == 2) and true
+  elseif kb.c[code] then
+    ctrl = (val == 1 or val == 2) and true
   elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.XSIZE) else
-        x_index = util.clamp(x_index - (ctrl and 9 or 1), 1,orca.XSIZE)
-      end
+      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.XSIZE) 
+      else x_index = util.clamp(x_index - (ctrl and 9 or 1), 1,orca.XSIZE) end
       update_offset(x_index, y_index)
-    elseif menu then
-      if ctrl then 
-        norns.enc(1, -8)
-      else
-        norns.enc(3, shift and -20 or -2)
-      end
-    end
+    elseif menu then if ctrl then norns.enc(1, -8) else norns.enc(3, shift and -20 or -2) end end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1,orca.XSIZE) else
-        x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.XSIZE)
-      end
+      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1,orca.XSIZE) 
+      else x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.XSIZE) end
       update_offset(x_index, y_index)
-    elseif menu then
-      if ctrl then 
-        norns.enc(1, 8)
-      else
-        norns.enc(3, shift and 20 or 2)
-      end
-    end
+    elseif menu then if ctrl then norns.enc(1, 8) else norns.enc(3, shift and 20 or 2) end end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.YSIZE) else
-        y_index = util.clamp(y_index + (ctrl and 9 or 1), 1,orca.YSIZE)
-      end
+      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.YSIZE) 
+      else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1,orca.YSIZE) end
       update_offset(x_index, y_index)
-    elseif menu then
-      norns.enc(2, shift and 104 or 2)
-    end
+    elseif menu then norns.enc(2, shift and 104 or 2) end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.YSIZE) else
-        y_index = util.clamp(y_index - (ctrl and 9 or 1) ,1,orca.YSIZE)
-      end
+      if shift then selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.YSIZE) 
+      else y_index = util.clamp(y_index - (ctrl and 9 or 1) ,1,orca.YSIZE) end
       update_offset(x_index, y_index)
-    elseif menu then
-     norns.enc(2, shift and -104 or -2)
-    end
-  elseif (code == hid.codes.KEY_TAB and val == 1) then
-    bar = not bar
-  elseif (code == 41 and val == 1) then
-    map = not map
-  -- bypass crashes  -- 2do F1-F12 (59-68, 87,88)
-  elseif (code == 26 and val == 1) then
-      dot_density = util.clamp(dot_density - 1, 1, 8)
-  elseif (code == 27 and val == 1) then
-      dot_density = util.clamp(dot_density + 1, 1, 8)
-  elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then
-        selected_area_y, selected_area_x = 1, 1
-      if shift then
-        norns.menu.set_status(not menu)
-      elseif menu and not shift then
-        norns.key(2, 1)
-      end
+    elseif menu then norns.enc(2, shift and -104 or -2) end
+  elseif (code == hid.codes.KEY_TAB and val == 1) then bar = not bar
+  elseif (code == 41 and val == 1) then map = not map
+  elseif (code == 14 or code == 111) then orca.erase(x_index,y_index)
+  elseif code == 58 or code == 56 then -- caps/alt 
+  elseif code == 110 then orca.paste_area() 
+  elseif code == 102 then x_index, y_index = 1,1 field_offset_x, field_offset_y = 1,1 update_offset(x_index, y_index)
+  elseif (code == 26 and val == 1) then dot_density = util.clamp(dot_density - 1, 1, 8)
+  elseif (code == 27 and val == 1) then dot_density = util.clamp(dot_density + 1, 1, 8)
+  elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then 
+    selected_area_y, selected_area_x = 1, 1
+    if shift then norns.menu.set_status(not menu)
+    elseif menu and not shift then norns.key(2, 1) end
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
-    if menu then
-      norns.key(3, 1)
-    end
+    if menu then norns.key(3, 1) end
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
-    if clock.playing then
-      clock:stop()
-      engine.noteKillAll()
-      for i=1, orca.sc_ops.max  do
-        softcut.play(i,0)
-      end
-    else
-      clock:start()
-    end
-  else
-    if val == 1 then
-      keyinput = get_key(code, val, shift)
-      if not ctrl then
-        if not orca.locked(x_index,y_index) and keyinput ~= orca.data.cell[y_index][x_index] then
-          orca.erase(x_index,y_index)
-          if orca.data.cell[y_index][x_index] == '/' then
-            orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 1, orca.sc_ops.max)
-          end
-        end
-        orca.data.cell[y_index][x_index] = keyinput or '.'
-      end
-      if ctrl then
-        if code == 45 then -- cut
-          orca.cut_area()
-        elseif code == 46 then -- copy
-          orca.copy_area()
-        elseif code == 47 then -- paste
-          orca.paste_area()
-        end
-      end
+    if clock.playing then clock:stop() engine.noteKillAll()
+    for i=1, orca.sc_ops.max do softcut.play(i,0) end
+    else clock:start() end
+  else if val == 1 then keyinput = get_key(code, val, shift) if not ctrl then
+    if not orca.locked(x_index,y_index) and keyinput ~= orca.data.cell[y_index][x_index] then orca.erase(x_index,y_index)
+    if orca.data.cell[y_index][x_index] == '/' then orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 1, orca.sc_ops.max) end end 
+    orca.data.cell[y_index][x_index] = keyinput or '.' end
+    if ctrl then if code == 45 then orca.cut_area() elseif code == 46 then orca.copy_area() elseif code == 47 then orca.paste_area() end end
     end
   end
 end
@@ -518,21 +459,19 @@ end
 local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
-  for y= 1, bounds_y do
-    local y = y + field_offset_y
-    for x = 1, bounds_x do
-      local x = x + field_offset_x
-      local f = orca.data.cell.params[y][x] or {}
-      local cell = orca.data.cell[y][x] or '.'
-      if f.lit then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
-      if f.lit_out then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
-      if cell ~= '.' or cell ~= nil then screen.level( orca.op(x, y) and 15 or ( f.lit or f.lit_out or f.dot) and 12 or 1 )
-      elseif cell == '.' then screen.level( f.dot and 9 or 1) end
-      screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.data.cell[y][x] and 2 or 3))
-      if cell == '.' or cell == nil then
-        screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
-      elseif cell == tostring(cell) then screen.text(cell) end
-      screen.stroke()
+  for y= 1, bounds_y do local y = y + field_offset_y for x = 1, bounds_x do
+    local x = x + field_offset_x
+    local f = orca.data.cell.params[y][x] or {}
+    local cell = orca.data.cell[y][x] or '.'
+    if f.lit then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
+    if f.lit_out then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
+    if cell ~= '.' or cell ~= nil then screen.level( orca.op(x, y) and 15 or ( f.lit or f.lit_out or f.dot) and 12 or 1 )
+    elseif cell == '.' then screen.level( f.dot and 9 or 1) end
+    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.data.cell[y][x] and 2 or 3))
+    if cell == '.' or cell == nil then
+      screen.text(f.dot and '.' or ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 ) and  '.' or '')
+    elseif cell == tostring(cell) then screen.text(cell) end
+    screen.stroke()
     end
   end
 end
@@ -572,29 +511,12 @@ local function map_index_y (p)  return (((util.clamp(p,1, 60) / orca.XSIZE) ) * 
 
 
 local function draw_map()
-  
-  screen.level(15)
-  screen.rect(4,5,120,55)
-  screen.fill()
-  screen.level(0)
-  screen.rect(5,6,118,53)
-  screen.fill()
-  for y = 1, orca.YSIZE do
-    for x = 1, orca.XSIZE do
-      if orca.data.cell[y][x] ~= '.' then
-        screen.level(1)
-        screen.rect(map_x(x), map_y(y), 3,3 )
-        screen.fill()
-      elseif orca.data.cell.params[y][x].lit then
-        screen.level(4)
-        screen.rect(map_x(x), map_y(y), 3,3 )
-        screen.fill()
-      end
-    end
-  end
-  screen.level(2)
-  screen.rect(map_x(x_index), map_y(y_index), 24, 14 )
-  screen.stroke()
+  screen.level(15) screen.rect(4,5,120,55) screen.fill()
+  screen.level(0) screen.rect(5,6,118,53) screen.fill()
+  for y = 1, orca.YSIZE do for x = 1, orca.XSIZE do
+  if orca.data.cell[y][x] ~= '.' then screen.level(1) screen.rect(map_x(x), map_y(y), 3,3 ) screen.fill()
+  elseif orca.data.cell.params[y][x].lit then screen.level(4) screen.rect(map_x(x), map_y(y), 3,3 ) screen.fill() end end end
+  screen.level(2) screen.rect(map_x(x_index), map_y(y_index), 24, 14 ) screen.stroke()
 end
 
 function enc(n, d)
