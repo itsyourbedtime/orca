@@ -7,24 +7,16 @@ local F = function( self, x, y, glyph )
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'if'
   self.info = 'Bangs if both inputs are equal.'
-
-  self.ports = {
-    {-1, 0, 'in-a', 'haste'}, 
-    {1, 0, 'in-b', 'input'}, 
-    {0, 1, 'f-output', 'output'}
-  }
+  self.ports = { {-1, 0, 'in-a', 'haste'}, {1, 0, 'in-b', 'input'}, {0, 1, 'f-output', 'output'} }
   
   local b = self:listen( self.x + 1, self.y)
   local a = self:listen( self.x - 1, self.y)
   local val = a == b and '*' or '.'
   val = a == false and b == false and '.' or val
 
-  if not self.passive then
+  if not self.passive or self:banged() then
     self:spawn(self.ports)
-    self:write(self.ports[3][1], self.ports[3][2], val)
-  elseif self:banged( ) then
-    self:spawn({{0, 1, self.glyph, 'output'}})
-    self:write(self.ports[3][1], self.ports[3][2], val)
+    self:write(0, 1, val)
   end
   
 end

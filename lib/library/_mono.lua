@@ -7,14 +7,9 @@ local midi_out = function ( self, x, y )
   self.name = 'mono'
   self.info = 'Sends MIDI monophonic note.'
   self.passive = false
-
-  self.ports = {
-    {1, 0, 'in-port', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, 
-    {4, 0, 'in-velocity', 'input'}, {5, 0, 'in-length', 'input'}
-  }
+  self.ports = { {1, 0, 'in-port', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, {4, 0, 'in-velocity', 'input'}, {5, 0, 'in-length', 'input'} }
   
   self:spawn(self.ports)
-  
   self:notes_off( channel )
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )

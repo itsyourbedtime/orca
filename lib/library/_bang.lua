@@ -7,13 +7,10 @@ local bang = function( self, x, y )
   self.passive = false
   self.name = 'bang'
   self.info = 'Bangs neighboring operators.'
-  
   self.ports = {}
   
-  if not self.passive then 
-    self.erase(self.x, self.y)  
-  end
-  
+  self.erase(self.x, self.y)  
+
 end
 
 return bang

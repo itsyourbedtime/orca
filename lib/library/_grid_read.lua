@@ -7,11 +7,7 @@ local grid_read = function ( self, x, y )
   self.name = 'g.read'
   self.info = 'Reads grid on bang.'
   self.passive = false
-
-  self.ports = {
-    {-2, 0, 'in-g.col', 'haste'}, {-1, 0, 'in-g.row', 'haste'}, 
-    {0, 1, 'out-g.read', 'output'}
-  }
+  self.ports = { {-2, 0, 'in-g.col', 'haste'}, {-1, 0, 'in-g.row', 'haste'}, {0, 1, 'out-g.read', 'output'} }
   
   self:spawn(self.ports)
   

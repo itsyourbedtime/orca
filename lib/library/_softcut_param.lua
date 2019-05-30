@@ -1,6 +1,7 @@
 local param_ids = { "source", "pan", "rate_slew_time", "level_slew_time", "sc_clear_region" } 
 local param_names = { "source", "pan","rate slew time", "level slew time", "clear region" } 
 local helper = false
+
 local softcut_param = function ( self, x, y )
 
   self.y = y
@@ -10,12 +11,7 @@ local softcut_param = function ( self, x, y )
   self.name = 'sc.param'
   self.info = 'Sets softcut param on bang'
   self.passive = false
-
-  self.ports = { 
-    {1, 0, 'in-playhead', 'input'}, 
-    {2, 0, helper or 'in-param', 'input' }, 
-    {3, 0, helper or 'in-value', 'input'}
-  }
+  self.ports = { {1, 0, 'in-playhead', 'input'}, {2, 0, helper or 'in-param', 'input' }, {3, 0, helper or 'in-value', 'input'} }
 
   
   
@@ -27,11 +23,9 @@ local softcut_param = function ( self, x, y )
     local source = (val == 1 and 'in 1' or val == 2 and 'in 2' or val == 3 and 'both' or val == 0 and 'off')  or 'off'
     helper = param_names[param] .. ' ' .. (param == 1 and source or value )
 
-  
   self:spawn(self.ports)
-  
+
   if self:banged( ) then
-    
     if param == 1 then
       norns.audio.level_adc_cut(val == 0 and 0 or 1)
       norns.audio.level_eng_cut(val == 3 and 1 or 0)

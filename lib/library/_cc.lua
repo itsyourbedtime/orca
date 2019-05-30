@@ -7,12 +7,8 @@ local midi_cc = function ( self, x, y )
   self.name = 'cc'
   self.info = 'Sends MIDI control change.'
   self.passive = false
-
-  self.ports = { 
-    {1, 0, 'in-channel','input' }, 
-    {2, 0, 'in-knob', 'input' }, 
-    {3, 0, 'in-value', 'input'}
-  }
+  self.ports = { {1, 0, 'in-channel','input' }, {2, 0, 'in-knob', 'input' }, {3, 0, 'in-value', 'input'} }
+  
   self:spawn(self.ports)
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )

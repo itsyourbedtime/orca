@@ -10,8 +10,7 @@ local timber = function ( self, x, y )
 
   self.ports = {
     {1, 0, 'in-sample', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, 
-    {4, 0, 'in-level', 'input'}, {5, 0, 'in-position', 'input'}
-  }
+    {4, 0, 'in-level', 'input'}, {5, 0, 'in-position', 'input'} }
 
   self:spawn(self.ports)
   

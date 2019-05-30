@@ -8,9 +8,7 @@ local Q = function (self, x, y, glyph)
   self.name = 'query'
   self.info = 'Reads distant operators with offset.'
   
-  self.ports = {
-    {-3, 0, 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'}, 
-  }
+  self.ports = { {-3, 0, 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'} }
 
   local a = self:listen(self.x - 3, self.y) or 1 
   local b = self:listen(self.x - 2, self.y) or 0
@@ -18,14 +16,11 @@ local Q = function (self, x, y, glyph)
   local y_port = b + self.y
   local x_port = a + self.x
   
-  if not self.passive then
+  if not self.passive or self:banged() then
     self.cleanup(self.x, self.y)
-    for i = 1, length do
-      local val = self:glyph_at((x_port + i) - 1, y_port) 
+    for i = 1, length do local val = self:glyph_at((x_port + i) - 1, y_port) 
       self.ports[#self.ports + 1] = { (b + i) , a - 1 , 'in-q',  'input' }
-      self:write( i - length, 1, val)
-    end
-    
+      self:write( i - length, 1, val) end
     self:spawn(self.ports)
   end
 end

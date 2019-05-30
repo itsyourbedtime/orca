@@ -7,11 +7,7 @@ local midi_out = function ( self, x, y )
   self.name = 'midi'
   self.info = 'Sends MIDI note.'
   self.passive = false
-
-  self.ports = {
-    {1, 0, 'in-port', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, 
-    {4, 0, 'in-velocity', 'input'}, {5, 0, 'in-length', 'input'}
-  }
+  self.ports = { {1, 0, 'in-port', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, {4, 0, 'in-velocity', 'input'}, {5, 0, 'in-length', 'input'} }
   
   self:spawn(self.ports)
   

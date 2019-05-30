@@ -10,9 +10,7 @@ local W = function(self, x, y, glyph)
 
   self.ports = {}
   
-  if not self.passive then
-    self:move( -1, 0 )
-  elseif self:banged( ) then
+  if not self.passive or self:banged() then
     self:move( -1, 0 )
   end
   

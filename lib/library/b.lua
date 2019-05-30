@@ -7,12 +7,7 @@ local B = function ( self, x, y, glyph )
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'bounce'
   self.info = 'Bounces between two values based on the runtime frame.'
-
-  self.ports = {
-    {-1, 0, 'in-rate', 'haste'}, 
-    {1, 0, 'in-to', 'input'}, 
-    {0, 1, 'b-out', 'output'}
-  }
+  self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-to', 'input'},  {0, 1, 'b-out', 'output'} }
   
   local to = self:listen( self.x + 1, self.y ) or 1
   local rate = self:listen( self.x - 1, self.y ) or 1
@@ -20,12 +15,9 @@ local B = function ( self, x, y, glyph )
   local key = math.floor( self.frame / rate ) % ( to * 2 )
   local val = key <= to and key or to - ( key - to )
   
-  if not self.passive then
+  if not self.passive or self:banged() then
     self:spawn(self.ports)
-    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
-  elseif self:banged() then
-    self:spawn({{0, 1, self.glyph, 'output'}})
-    self:write(self.ports[3][1], self.ports[3][2], self.chars[val])
+    self:write(0, 1, self.chars[val])
   end
   
 end

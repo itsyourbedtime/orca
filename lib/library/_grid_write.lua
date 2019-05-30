@@ -7,10 +7,7 @@ local grid_write = function ( self, x, y )
   self.name = 'g.write'
   self.info = 'Writes grid x / y.'
   self.passive = false
-
-  self.ports = { 
-    {1, 0, 'in-g.col', 'input'}, {2, 0, 'in-g.row', 'input'}, {3, 0, 'in-brightness', 'input'}
-  }
+  self.ports = { {1, 0, 'in-g.col', 'input'}, {2, 0, 'in-g.row', 'input'}, {3, 0, 'in-brightness', 'input'} }
   
   self:spawn(self.ports)
   

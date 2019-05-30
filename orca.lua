@@ -1,5 +1,5 @@
 -- ORCA
--- v0.9.9.6 @its_your_bedtime
+-- v0.9.9.8 @its_your_bedtime
 -- llllllll.co/t/orca
 
 local tab = require 'tabutil'
@@ -18,7 +18,7 @@ local bar, help, map = false
 local dot_density = 1
 local copy_buffer = { cell = {} }
 
-local orca = {
+ orca = {
   XSIZE = 60,
   YSIZE = 60,
   frame = 0,
@@ -28,6 +28,7 @@ local orca = {
   euclid = require 'er',
   chars = keycodes.chars,
   base36 = keycodes.base36,
+  num = keycodes.num,
   keyboard = hid.connect( ),
   g = grid.connect( ),
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
@@ -37,7 +38,6 @@ local orca = {
   sc_ops = { count = 0, max = 6, pos = {0, 0, 0, 0, 0, 0} },  
   data = { project = 'untitled', cell = { params = { } } }
 }
-
 
 -- midi / audio related
 function orca.normalize(n)
@@ -122,39 +122,28 @@ function orca.save_project(txt)
 end
 
 -- cut / copy / paste 
-function orca.copy_area()
-  copy_buffer = { cell = {} }
-  for y=y_index, y_index + selected_area_y - 1 do
-    copy_buffer.cell[y -  y_index ] = {}
-    for x = x_index - 1,( x_index + selected_area_x ) - 1 do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(orca.data.cell[y][x])
-    end
-  end
+function orca.copy_area() copy_buffer = { cell = {} }
+  for y=y_index, y_index + selected_area_y - 1 do copy_buffer.cell[y -  y_index ] = {}
+  for x = x_index - 1, (x_index + selected_area_x) - 1 do
+  copy_buffer.cell[y - y_index ][x - x_index ] = orca.copy(orca.data.cell[y][x]) end end
 end
 
-function orca.cut_area()
-  copy_buffer = { cell = {} }
-  for y=y_index, y_index + selected_area_y - 1 do
-    copy_buffer.cell[y -  y_index ] = {}
-    for x = x_index, (x_index + selected_area_x) - 1 do
-      copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(orca.data.cell[y][x])
-      orca.erase(x, y)
-    end
-  end
+function orca.cut_area() copy_buffer = { cell = {} }
+  for y=y_index, y_index + selected_area_y - 1 do copy_buffer.cell[y -  y_index ] = {}
+  for x = x_index, (x_index + selected_area_x) - 1 do
+  copy_buffer.cell[y -  y_index ][x -  x_index ] = orca.copy(orca.data.cell[y][x])
+  orca.erase(x, y) end end
 end
 
 function orca.paste_area()
-  for y=0, #copy_buffer.cell do
-    for x = 0, #copy_buffer.cell[y] do
-      orca.erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
-      orca.data.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x])
-    end
-  end
+  for y=0, #copy_buffer.cell do for x = 0, #copy_buffer.cell[y] do
+  orca.erase(util.clamp(x_index + x, 0, orca.XSIZE), util.clamp(y_index + y, 0, orca.YSIZE))
+  orca.data.cell[y_index + y][(x_index + x)] = orca.copy(copy_buffer.cell[y][x]) end end
 end
 
 -- core
 function orca.up(i) 
-  local l = tostring(i)  return string.upper(l) or '.'
+  local l = tostring(i) return string.upper(l) or '.'
 end
 
 function orca.inbounds(x, y)
@@ -205,8 +194,8 @@ function orca:banged( )
 end
 
 function orca.copy(obj)
-  if type(obj) ~= 'table' then return obj end
-  local res = {} for k, v in pairs(obj) do res[orca.copy(k)] = orca.copy(v) end
+  if type(obj) ~= 'table' then return obj end local res = {} 
+  for k, v in pairs(obj) do res[orca.copy(k)] = orca.copy(v) end
   return res
 end
 
@@ -255,64 +244,39 @@ function orca:move(x, y)
   else self:explode() end
 end
 
-function orca:spawn(ports)
-  local cell = orca.data.cell.params[self.y][self.x]
-  cell.spawned.ports = ports or {}
+function orca:spawn(p)
+  local cell = self.data.cell.params[self.y][self.x]
+  cell.spawned.ports = p or {}
   cell.spawned.info = { self.name, self.info }
   cell.lit = not self.passive
-  for k = 1, #ports do
-    local type = ports[k][4]
-    local x = self.x + ports[k][1]
-    local y = self.y + ports[k][2]
-    if self.inbounds(x, y) then
-      self.lock( x, y, false, type == 'output' and true or false, (type == 'input' or type == 'output') and true )
-      orca.data.cell.params[y][x].spawned.info = { ports[k][3] }
-    end
-  end
+  for k = 1, #p do local x, y, info, type = self.x + p[k][1], self.y + p[k][2], p[k][3], p[k][4]
+  if self.inbounds(x, y) then self.data.cell.params[y][x].spawned.info = { p[k][3] }
+  self.lock( x, y, false, type == 'output' and true, (type == 'input' or type == 'output') and true ) end end
 end
 
 function orca.cleanup(x, y)
-    local ports = orca.data.cell.params[y][x].spawned.ports or false
-    if ports then
-      for k = 1, #ports do
-        local type = ports[k][4]
-        local X = x + ports[k][1]
-        local Y = y + ports[k][2]
-        orca.unlock(X, Y, false, false, false)
-      end
-    end
-  if orca.data.cell[y][x] == '/' then 
-    softcut.play(orca:listen(x + 1, y) or 1, 0) 
-    orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max)
-  end
-  orca.data.cell.params[y][x].lit = false
-  orca.data.cell.params[y][x].spawned = { }
+  local ports = orca.data.cell.params[y][x].spawned.ports or false
+  if ports then for k = 1, #ports do local X, Y = x + ports[k][1], y + ports[k][2] 
+  orca.unlock(X, Y, false, false, false) end end
+  if orca.data.cell[y][x] == '/' then softcut.play(orca:listen(x + 1, y) or 1, 0) 
+  orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max) end
+  orca.data.cell.params[y][x].lit = false orca.data.cell.params[y][x].spawned = { }
 end
 
 -- exec
 function orca:parse()
-  local a = {}
-  for y = 0, self.YSIZE do
-    for x = 0, self.XSIZE do
-      if (self.op(x, y) and not self.locked(x, y)) then
-        local g = self.data.cell[y][x]
-        local o =  library[self.up(g)]
-        local x, y, g = x, y, g
-        a[#a + 1] = { o, x, y, g } 
-      else
-        self.unlock(x, y, false, false, false)
-      end
-    end
-  end
+  local a = {} for y = 0, self.YSIZE do for x = 0, self.XSIZE do
+  if (self.op(x, y) and not self.locked(x, y)) then
+  local g = self.data.cell[y][x] local o =  library[self.up(g)]
+  local x, y, g = x, y, g a[#a + 1] = { o, x, y, g } 
+  else self.unlock(x, y, false, false, false) end end end
   return a
 end
 
 function orca:operate()
-  self.frame = self.frame + 1
-  local l = self:parse()
+  self.frame = self.frame + 1 local l = self:parse()
   for i = 1, #l do local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
-    if not self.locked(x, y) then op(self, x, y, g) end
-  end
+  if not self.locked(x, y) then op(self, x, y, g) end end
 end
 
 -- grid 
@@ -325,24 +289,15 @@ function orca.g.redraw()
 end
 
 function init()
-  -- orca.data 
-  for y = 0, orca.YSIZE do
-    orca.data.cell[y] = {}
-    orca.data.cell.params[y] = {}
-    for x = 0, orca.XSIZE do
-      orca.data.cell[y][x] = '.'
-      orca.data.cell.params[y][x] = orca.copy(orca.defaults)
-    end
-  end
-  -- grid 
-  for i = 1, orca.g.rows do
-    orca.grid[i] = {}
-  end
-  -- ops exec 
+  -- 
+  for y = 0, orca.YSIZE do orca.data.cell[y] = {} orca.data.cell.params[y] = {}
+  for x = 0, orca.XSIZE do orca.data.cell[y][x] = '.' orca.data.cell.params[y][x] = orca.copy(orca.defaults) end end
+  for i = 1, orca.g.rows do orca.grid[i] = {} end
+  -- 
   clock.on_step = function() orca:operate()  orca.g:redraw() end,
   clock:add_clock_params()
   clock:start()
-  -- params
+  --
   params:set("bpm", 120)
   params:add_separator()
   params:add_trigger('save_p', "< Save project" )
@@ -358,19 +313,17 @@ function init()
   params:set_action("ENG", function(x) audio.level_eng_cut(x) end)
   params:add_separator()
   engines.init()
-  -- midi
+  -- 
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
   orca.midi_out_device.event = function() end
-  params:add{
-    type = "number", id = "midi_out_device", 
-    name = "midi out device", min = 1, max = 4, default = 1,
-    action = function(value) orca.midi_out_device = midi.connect(value) end 
-  }
-  -- redraw metro
+  params:add{ type = "number", id = "midi_out_device", name = "midi out device", min = 1, max = 4, default = 1,
+  action = function(value) orca.midi_out_device = midi.connect(value) end }
+  --
   redraw_metro = metro.init(function(stage) redraw() end, 1/30)
   redraw_metro:start()
 end
+
 -- UI / controls
 local function update_offset(x ,y)
   if x < bounds_x + ( field_offset_x - 24 )  then
