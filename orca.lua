@@ -197,10 +197,9 @@ end
 function orca:write(x, y, g)
   if not self.inbounds(self.x + x, self.y + y) then return false
   elseif self.cell[self.y + y][self.x + x] == g then return false 
-  else self.cell[self.y + y][self.x + x] = g return true
-  end
+  else self.cell[self.y + y][self.x + x] = g return true end
 end
-                    
+
 function orca.lock(x, y, locks, dot, active, out)
   local at = orca.index_at(x, y)  
   orca.locks[at] = { locks, dot, active, out }
@@ -221,61 +220,98 @@ end
 function orca:move(x, y)
   local a, b = self.y + y, self.x + x
   if self.inbounds(b,a) then
-  local c = orca.cell[a][b]
-  if c ~= '.' and c ~= '*' then self:explode()
-  else local l = orca.cell[self.y][self.x]
-  self:replace('.') orca.cell[a][b] = l end
-  else self:explode() end
+    local c = orca.cell[a][b]
+    if c ~= '.' and c ~= '*' then 
+      self:explode()
+    else 
+      local l = orca.cell[self.y][self.x]
+      self:replace('.') 
+      orca.cell[a][b] = l 
+    end
+  else 
+    self:explode() 
+  end
 end
 
 function orca:spawn(p)
   local at =  self.index_at(self.x, self.y)
-  self.inf[at] = self.name self.locks[at] = { false, false, not self.passive, false }
-  for k = 1, #p do local x, y, info, type = self.x + p[k][1], self.y + p[k][2], p[k][3], p[k][4]
-  if self.inbounds(x, y) then 
-  self.lock(x, y, (type == 'input' or type == 'output') and true, true, false, type == 'output' and true ) 
-  self.inf[self.index_at(x, y)] = p[k][3] end end
+  self.inf[at] = self.name 
+  self.locks[at] = { false, false, not self.passive, false }
+  for k = 1, #p do 
+    local x, y, info, type = self.x + p[k][1], self.y + p[k][2], p[k][3], p[k][4]
+    if self.inbounds(x, y) then 
+      self.lock(x, y, (type == 'input' or type == 'output') and true, true, false, type == 'output' and true ) 
+      self.inf[self.index_at(x, y)] = p[k][3] 
+    end 
+  end
 end
 
 function orca.cleanup(x, y)
   local at = orca.index_at(x,y)
-  if orca.cell[y][x] == '/' then softcut.play(orca:listen(x + 1, y) or 1, 0) 
-  orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max) end
   orca.locks[at] = { false, false, false, false }
   orca.inf[at] = nil
+  if orca.cell[y][x] == '/' then 
+    softcut.play(orca:listen(x + 1, y) or 1, 0) 
+    orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max) 
+  end
+
 end
 
 -- exec
 function orca:parse()
   local a,b = {},1 
-  for y = 0, self.YSIZE do for x = 0, self.XSIZE do
-  if self.op(x, y) then local g = self.cell[y][x] 
-  local o =  library[self.up(g)] local x, y, g = x, y, g 
-  a[b] = { o, x, y, g } b = b + 1
-  end end end self.locks = {}  --self.inf = {}
+  for y = 0, self.YSIZE do 
+    for x = 0, self.XSIZE do
+      if self.op(x, y) then 
+        local g = self.cell[y][x] 
+        local o =  library[self.up(g)] 
+        local x, y, g = x, y, g 
+        a[b] = { o, x, y, g }
+        b = b + 1
+      end 
+    end 
+  end 
+  self.locks = {}  --self.inf = {}
   return a
 end
 
 function orca:operate()
-  self.frame = self.frame + 1 local l = self:parse()
-  for i = 1, #l do local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
-  if not self.locked(x, y) then op(self, x, y, g) end end
+  self.frame = self.frame + 1 
+  local l = self:parse()
+  for i = 1, #l do 
+    local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
+    if not self.locked(x, y) then 
+      op(self, x, y, g) 
+    end 
+  end
 end
 
 -- grid 
 function orca.g.key(x, y, z) 
-  local last = orca.grid[y][x] orca.grid[y][x] = z == 1 and 15 or last < 6 and last or 0 
+  local last = orca.grid[y][x] 
+  orca.grid[y][x] = z == 1 and 15 or last < 6 and last or 0 
 end
 
 function orca.g.redraw() 
-  for y = 1, orca.g.rows do for x = 1, orca.g.cols do orca.g:led(x, y, orca.grid[y][x] or 0  ) end end orca.g:refresh()
+  for y = 1, orca.g.rows do 
+    for x = 1, orca.g.cols do 
+      orca.g:led(x, y, orca.grid[y][x] or 0  ) 
+      end 
+    end 
+  orca.g:refresh()
 end
 
 function init()
   -- 
-  for y = 0, orca.YSIZE do orca.cell[y] = {} 
-  for x = 0, orca.XSIZE do orca.cell[y][x] = '.' end end
-  for i = 1, orca.g.rows do orca.grid[i] = {} end
+  for y = 0, orca.YSIZE do 
+    orca.cell[y] = {} 
+    for x = 0, orca.XSIZE do 
+      orca.cell[y][x] = '.' 
+    end 
+  end
+  for i = 1, orca.g.rows do 
+    orca.grid[i] = {} 
+  end
   -- 
   clock.on_step = function() orca:operate()  orca.g:redraw() end,
   clock:add_clock_params()
@@ -446,12 +482,13 @@ local function draw_sliders()
 end
 
 function enc(n, d)
-  if n == 2 then x_index = util.clamp(x_index + d, 1, orca.XSIZE)
-  elseif n == 3 then y_index = util.clamp(y_index + d, 1, orca.YSIZE) end
+  if n == 2 then 
+    x_index = util.clamp(x_index + d, 1, orca.XSIZE)
+  elseif n == 3 then 
+    y_index = util.clamp(y_index + d, 1, orca.YSIZE) 
+  end
   update_offset(x_index, y_index)
 end
-
---  function key(n, z)  map = n == 1 and z == 1 and true end
 
 function redraw()
   screen.clear()
