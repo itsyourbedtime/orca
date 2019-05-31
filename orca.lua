@@ -40,6 +40,7 @@ local orca = {
   xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } },
   sc_ops = { count = 0, max = 6, pos = {0, 0, 0, 0, 0, 0} },
 }
+setmetatable(orca.cell, { __index = function () return '.' end })
 
 -- midi / audio related
 function orca.normalize(n)
@@ -211,9 +212,11 @@ function orca.unlock(x, y, locks, dot, active, out)
 end
 
 function orca:shift(s, e)
-  local data = orca.cell[self.y][self.x + s]
-  table.remove(orca.cell[self.y], self.x + s)
-  table.insert(orca.cell[self.y], self.x + e, data)
+  if self.inbounds(self.x + e, self.y) then
+    local data = orca.cell[self.y][self.x + s]
+    table.remove(orca.cell[self.y], self.x + s)
+    table.insert(orca.cell[self.y], self.x + e, data)
+  end
 end
 
 
@@ -335,7 +338,7 @@ function init()
   -- 
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
-  orca.midi_out_device.event = function() end
+  orca.midi_out_device.event = function(data)  orca.vars['midi'] = midi.to_msg(data).note end
   params:add{ type = "number", id = "midi_out_device", name = "midi out device", min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end }
   --
