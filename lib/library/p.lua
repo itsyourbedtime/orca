@@ -16,7 +16,7 @@ local P = function (self, x, y, glyph)
   for i = 1, length do self.ports[#self.ports + 1] = { i - 1, 1, 'in-value',  pos == i and  'output' or 'input' } end
   
   if not self.passive or self:banged() then
-    self:write((((pos or 1)  % (length + 1))) - 1, 1,  val)
+    self:write(pos - 1, 1,  val)
     self:spawn(self.ports)
   end
 end

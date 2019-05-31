@@ -22,7 +22,7 @@ local midi_out = function ( self, x, y )
   
   if self:banged( ) then
     self.midi_out_device:note_on( n, velocity, channel )
-    self:add_note_mono( channel, n, length )
+    self:add_note( channel, n, length , true)
   end
   
 end

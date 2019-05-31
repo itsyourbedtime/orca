@@ -17,7 +17,6 @@ local Q = function (self, x, y, glyph)
   local x_port = a + self.x
   
   if not self.passive or self:banged() then
-    self.cleanup(self.x, self.y)
     for i = 1, length do local val = self:glyph_at((x_port + i) - 1, y_port) 
       self.ports[#self.ports + 1] = { (b + i) , a - 1 , 'in-q',  'input' }
       self:write( i - length, 1, val) end

@@ -28,7 +28,6 @@ local G = function(self, x, y, glyph)
     
 
   if not self.passive or self:banged() then
-    self.cleanup(self.x, self.y)
     operate()
     self:spawn(self.ports)
   end

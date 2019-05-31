@@ -18,7 +18,6 @@ local O = function(self, x, y, glyph)
   self.ports[3][2] = b
   
   if not self.passive or self:banged() then
-    self.cleanup(self.x,self.y)
     self:spawn(self.ports)
     self:write(self.ports[4][1], self.ports[4][2], self:glyph_at(offset_x, offset_y))
   end
