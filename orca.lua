@@ -117,23 +117,23 @@ end
 
 -- cut / copy / paste
 
-function orca.copy_area( delete ) copy_buffer = { }
-  for y=y_index, y_index + selected_area_y - 1 do 
-    copy_buffer[y -  y_index ] = {}
-    for x = x_index - 1, (x_index + selected_area_x) - 1 do
-      copy_buffer[y - y_index ][x - x_index ] = orca.copy(orca.cell[y][x])
-      if delete then orca.erase(x, y) end
+local function copy_area(a, b, t, cut) 
+  copy_buffer = { }
+  for y=b, b + selected_area_y - 1 do 
+    copy_buffer[y -  b ] = {}
+    for x = a - 1, (a + selected_area_x) - 1 do
+      copy_buffer[y - b ][x - a ] = orca.copy(t[y][x])
+      if cut then orca.erase(x, y) end
     end
   end
 end
 
-function orca.paste_area()
-  local b = copy_buffer
-  for y=0, #b or 1 do 
-    for x = 0, #b[y] or 1 do
-    if orca.inbounds(x_index + x, y_index + y) then
-      orca.erase(x_index + x , y_index + y)
-      orca.cell[y_index + y][(x_index + x)] = b[y][x] or '.' 
+local function paste_area(a, b, t)
+  for y=0, #copy_buffer or 1 do 
+    for x = 0, #copy_buffer[y] or 1 do
+    if orca.inbounds(a + x, b + y) then
+      orca.erase(a + x , b + y)
+      t[b + y][(a + x)] = copy_buffer[y][x] or '.' 
       end 
     end 
   end
@@ -404,7 +404,7 @@ function orca.keyboard.event(typ, code, val)
   elseif (code == 41 and val == 1) then map = not map
   elseif (code == 14 or code == 111) then orca.erase(x_index,y_index)
   elseif code == 58 or code == 56 then -- caps/alt 
-  elseif code == 110 then orca.paste_area() 
+  elseif code == 110 then paste_area(x_index, y_index, orca.cell) 
   elseif code == 102 then x_index, y_index = 1,1 field_offset_x, field_offset_y = 1,1 update_offset(x_index, y_index)
   elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then 
     selected_area_y, selected_area_x = 1, 1
@@ -420,7 +420,11 @@ function orca.keyboard.event(typ, code, val)
     if not orca.locked(x_index,y_index) and keyinput ~= orca.cell[y_index][x_index] then orca.erase(x_index,y_index)
     if orca.cell[y_index][x_index] == '/' then orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 1, orca.sc_ops.max) end end 
     orca.cell[y_index][x_index] = keyinput or '.' end
-    if ctrl then if code == 45 then orca.copy_area(true) elseif code == 46 then orca.copy_area() elseif code == 47 then orca.paste_area() end end
+    if ctrl then if code == 45 then 
+      copy_area(x_index, y_index, orca.cell, true)  
+      elseif code == 46 then 
+      copy_area(x_index, y_index, orca.cell)  
+      elseif code == 47 then paste_area(x_index, y_index, orca.cell)  end end
     end
   end
 end
@@ -428,7 +432,6 @@ end
 local function draw_op_frame(x, y, b)
   screen.level(b) screen.rect(( x * 5 ) - 5, (( y * 8 ) - 5 ) - 3, 5, 8) screen.fill()
 end
-
 local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
@@ -443,6 +446,47 @@ local function draw_grid()
     if cell ~= '.' or cell ~= nil then screen.level( orca.op(x, y) and 15 or ( f[2] or f[3] or f[4]) and 12 or 1 )
     elseif cell == '.' then screen.level( f[2] and 9 or 1) end
     screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
+    if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
+    elseif cell == tostring(cell) then screen.text(cell) end
+    screen.stroke()
+    end
+  end
+end
+
+local function draw_gjrid()
+  screen.font_face(25)
+  screen.font_size(6)
+  for y= 1, bounds_y do 
+    local y = y + field_offset_y for x = 1, bounds_x do
+    local x = x + field_offset_x
+    local f = orca.locks[orca.index_at(x,y)] or {}
+--[[    local level1 = 1
+    if f[1] == true then 
+      if orca.op(x, y) then level1 = 15 end
+      if f[2] == true then level1 = 5 end
+      if f[3] == true then level1 = 5 end
+      if f[4] == true then level1 = 15 end
+      
+    else level1 =  1 
+    end 
+
+    --local level1 = f[1] == true and 5 or f[2] == true and 15 or 5
+]]    
+    local level1 =  (orca.op(x, y) and (not f[1] and 15 or f[1] and 6 or 15) ) or ( f[2] or f[3] or f[4]) and 12 or 1
+    local level2 = f[2] and 6 or 1
+    local cell = orca.cell[y][x] or '.'
+    local ofst = ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 )
+    
+    if f[3] then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
+    if f[4] then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
+    
+    if cell ~= '.' or cell ~= nil then screen.level( level1 )
+    
+    elseif cell == '.' then screen.level( level2) 
+      end
+    
+    screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
+    
     if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
     elseif cell == tostring(cell) then screen.text(cell) end
     screen.stroke()
