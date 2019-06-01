@@ -18,7 +18,6 @@ local bar, help, map = false
 local dot_density = 7
 local copy_buffer = { }
 local pt = {} 
-
 local orca = {
   project = 'untitled',
   XSIZE = 60,
@@ -42,7 +41,6 @@ local orca = {
   xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } },
   sc_ops = { count = 0, max = 6, pos = {0, 0, 0, 0, 0, 0} },
 }
-setmetatable(orca.cell, { __index = function () return '.' end })
 
 -- midi / audio related
 function orca.normalize(n)
@@ -96,12 +94,11 @@ function orca.load_project(pth)
     local saved = tab.load(pth)
     if saved ~= nil then
       print("data found")
-      orca.cell = saved
-      local name = string.sub(string.gsub(pth, '%w+/',''),2,-6)
-      orca.project = name 
-      softcut.buffer_read_mono(norns.state.data .. name .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
-      params:read(norns.state.data .. name ..".pset")
-      print ('loaded ' .. norns.state.data .. name .. '_buffer.aif')
+      orca.project = saved[1]
+      orca.cell = saved[2]
+      softcut.buffer_read_mono(norns.state.data .. orca.project .. '_buffer.aif', 0, 0, #orca.chars, 1, 1)
+      params:read(norns.state.data .. orca.project ..".pset")
+      print ('loaded ' .. norns.state.data .. orca.project .. '_buffer.aif')
     else
       print("no data")
     end
@@ -109,12 +106,16 @@ function orca.load_project(pth)
 end
 
 function orca.save_project(txt)
-  if txt then orca.project = txt
-    tab.save(orca.cell, norns.state.data .. txt ..".orca")
-    softcut.buffer_write_mono(norns.state.data..txt .."_buffer.aif",0,#orca.chars, 1)
-    params:write(norns.state.data .. txt .. ".pset")
-    print ('saved ' .. norns.state.data .. txt .. '_buffer.aif')
-  else print("save cancel") end
+  if txt then
+    local l = { orca.project, orca.cell }
+    local full_path = norns.state.data .. txt
+    tab.save(l, full_path ..".orca")
+    softcut.buffer_write_mono(full_path .."_buffer.aif",0,#orca.chars, 1)
+    params:write(full_path .. ".pset")
+    print ('saved ' .. full_path .. '_buffer.aif')
+  else
+    print("save cancel")
+  end
 end
 
 -- cut / copy / paste
