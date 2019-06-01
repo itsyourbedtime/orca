@@ -17,6 +17,7 @@ local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map = false
 local dot_density = 7
 local copy_buffer = { }
+local pt = {} 
 
 local orca = {
   project = 'untitled',
@@ -28,6 +29,7 @@ local orca = {
   cell = { },
   locks = { },
   inf = { },
+  draw = { },
   active_notes = { },
   music = require 'musicutil',
   euclid = require 'er',
@@ -169,7 +171,18 @@ function orca.locked(x, y)
 end
 
 function orca.erase(x, y) 
-  orca.cleanup(x, y) orca.cell[y][x] = '.'  
+  local at = orca.index_at(x,y)
+  
+  orca.locks[at] = {}
+  orca.inf[at] = nil
+  
+  if orca.cell[y][x] == '/' then 
+    softcut.play(orca:listen(x + 1, y) or 1, 0) 
+    orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max) 
+  end
+  
+  orca.cell[y][x] = '.'  
+  
 end
 
 function orca.index_at(x, y) 
@@ -241,53 +254,52 @@ function orca:spawn(p)
   self.inf[at] = self.name 
   self.locks[at] = { false, false, not self.passive, false }
   for k = 1, #p do 
-    local x, y, info, type = self.x + p[k][1], self.y + p[k][2], p[k][3], p[k][4]
+    local x, y, info, type = self.x + p[k][1], self.y + p[k][2]
+    local info, type = p[k][3], p[k][4]
     if self.inbounds(x, y) then 
-      self.lock(x, y, (type == 'input' or type == 'output') and true, true, false, type == 'output' and true ) 
+      
+      local lock = type ~= 'haste' and true 
+      local draw = type == 'output' and true
+      
+      self.lock(x, y, lock, true, false, draw ) 
+      
       self.inf[self.index_at(x, y)] = p[k][3] 
     end 
   end
 end
 
-function orca.cleanup(x, y)
-  local at = orca.index_at(x,y)
-  orca.locks[at] = { false, false, false, false }
-  orca.inf[at] = nil
-  if orca.cell[y][x] == '/' then 
-    softcut.play(orca:listen(x + 1, y) or 1, 0) 
-    orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 0, orca.sc_ops.max) 
-  end
-
-end
 
 -- exec
 function orca:parse()
-  local a,b = {},1 
+  local b = 1 
   for y = 0, self.YSIZE do 
     for x = 0, self.XSIZE do
       if self.op(x, y) then 
         local g = self.cell[y][x] 
-        local o =  library[self.up(g)] 
-        local x, y, g = x, y, g 
-        a[b] = { o, x, y, g }
+        pt[b] = { x, y, g }
         b = b + 1
       end 
     end 
   end 
   self.locks = {}  --self.inf = {}
-  return a
+end
+
+
+function orca:exec(o, x, y, g)
+  return library[self.up(o)](self, x, y, g )
 end
 
 function orca:operate()
   self.frame = self.frame + 1 
-  local l = self:parse()
-  for i = 1, #l do 
-    local op, x, y, g = l[i][1], l[i][2], l[i][3], l[i][4]
+  self:parse()
+  for i = 1, #pt do 
+    local x, y, g = pt[i][1], pt[i][2], pt[i][3]
     if not self.locked(x, y) then 
-      op(self, x, y, g) 
+      self:exec(g,x,y,g)
     end 
   end
 end
+
 
 -- grid 
 function orca.g.key(x, y, z) 
