@@ -14,10 +14,11 @@ local grid_read = function ( self, x, y )
   local col = self:listen( self.x - 2, self.y )
   local row = self:listen( self.x - 1, self.y ) 
   local mode = (row  and not col and 1 ) or (col and not row and 2) or 0
-  local v = self.grid[not row and 1 or row][not col and 1 or col] 
-  local value = v and v < 6 and '.' or '*'
+  col = col == 0 and 1 or col row = row == 0 and 1 or row
   
   if mode == 0 then
+    local v = self.grid[ row or 1 ][ col or 1 ]
+    local value = v and v < 6 and '.' or '*'
     self.grid[ row or 1 ][ col or 1 ] = 5
     self:write(0, 1, value)
   else 

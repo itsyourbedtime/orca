@@ -131,8 +131,8 @@ local function copy_area(a, b, t, cut)
 end
 
 local function paste_area(a, b, t)
-  for y=0, #copy_buffer or 1 do 
-    for x = 0, #copy_buffer[y] or 1 do
+  for y= 0, selected_area_y do 
+    for x = 0, selected_area_x  do
     if orca.inbounds(a + x, b + y) then
       orca.erase(a + x , b + y)
       t[b + y][(a + x)] = copy_buffer[y][x] or '.' 
@@ -171,9 +171,9 @@ function orca.locked(x, y)
 end
 
 function orca.erase(x, y) 
-  local at = orca.index_at(x,y)
+  local at = orca.index_at(x, y)
   
-  orca.locks[at] = {}
+  orca.locks[at] = { false, false, false, false }
   orca.inf[at] = nil
   
   if orca.cell[y][x] == '/' then 
