@@ -18,21 +18,31 @@ local softcut_param = function ( self, x, y )
     local val = self:listen( self.x + 3, self.y ) or 0
     val = ( param == 1 and (val % 4) ) or val
     local value = val or 0
-    local source = (val == 1 and 'in 1' or val == 2 and 'in 2' or val == 3 and 'both' or val == 0 and 'off')  or 'off'
+    local source = (val == 1 and 'in ext' or val == 2 and 'in engine' or val == 3 and 'both' or val == 0 and 'off')  or 'off'
     helper = param_names[param] .. ' ' .. (param == 1 and source or value )
 
   self:spawn(self.ports)
 
   if self:banged( ) then
     if param == 1 then
-      norns.audio.level_adc_cut(val == 0 and 0 or 1)
-      norns.audio.level_eng_cut(val == 3 and 1 or 0)
+      if val == 0 then
+      norns.audio.level_adc_cut(0)
+      norns.audio.level_eng_cut(0)
+      elseif val == 1 then
+        norns.audio.level_adc_cut(1)
+        norns.audio.level_eng_cut(0)
+      elseif val == 2 then
+        norns.audio.level_adc_cut(0)
+        norns.audio.level_eng_cut(1)
+      elseif val == 3 then
+        norns.audio.level_adc_cut(1)
+        norns.audio.level_eng_cut(1)
+      end
     elseif param == 2 then
       softcut[param_ids[param]](playhead, value % 3)
     elseif param == #param_ids then
       self.sc_clear_region(playhead, value)
     else
-      print(param, playhead, value)
       softcut[param_ids[param]](playhead, value)
     end
 
