@@ -1,5 +1,5 @@
-local param_ids = { 'level_eng_rev','level_cut_rev','level_monitor_rev','level_rev_dac','level_eng','level_cut','level_adc','level_monitor','level_dac' }
-local param_names = { 'engine reverb','softcut reverb','monitor reverb','dac reverb','engine level','softcut level','adc level','monitor level','dac level' }
+local param_ids = { 'level_eng_rev','level_cut_rev','level_monitor_rev','level_rev_dac','level_eng','level_cut','level_adc' }
+local param_names = { 'engine reverb','softcut reverb','monitor reverb','dac reverb','engine level','softcut level','adc level' }
 local helper = false
 
 

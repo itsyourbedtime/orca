@@ -103,9 +103,9 @@ function orca.load_project(pth)
       orca.w = saved[2]
       orca.h = saved[3]
       orca.cell = saved[4]
-      softcut.buffer_read_mono(norns.state.data .. orca.project .. '_buffer.aif', 0, 0, 35, 1, 1)
-      params:read(norns.state.data .. orca.project ..".pset")
-      print ('loaded ' .. norns.state.data .. orca.project .. '_buffer.aif')
+      softcut.buffer_read_mono(norns.state.data .. saved[1] .. '_buffer.aif', 0, 0, 35, 1, 1)
+      params:read(norns.state.data .. saved[1] ..".pset")
+      print ('loaded ' .. norns.state.data .. saved[1] .. '_buffer.aif')
     else
       print("no data")
     end
@@ -114,7 +114,7 @@ end
 
 function orca.save_project(txt)
   if txt then
-    local l = { orca.project, orca.w, orca.h,  orca.cell }
+    local l = { txt, orca.w, orca.h,  orca.cell }
     local full_path = norns.state.data .. txt
     tab.save(l, full_path ..".orca")
     softcut.buffer_write_mono(full_path .."_buffer.aif",0, 35, 1)
@@ -182,10 +182,11 @@ function orca:erase(x, y)
   local at = self:index_at(x, y)
   if self.cell[y][x] == '/' then 
     softcut.play(self:listen(x + 1, y) or 1, 0) 
-    self.sc_ops.count = util.clamp(self.sc_ops.count - 1, 0, self.sc_ops.max) 
+    self.sc_ops.count = util.clamp(self.sc_ops.count - 1, 0, 6) 
   end
-  self.cell[y][x] = '.'  
-  self.inf[at] = false
+  self.cell[y][x] = '.' 
+  self.locks[at] = { } 
+  self.inf[at] = 'empty'
 end
 
 function orca:index_at(x, y) 
@@ -274,8 +275,6 @@ function orca:parse()
       end 
     end 
   end 
-  self.locks = {}    
-  self.inf = {}
 end
 
 function orca:exec(o, x, y, g)
@@ -283,14 +282,16 @@ function orca:exec(o, x, y, g)
 end
 
 function orca:operate()
-  self.frame = self.frame + 1 
   self:parse()
+  self.locks = {}    
+  --self.inf = {}
   for i = 1, #pt do 
     local x, y, g = pt[i][1], pt[i][2], pt[i][3]
     if not self:locked(x, y) then 
       self:exec(g,x,y,g)
     end 
   end
+  self.frame = self.frame + 1 
 end
 
 

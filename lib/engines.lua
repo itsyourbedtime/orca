@@ -64,8 +64,8 @@ function orca_engine.init()
     }
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
-    params:set('play_mode_' .. i, 4)
-    params:set('amp_env_sustain_' .. i, 0)
+    --params:set('play_mode_' .. i, 4)
+    --params:set('amp_env_sustain_' .. i, 0)
   end
   -- softcut 
   softcut.reset()
