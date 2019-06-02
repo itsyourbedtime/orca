@@ -9,7 +9,7 @@ local bang = function( self, x, y )
   self.info = 'Bangs neighboring operators.'
   self.ports = {}
   
-  self.erase(self.x, self.y)  
+  self:erase(self.x, self.y)  
 
 end
 

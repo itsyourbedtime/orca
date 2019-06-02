@@ -13,7 +13,7 @@ local A = function ( self, x, y, glyph )
   local a = self:listen( self.x + 1, self.y) or 0
   local l = self:glyph_at(self.x + 1, self.y)
   local cap = l ~= '.' and l == self.up(l) and true
-  local sum  = self.chars[ ( a + b )  % ( #self.chars + 1 ) ]
+  local sum  = self.chars[ ( a + b )  % 36 ]
   sum = sum == '0' and '.' or (cap and self.up(sum) or sum)
   
   if not self.passive or self:banged() then

@@ -19,7 +19,7 @@ local X = function(self, x, y, glyph)
  
   if not self.passive or self:banged() then
     self:spawn(self.ports)
-    if self.op(self.x + 1, self.y) then self.unlock(self.x + a, self.y + b, false, true, false, true) end
+    if self:op(self.x + 1, self.y) then self:unlock(self.x + a, self.y + b, false, true, false, true) end
     self:write(a, b, input)
   end
   

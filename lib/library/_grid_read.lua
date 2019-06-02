@@ -22,7 +22,7 @@ local grid_read = function ( self, x, y )
     self.grid[ row or 1 ][ col or 1 ] = 5
     self:write(0, 1, value)
   else 
-    for i= 1,( mode == 1 and self.g.cols or self.g.rows ) do
+    for i= 1,( mode == 1 and 16 or 8 ) do
       local y, x = mode == 1 and row or i, mode == 1 and i or col
       if self.grid[y][x] ~= nil and self.grid[y][x] > 6 then 
         self:write( self.ports[3][1], self.ports[3][2], self.chars[i])

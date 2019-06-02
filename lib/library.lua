@@ -3,6 +3,7 @@ ops.__index = ops
 ops['#'] = include("lib/library/_comment")
 ops['='] = include("lib/library/_osc_out")
 ops['*'] = include("lib/library/_bang")
+ops['?'] = include("lib/library/_levels")
 ops["'"] = include("lib/library/_timber")
 ops['"'] = include("lib/library/_timber_param")
 ops[':'] = include("lib/library/_midi")

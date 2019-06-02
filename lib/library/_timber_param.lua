@@ -84,14 +84,14 @@ local timber_param = function ( self, x, y )
   local sample = self:listen( self.x + 1, self.y ) or 0
   local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
   local val = self:listen( self.x + 3, self.y ) or 0
-  local val_scaled = math.floor(( val / #self.chars ) * 100 )
-  local value = (param == 1 or param == 2 or param == 3 or param == 4) and ( val / #self.chars ) * 5 -- attack / decay
+  local val_scaled = math.floor(( val / 35 ) * 100 )
+  local value = (param == 1 or param == 2 or param == 3 or param == 4) and ( val / 35 ) * 5 -- attack / decay
               or param == 7 and val_scaled * 2 -- stretch
               or param == 8 and val_scaled * 200  -- filter freq
-              or param == 9 and ( val / #self.chars )  -- res
+              or param == 9 and ( val / 35 )  -- res
               or param == 10 and (val % 2) + 1
               or param == 11 and (val % 4) + 1  
-              or param > 11 and ( val / #self.chars ) -- other
+              or param > 11 and ( val / 35 ) -- other
               or val_scaled
               
   helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))

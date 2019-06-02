@@ -15,7 +15,7 @@ local V = function (self, x, y, glyph)
   local var_a, var_b = self.vars[a], self.vars[b]
   
   if b and not a then 
-    self.unlock(self.x - 1, self.y)
+    self:unlock(self.x - 1, self.y)
     self.ports[1] = { 0, 1, 'v-out', 'output'}
   end
 

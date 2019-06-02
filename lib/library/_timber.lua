@@ -22,15 +22,17 @@ local timber = function ( self, x, y )
   local note_in = self:listen( self.x + 3, self.y ) or 0
   local note = self.chars[note_in]
   if l == string.upper(l) then note = string.upper(note) end
-  local transposed = self.transpose( note, octave )
-  local n, oct, lev = transposed[1], transposed[4], (( level / #self.chars ) * 100 ) - 84
+  local transposed = self:transpose( note, octave )
+  local n, oct, lev = transposed[1], transposed[4], (( level / 35 ) * 100 ) - 84
   local length = params:get("end_frame_" .. sample)
-  local start_pos = util.clamp((( start / #self.chars ) * 2 ) * length, 0, length )
+  local start_pos = util.clamp((( start / 35 ) * 2 ) * length, 0, length )
   
-  params:set("start_frame_" .. sample, start_pos )
-  params:set('amp_' .. sample, lev)
   
   if self:banged( ) then
+      
+    params:set("start_frame_" .. sample, start_pos )
+    params:set('amp_' .. sample, lev)
+  
     engine.noteOn( sample, sample, self.music.note_num_to_freq(n), 100 )
   end
   
