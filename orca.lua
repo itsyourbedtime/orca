@@ -19,7 +19,6 @@ local bar, help, map, shift, alt, ctrl = false
 local dot_density = 7
 local copy_buffer = { }
 local pt = {} 
-local keyinput = ""
 local w = 60
 local h = 60
 
@@ -181,17 +180,12 @@ end
 
 function orca:erase(x, y) 
   local at = self:index_at(x, y)
-  --print(at)
-  --self:unlock( x, y  )
-  
   if self.cell[y][x] == '/' then 
     softcut.play(self:listen(x + 1, y) or 1, 0) 
     self.sc_ops.count = util.clamp(self.sc_ops.count - 1, 0, self.sc_ops.max) 
   end
-  
   self.cell[y][x] = '.'  
   self.inf[at] = false
-  --self.locks[at] = {false, false, false ,false }
 end
 
 function orca:index_at(x, y) 
@@ -201,7 +195,6 @@ end
 function orca:op(x, y) 
   local c = self.cell[y][x] return (library[self.up(c)] ~= nil) and true 
 end
-
 
 function orca:banged()
   for i = 1, 4 do
@@ -235,7 +228,6 @@ function orca:shift(s, e)
   end
 end
 
-
 function orca:move(x, y)
   local a, b = self.y + y, self.x + x
   if self:inbounds(b,a) then
@@ -256,6 +248,7 @@ function orca:spawn(p)
   local at =  self:index_at(self.x, self.y)
   self.inf[at] = self.name 
   self.locks[at] = { false, false, not self.passive, false }
+  
   for k = 1, #p do 
     local x, y, info, type = self.x + p[k][1], self.y + p[k][2]
     local info, type = p[k][3], p[k][4]
@@ -269,7 +262,6 @@ function orca:spawn(p)
   end
 end
 
-
 -- exec
 function orca:parse()
   local b = 1
@@ -282,9 +274,9 @@ function orca:parse()
       end 
     end 
   end 
-  self.locks = {}    self.inf = {}
+  self.locks = {}    
+  self.inf = {}
 end
-
 
 function orca:exec(o, x, y, g)
   return library[self.up(o)](self, x, y, g )
@@ -318,7 +310,7 @@ function g.redraw()
 end
 
 function orca:init_field( w, h )
-  self.w = w
+  self.w = w 
   self.h = h
   for y = 0, self.h do 
     self.cell[y] = {} 
@@ -332,7 +324,6 @@ end
 function init()
 
   orca:init_field( w, h )
-  
   for i = 1, 8 do orca.grid[i] = {}  end
     -- 
   clock.on_step = function() orca:operate()  g:redraw() end,
@@ -390,7 +381,7 @@ end
 local kb = {s = {[42] = true, [54] = true }, c = {[29] = true, [125] = true, [127] = true, [97] = true}}
 function keyboard.event(typ, code, val)
   local menu = norns.menu.status()
-  print("hid.event ", typ, code, val)
+  --print("hid.event ", typ, code, val)
   if kb.s[code] then
     shift  =  (val == 1 or val == 2) and true
   elseif kb.c[code] then
@@ -440,6 +431,7 @@ function keyboard.event(typ, code, val)
     update_offset(x_index, y_index)
   elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then 
     selected_area_y, selected_area_x = 1, 1
+    map = fale
     if shift then 
       norns.menu.set_status(not menu)
     elseif menu and not shift then 
@@ -458,7 +450,7 @@ function keyboard.event(typ, code, val)
     else clock:start() 
     end
   else if val == 1 then 
-    keyinput = get_key(code, val, shift) 
+    local keyinput = get_key(code, val, shift) 
     if not ctrl then
         if orca.cell[y_index][x_index] == '/' then 
           orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 1, 6) 
@@ -549,7 +541,7 @@ local function draw_map()
     for x = 1, orca.w do
       if orca.cell[y][x] ~= '.' then  
         screen.level(2) 
-        screen.rect(scale_map_x(x), scale_map_y(y), 2,2 ) 
+        screen.rect(scale_map_x(x), scale_map_y(y), 2, 2 ) 
         screen.fill()
       end
     end
