@@ -55,7 +55,7 @@ function orca:transpose(n, o)
   local octave = util.clamp(self.normalize(string.sub(transpose_table[n], 2)) + o, 0, 8)
   local value = tab.key(self.notes, note)
   local id = math.ceil( util.clamp((octave * 12) + value, 0, 127) - 1)
-  return {id, value, note, octave, self.music.note_num_to_name(id)}
+  return {id, value, note, octave, music.note_num_to_name(id)}
 end
 
 function orca.sc_clear_region(p, l) 
