@@ -15,6 +15,7 @@ local library = include( "lib/library" )
 local engines = include( "lib/engines" )
 local keyboard = hid.connect( )
 local g = grid.connect( )
+local string = string
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map, shift, alt, ctrl = false
@@ -145,8 +146,10 @@ function orca:copy_area(a, b, cut)
   for y=b, b + selected_area_y do 
     copy_buffer[y -  b ] = {}
     for x = a, (a + selected_area_x) do
-      copy_buffer[y - b ][x - a ] = self.cell[y][x]
-      if cut then self:erase(x, y) end
+      if self:inbounds(a + x, b + y) then
+        copy_buffer[y - b ][x - a ] = self.cell[y][x]
+        if cut then self:erase(x, y) end
+      end
     end
   end
 end
@@ -155,8 +158,8 @@ function orca:paste_area( a, b)
   if #copy_buffer > 0 then
     for y= 0, selected_area_y do 
       for x = 0, selected_area_x  do
-      if self:inbounds(a + x, b + y) then
-        self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
+        if self:inbounds(a + x, b + y) then
+          self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
         end 
       end 
     end
@@ -181,7 +184,8 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  return keycodes.base36[string.lower(self:glyph_at(x,y))] 
+  local l = string.lower(self:glyph_at(x,y))
+  return keycodes.base36[l] 
 end
 
 function orca:glyph_at(x, y) 
@@ -314,7 +318,6 @@ function orca:operate()
   end
   self.frame = self.frame + 1 
 end
-
 
 -- grid 
 function g.key(x, y, z) 
