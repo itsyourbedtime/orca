@@ -35,7 +35,7 @@ local orca = {
   draw = { },
   active_notes = { },
   music = require 'musicutil',
-  euclid = require 'er',
+  euclid = require 'er', 
   chars = keycodes.chars,
   base36 = keycodes.base36,
   num = keycodes.num,
@@ -117,7 +117,7 @@ function orca.save_project(txt)
     local l = { txt, orca.w, orca.h,  orca.cell }
     local full_path = norns.state.data .. txt
     tab.save(l, full_path ..".orca")
-    softcut.buffer_write_mono(full_path .."_buffer.aif",0, 35, 1)
+    softcut.buffer_write_mono(full_path .."_buffer.aif", 0, 35, 1)
     params:write(full_path .. ".pset")
     print ('saved ' .. full_path .. '_buffer.aif')
   else
@@ -139,12 +139,14 @@ function orca:copy_area(a, b, cut)
 end
 
 function orca:paste_area( a, b)
-  for y= 0, selected_area_y do 
-    for x = 0, selected_area_x  do
-    if self:inbounds(a + x, b + y) then
-      self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
+  if #copy_buffer > 0 then
+    for y= 0, selected_area_y do 
+      for x = 0, selected_area_x  do
+      if self:inbounds(a + x, b + y) then
+        self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
+        end 
       end 
-    end 
+    end
   end
 end
 
