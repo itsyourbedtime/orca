@@ -23,7 +23,7 @@ local softcut_param = function ( self, x, y )
 
   self:spawn(self.ports)
 
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
     if param == 1 then
       if val == 0 then
       norns.audio.level_adc_cut(0)

@@ -16,10 +16,9 @@ local A = function ( self, x, y, glyph )
   local sum  = self.chars[ ( a + b )  % 36 ]
   sum = sum == '0' and '.' or (cap and self.up(sum) or sum)
   
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, sum)
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, sum)
+  
 end
 
 

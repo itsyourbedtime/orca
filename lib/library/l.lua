@@ -14,10 +14,8 @@ local L = function (self, x, y, glyph)
   local l_start, l_end = self.x + 1, self.x + length
   for i = 1, length do self.ports[#self.ports + 1] = { i , 0, 'in-value',  'input' } end
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    if (self.frame % rate == 0 and length ~= 0) then self:shift(1, length) end
-  end
+  self:spawn(self.ports)
+  if (self.frame % rate == 0 and length ~= 0) then self:shift(1, length) end
 
 end
 

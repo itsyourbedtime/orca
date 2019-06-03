@@ -23,7 +23,7 @@ local levels = function ( self, x, y )
 
   self:spawn(self.ports)
 
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
       norns.audio[param_ids[param]](value)
   end
 

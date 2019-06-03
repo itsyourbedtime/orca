@@ -22,10 +22,9 @@ local K = function (self, x, y, glyph)
     end
   end
   
-  if not self.passive or self:banged() then
-    operation()
-    self:spawn(self.ports)
-  end
+  operation()
+  self:spawn(self.ports)
+  
 end
 
 

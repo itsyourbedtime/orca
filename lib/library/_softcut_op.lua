@@ -32,8 +32,8 @@ local _softcut_op = function ( self, x, y)
     softcut.rate( playhead, pl == 2 and -rate or rate )
     softcut.level( playhead, level )
     
-    if self.cell[self.y][self.x + 2] == '*' then
-      self.cell[self.y][self.x + 2] = '.'
+    if self:glyph_at(self.x + 2, self.x)  == '*' then
+      self:write(self.x + 2, self.y, '.')
       softcut.buffer_clear_region( 0, 35 )
     end
     
@@ -42,7 +42,7 @@ local _softcut_op = function ( self, x, y)
 
   self.operation()
   
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
     if play ~= 0 then
       self.sc_ops.pos[playhead] = pos
       softcut.position( playhead, pos )

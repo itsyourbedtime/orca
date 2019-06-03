@@ -13,15 +13,14 @@ local osc_out = function ( self, x, y, frame, grid )
   local osc_path = { }
   
   for x = x + 2, 35 do self.ports[#self.ports + 1] = { x - self.x, 0, 'osc-path',  'input' }
-  if self.cell[self.y][x] == '.' then break end end
+  if self:glyph_at(x, self.y) == '.' then break end end
   for i = 1, #self.ports  do l = self:glyph_at(self.x + i, self.y) osc_path[i] = l  == '.' and '' or l end
   local concat_path = table.concat(osc_path) local values = tab.split(concat_path, ';')
   concat_path = values[1] values[1] = nil
   
   self:spawn(self.ports)
-  
-  if self:banged() then  --print(concat_path) tab.print(values)
-   osc.send(osc_dest, '/' .. concat_path, values)
+  if self:neighbor(self.x, self.y, '*') then
+    osc.send(osc_dest, '/' .. concat_path, values)
   end
 end
 

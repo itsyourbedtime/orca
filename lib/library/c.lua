@@ -15,10 +15,8 @@ local C = function ( self, x, y, glyph )
   rate = rate == 0 and 1 or rate
   local val = ( math.floor( self.frame / rate ) % mod ) + 1
 	
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, self.chars[val])
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, self.chars[val])
   
 end
 

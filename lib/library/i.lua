@@ -17,10 +17,8 @@ local I = function (self, x, y, glyph)
   local cap = l ~= '.' and l == self.up(l) and true
   local value = cap and self.up(self.chars[val]) or self.chars[val]
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, value)
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, value)
   
 end
 

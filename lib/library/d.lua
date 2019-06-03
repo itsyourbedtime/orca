@@ -15,10 +15,8 @@ local D = function ( self, x, y, glyph )
   local val = ( self.frame % ( mod * rate ))
   local out = ( val == 0 or mod == 1 ) and '*' or '.'
   
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, out)
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, out)
   
 end
 

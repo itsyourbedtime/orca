@@ -13,11 +13,9 @@ local M  = function ( self, x, y, glyph )
   local m = self:listen( self.x + 1, self.y, 1 ) or 0
   if m < l then l,m = m,l end
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write( self.ports[3][1], self.ports[3][2], self.chars[( l * m ) % 36])
-  end
-  
+  self:spawn(self.ports)
+  self:write( self.ports[3][1], self.ports[3][2], self.chars[( l * m ) % 36])
+
 end
 
 return M

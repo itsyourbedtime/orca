@@ -6,6 +6,8 @@ local tab = require 'tabutil'
 local fileselect = require "fileselect"
 local textentry = require "textentry"
 local beatclock = require 'beatclock'
+local music = require 'musicutil'
+local euclid = require 'er'
 local clock = beatclock.new()
 local keycodes = include("lib/keycodes")
 local transpose_table = include("lib/transpose")
@@ -16,6 +18,7 @@ local g = grid.connect( )
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
 local bar, help, map, shift, alt, ctrl = false
+local hood = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }
 local dot_density = 7
 local copy_buffer = { }
 local pt = {} 
@@ -32,15 +35,10 @@ local orca = {
   cell = { },
   locks = { },
   inf = { },
-  draw = { },
   active_notes = { },
-  music = require 'musicutil',
-  euclid = require 'er', 
   chars = keycodes.chars,
-  base36 = keycodes.base36,
   num = keycodes.num,
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
-  xy = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } },
   sc_ops = { count = 0, max = 6, pos = { 0, 0, 0, 0, 0, 0 } },
 }
 
@@ -63,6 +61,21 @@ function orca.sc_clear_region(p, l)
   softcut.buffer_clear_region(orca.sc_ops.pos[p], l) 
 end
 
+function orca:gen_pattern(p, s)
+  return euclid.gen(p, s)
+end
+
+function orca:get_scale(s)
+  local name = music.SCALES[s].name
+  local notes = music.generate_scale(1, name, 1)
+  return { string.lower(name), notes }
+end
+
+function orca:note_freq(n)
+  return music.note_num_to_freq(n)
+end
+  
+  
 function orca:add_note(ch, note, length, mono)
   local id = self:index_at(self.x,self.y)
   if self.active_notes[id] == nil then
@@ -152,7 +165,7 @@ end
 
 -- core
 function orca.up(i) 
-  local l = tostring(i) return string.upper(l) or '.'
+  return i and string.upper(i) or '.'
 end
 
 function orca:inbounds( x, y )
@@ -168,11 +181,15 @@ function orca:explode()
 end
 
 function orca:listen(x, y)
-  local l = string.lower(self:glyph_at(x,y) or '.') return self.base36[l] 
+  return keycodes.base36[string.lower(self:glyph_at(x,y))] 
 end
 
 function orca:glyph_at(x, y) 
-  if not self:inbounds(x, y) then return '.'  else l = self.cell[y][x] return l end 
+  if self:inbounds(x, y) then 
+    return self.cell[y][x] or '.'
+  else 
+    return '.'
+  end
 end
 
 function orca:locked(x, y)
@@ -199,10 +216,10 @@ function orca:op(x, y)
   local c = self.cell[y][x] return (library[self.up(c)] ~= nil) and true 
 end
 
-function orca:banged()
+function orca:neighbor(x, y, n)
   for i = 1, 4 do
-    if self.cell[self.y + self.xy[i][2]][self.x + self.xy[i][1]] == '*' then
-    self:unlock(self.x, self.y) 
+    if self.cell[y + hood[i][2]][x + hood[i][1]] == n then
+    self:unlock(x, y) 
     return true end
   end
 end
@@ -253,7 +270,7 @@ function orca:spawn(p)
   self.locks[at] = { false, false, not self.passive, false }
   
   for k = 1, #p do 
-    local x, y, info, type = self.x + p[k][1], self.y + p[k][2]
+    local x, y = self.x + p[k][1], self.y + p[k][2]
     local info, type = p[k][3], p[k][4]
     
     if self:inbounds(x, y) then 
@@ -271,27 +288,29 @@ function orca:parse()
   for y = 0, self.h do 
     for x = 0, self.w do
       if self:op(x, y) then 
-        local g = self.cell[y][x] 
-        pt[b] = { x, y, g }
+        pt[b] = { x, y, self.cell[y][x] }
         b = b + 1
       end 
     end 
   end 
 end
 
-function orca:exec(o, x, y, g)
-  return library[self.up(o)](self, x, y, g )
+function orca:exec(op, x, y, g)
+  return library[op](self, x, y , g)
 end
 
 function orca:operate()
-  self:parse()
   self.locks = {}    
-  --self.inf = {}
+  self.inf = {}
+  self:parse()
   for i = 1, #pt do 
     local x, y, g = pt[i][1], pt[i][2], pt[i][3]
     if not self:locked(x, y) then 
-      self:exec(g,x,y,g)
-    end 
+      local op =  self.up(g)
+      if op == g or self:neighbor(x, y, '*') then 
+        self:exec(op, x, y, g)
+      end 
+    end
   end
   self.frame = self.frame + 1 
 end
@@ -307,8 +326,8 @@ function g.redraw()
   for y = 1, 8 do 
     for x = 1, 16 do 
       g:led(x, y, orca.grid[y][x] or 0  ) 
-      end 
     end 
+  end 
   g:refresh()
 end
 
@@ -321,11 +340,12 @@ function orca:init_field( w, h )
       self.cell[y][x] = '.' 
     end 
   end
+  self.locks = {}
+  self.info = {} 
 end
 
 
 function init()
-
   orca:init_field( w, h )
   for i = 1, 8 do orca.grid[i] = {}  end
     -- 
@@ -488,7 +508,7 @@ local function draw_grid()
       local ofst = ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 )
       if f[3] then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
       if f[4] then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
-        if cell ~= '.' then screen.level( orca:op(x, y) and 15 or ( f[2] or f[3] or f[4]) and 12 or 1 )
+        if cell ~= '.' then screen.level((cell == orca.up(cell) and  15 )or ( f[2] or f[3] or f[4]) and 12 or 1 )
       else screen.level( f[2] and 9 or 1) end
       screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
       if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')

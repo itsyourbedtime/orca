@@ -14,10 +14,9 @@ local F = function( self, x, y, glyph )
   local val = a == b and '*' or '.'
   val = a == false and b == false and '.' or val
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, val)
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, val)
+  
   
 end
 

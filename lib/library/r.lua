@@ -17,10 +17,9 @@ local R = function (self, x, y, glyph)
   local val = self.chars[math.random(a, b)]
   local value = cap and self.up(val) or val
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, value)
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, value)
+  
   
 end
 

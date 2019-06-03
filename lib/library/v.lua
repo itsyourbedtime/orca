@@ -19,11 +19,9 @@ local V = function (self, x, y, glyph)
     self.ports[1] = { 0, 1, 'v-out', 'output'}
   end
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    if b and not a then self:write(0, 1, self.vars[b])
-    elseif a then self.vars[a] = var end
-  end
+  self:spawn(self.ports)
+  if b and not a then self:write(0, 1, self.vars[b])
+  elseif a then self.vars[a] = var end
 
 end
 

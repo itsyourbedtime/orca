@@ -16,7 +16,7 @@ local midi_cc = function ( self, x, y )
   local val = self:listen( self.x + 3, self.y ) or 0
   local val = math.floor(( val / 35 ) * 127 )
   
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
     self.midi_out_device:cc(knob, val, channel)
   end
   

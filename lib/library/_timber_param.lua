@@ -3,7 +3,6 @@ local param_ids = {
   "amp_env_decay",
   "amp_env_sustain", 
   "amp_env_release",
-  "original_freq", 
   "detune_cents", 
   "by_percentage",
   "filter_freq", 
@@ -36,7 +35,6 @@ local param_names = {
   "decay",
   "sustain", 
   "release",
-  "freq", 
   "detune", 
   "stretch",
   "cutoff", 
@@ -86,18 +84,17 @@ local timber_param = function ( self, x, y )
   local val = self:listen( self.x + 3, self.y ) or 0
   local val_scaled = math.floor(( val / 35 ) * 100 )
   local value = (param == 1 or param == 2 or param == 3 or param == 4) and ( val / 35 ) * 5 -- attack / decay
-              or param == 7 and val_scaled * 2 -- stretch
-              or param == 8 and val_scaled * 200  -- filter freq
-              or param == 9 and ( val / 35 )  -- res
-              or param == 10 and (val % 2) + 1
-              or param == 11 and (val % 4) + 1  
-              or param > 11 and ( val / 35 ) -- other
+              or param == 6 and val_scaled * 2 -- stretch
+              or param == 7 and val_scaled * 200  -- filter freq
+              or param == 8 and ( val / 35 )  -- res
+              or param == 9 and (val % 2) + 1
+              or param == 10 and (val % 4) + 1  
+              or param > 10 and ( val / 35 ) -- other
               or val_scaled
               
   helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))
 
-
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
     params:set( param_ids[param] .. "_" .. sample, value )
   end
   

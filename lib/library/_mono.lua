@@ -20,7 +20,7 @@ local midi_out = function ( self, x, y )
   local transposed = self:transpose( note, octave )
   local n, oct, velocity = transposed[1], transposed[4], math.floor(( vel / 16 ) * 127 )
   
-  if self:banged( ) then
+  if self:neighbor(self.x, self.y, '*') then
     self.midi_out_device:note_on( n, velocity, channel )
     self:add_note( channel, n, length , true)
   end

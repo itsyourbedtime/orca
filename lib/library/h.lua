@@ -9,10 +9,9 @@ local H = function(self, x, y, glyph)
   self.info = 'Stops southward operator from operating.'
   self.ports = { {0, 1, 'h-output', 'output'} }
 
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-  end
+  self:spawn(self.ports)
   
+
 end
 
 return H

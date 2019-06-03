@@ -15,10 +15,8 @@ local B = function ( self, x, y, glyph )
   local key = math.floor( self.frame / rate ) % ( to * 2 )
   local val = key <= to and key or to - ( key - to )
   
-  if not self.passive or self:banged() then
-    self:spawn(self.ports)
-    self:write(0, 1, self.chars[val])
-  end
+  self:spawn(self.ports)
+  self:write(0, 1, self.chars[val])
   
 end
 

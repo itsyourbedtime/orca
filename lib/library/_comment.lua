@@ -11,7 +11,7 @@ local comment = function ( self, x, y )
   
   for x = x + 1, self.w do
     self.ports[#self.ports + 1] = { x - self.x  , 0, 'comment',  'input' }
-    if self.cell[y][x] == '#' then for c = x + 1, self.w - x do
+    if self:glyph_at(x, y) == '#' then for c = x + 1, self.w - x do
     if self:op(c , y) then break end end break end
   end
   
