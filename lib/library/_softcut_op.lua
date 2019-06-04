@@ -5,7 +5,6 @@ local _softcut_op = function ( self, x, y)
   
   self.glyph = '/'
   self.name = 'softcut'
-  self.info = 'Softcut, resets position on bang'
   self.passive = false
   self.ports = { {1, 0, 'in-playhead', 'input'}, {2, 0, 'in-rec', 'input'}, {3, 0, 'in-play', 'input'}, 
       {4, 0, 'in-level', 'input'},  {5, 0, 'in-rate', 'input'}, {6, 0, 'in-position', 'input'} }

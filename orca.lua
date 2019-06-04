@@ -185,7 +185,7 @@ end
 
 function orca:listen(x, y)
   local l = string.lower(self:glyph_at(x,y))
-  return keycodes.base36[l] 
+  return l ~= '.' and keycodes.base36[l] or false
 end
 
 function orca:glyph_at(x, y) 
@@ -197,18 +197,19 @@ function orca:glyph_at(x, y)
 end
 
 function orca:locked(x, y)
-  local p = self.locks[self:index_at(x, y)] return p and p[1] or false
+  local p = self.locks[self:index_at(x, y)]
+  return p and p[1] or false
 end
 
 
 function orca:erase(x, y) 
   local at = self:index_at(x, y)
+  self:unlock(x, y)
   if self.cell[y][x] == '/' then 
     softcut.play(self:listen(x + 1, y) or 1, 0) 
     self.sc_ops.count = util.clamp(self.sc_ops.count - 1, 0, 6) 
   end
-  self.cell[y][x] = '.' 
-  self.locks[at] = { } 
+  self.cell[y][x] = '.'
   self.inf[at] = 'empty'
 end
 
@@ -277,30 +278,25 @@ function orca:spawn(p)
     local x, y = self.x + p[k][1], self.y + p[k][2]
     local info, type = p[k][3], p[k][4]
     
-    if self:inbounds(x, y) then 
       local lock = type ~= 'haste' and true 
       local draw = type == 'output' and true
       self:lock(x, y, lock, true, false, draw ) 
       self.inf[self:index_at(x, y)] = p[k][3] 
-    end 
+    
   end
 end
 
 -- exec
 function orca:parse()
   local b = 1
-  for y = 0, self.h do 
-    for x = 0, self.w do
+  for y = 1, self.h do 
+    for x = 1, self.w do
       if self:op(x, y) then 
         pt[b] = { x, y, self.cell[y][x] }
         b = b + 1
       end 
     end 
   end 
-end
-
-function orca:exec(op, x, y, g)
-  return library[op](self, x, y , g)
 end
 
 function orca:operate()
@@ -312,7 +308,7 @@ function orca:operate()
     if not self:locked(x, y) then 
       local op =  self.up(g)
       if op == g or self:neighbor(x, y, '*') then 
-        self:exec(op, x, y, g)
+        library[op](self, x, y , g)
       end 
     end
   end
@@ -503,19 +499,34 @@ local function draw_grid()
   screen.font_face(25)
   screen.font_size(6)
   for y= 1, bounds_y do 
-    local y = y + field_offset_y 
     for x = 1, bounds_x do
+      local y = y + field_offset_y 
       local x = x + field_offset_x
-      local f = orca.locks[orca:index_at(x,y)] or {}
+      local f = orca.locks[orca:index_at(x,y)] or { false, false, false, false }
       local cell = orca.cell[y][x]
       local ofst = ( x % dot_density == 0 and y % util.clamp(dot_density - 1, 1, 8) == 0 )
       if f[3] then draw_op_frame(x - field_offset_x, y - field_offset_y, 4) end
       if f[4] then draw_op_frame(x - field_offset_x, y - field_offset_y, 1) end
-        if cell ~= '.' then screen.level((cell == orca.up(cell) and  15 )or ( f[2] or f[3] or f[4]) and 12 or 1 )
-      else screen.level( f[2] and 9 or 1) end
-      screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( orca.cell[y][x] and 2 or 3))
-      if cell == '.' or cell == nil then screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
-      elseif cell == tostring(cell) then screen.text(cell) end
+      
+      if cell ~= '.' then
+        if (orca:op(x, y) and cell == orca.up(cell)) or orca:neighbor(x, y, '*') then
+          screen.level(15)
+        elseif f[2] then 
+          screen.level(9)
+        else
+          screen.level(1)
+        end
+      else
+        screen.level(f[2] and 9 or 1)
+      end
+      
+      screen.move((( x - field_offset_x ) * 5) - 4 , (( y - field_offset_y )* 8) - ( cell and 2 or 3))
+     
+      if cell == '.' or cell == nil then 
+        screen.text(f.dot and '.' or ofst and ( dot_density > 4 and '+') or '.')
+      else  
+        screen.text(cell) 
+      end
       screen.stroke()
     end
   end
@@ -557,6 +568,7 @@ local function scale_map_y (p)  return ((p / orca.h) * 47) + 2 end
 local function scale_map_x (p)  return ((p / orca.w) * 93) + 15 end
 
 local function draw_map()
+  local c = orca.cell
   screen.level(15) 
   screen.rect(14,0,100,55) 
   screen.fill()
@@ -565,7 +577,7 @@ local function draw_map()
   screen.fill()
   for y = 1, orca.h do 
     for x = 1, orca.w do
-      if orca.cell[y][x] ~= '.' then  
+      if c[y][x] ~= '.' then  
         screen.level(2) 
         screen.rect(scale_map_x(x), scale_map_y(y), 2, 2 ) 
         screen.fill()

@@ -6,7 +6,6 @@ local B = function ( self, x, y, glyph )
   self.glyph = glyph
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'bounce'
-  self.info = 'Bounces between two values based on the runtime frame.'
   self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-to', 'input'},  {0, 1, 'b-out', 'output'} }
   
   local to = self:listen( self.x + 1, self.y ) or 1

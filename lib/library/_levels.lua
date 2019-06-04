@@ -10,7 +10,6 @@ local levels = function ( self, x, y )
   
   self.glyph = '?'
   self.name = 'levels'
-  self.info = 'Sets audio level on bang'
   self.passive = false
   self.ports = { {1, 0, helper or 'in-param', 'input' }, {2, 0, helper or 'in-value', 'input'} }
 

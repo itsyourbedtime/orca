@@ -6,7 +6,6 @@ local midi_in = function ( self, x, y )
   
   self.glyph = '&'
   self.name = 'midi in'
-  self.info = 'Recieve MIDI note.'
   self.passive = false
   self.ports = { {0, 1, 'midi-in', 'output'} }
   

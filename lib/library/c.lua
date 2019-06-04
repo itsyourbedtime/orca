@@ -6,7 +6,6 @@ local C = function ( self, x, y, glyph )
   self.glyph = glyph
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'clock'
-  self.info = 'Outputs a constant value based on the runtime frame.'
   self.ports = { {-1, 0 , 'in-rate', 'haste'},  {1, 0, 'in-mod', 'input'}, {0, 1, 'c-output', 'output'} }
   
   local mod = self:listen( self.x + 1, self.y ) or 9

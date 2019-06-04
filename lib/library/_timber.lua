@@ -5,7 +5,6 @@ local timber = function ( self, x, y )
   
   self.glyph = "'"
   self.name = 'engine'
-  self.info = 'Plays sample on bang'
   self.passive = false
 
   self.ports = {

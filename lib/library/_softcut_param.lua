@@ -9,7 +9,6 @@ local softcut_param = function ( self, x, y )
   
   self.glyph = '\\'
   self.name = 'sc.param'
-  self.info = 'Sets softcut param on bang'
   self.passive = false
   self.ports = { {1, 0, 'in-playhead', 'input'}, {2, 0, helper or 'in-param', 'input' }, {3, 0, helper or 'in-value', 'input'} }
   

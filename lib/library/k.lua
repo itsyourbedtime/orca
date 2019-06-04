@@ -6,7 +6,6 @@ local K = function (self, x, y, glyph)
   self.glyph = glyph
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'konkat'
-  self.info = 'Otputs multiple variables.'
   self.ports = { {-1, 0, 'in-length', 'haste'} }
   
   local length = self:listen(self.x - 1, self.y) or 0

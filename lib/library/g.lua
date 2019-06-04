@@ -6,7 +6,6 @@ local G = function(self, x, y, glyph)
   self.glyph = glyph
   self.passive = glyph == string.lower(glyph) and true 
   self.name = 'generator'
-  self.info = 'Writes distant operators with offset.'
   self.ports = { {-3, 0 , 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'} }
   
   local a = util.clamp(self:listen(self.x - 2, self.y) or 1, 1, 35)

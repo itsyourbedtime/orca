@@ -5,7 +5,6 @@ local rnote = function ( self, x, y )
 
   self.glyph = '^'
   self.name = 'r.note'
-  self.info = 'Outputs random note within octave.'
   self.passive = false
   self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-scale', 'input'}, {0, 1, 'r.note-output', 'output'} }
   

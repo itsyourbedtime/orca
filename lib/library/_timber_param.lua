@@ -70,7 +70,6 @@ local timber_param = function ( self, x, y )
   
   self.glyph = '"'
   self.name = 'param'
-  self.info = 'Sets engine param on bang'
   self.passive = false
   
   self.ports = { 
