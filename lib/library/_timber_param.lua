@@ -68,8 +68,6 @@ local timber_param = function ( self, x, y )
   self.y = y
   self.x = x
   self.name = 'param'
-  self.ports = { {1, 0, 'in-sample'}, {2, 0, helper or 'in-param'}, {3, 0, helper or 'in-value'} }
-  self:spawn(self.ports)
   
   local sample = self:listen( self.x + 1, self.y ) or 0
   local param = util.clamp( self:listen( self.x + 2, self.y ) or 1, 1, #param_ids)
@@ -84,8 +82,9 @@ local timber_param = function ( self, x, y )
               or param > 10 and ( val / 35 ) -- other
               or val_scaled
               
-  helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))
-
+  local helper = param_names[param] .. ' ' .. string.lower(params:string(param_ids[param] .. '_' .. sample))
+  self.ports = { {1, 0, 'in-sample'}, {2, 0, helper or 'in-param'}, {3, 0, helper or 'in-value'} }
+  self:spawn(self.ports)
   if self:neighbor(self.x, self.y, '*') then
     params:set( param_ids[param] .. "_" .. sample, value )
   end
