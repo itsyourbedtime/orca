@@ -23,8 +23,8 @@ local hood = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }
 local dot_density = 7
 local copy_buffer = { }
 local pt = {} 
-local w = 60
-local h = 60
+local w = 64
+local h = 24
 
 local orca = {
   project = 'untitled',
@@ -360,7 +360,7 @@ function init()
   params:add{ type = "number", id = "midi_out_device", name = "midi out device", min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end }
   --
-  redraw_metro = metro.init(function(stage) redraw() end, 1/30)
+  redraw_metro = metro.init(function(stage) redraw() end, 1/60)
   redraw_metro:start()
 end
 
