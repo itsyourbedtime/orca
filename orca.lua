@@ -38,7 +38,6 @@ local orca = {
   inf = { },
   active_notes = { },
   chars = keycodes.chars,
-  num = keycodes.num,
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
   sc_ops = { count = 0, max = 6, pos = { 0, 0, 0, 0, 0, 0 } },
 }
@@ -206,7 +205,7 @@ function orca:erase(x, y)
     self.sc_ops.count = util.clamp(self.sc_ops.count - 1, 0, 6) 
   end
   self.cell[y][x] = '.'
-  self.inf[at] = 'empty'
+  self.info[at] = 'empty'
 end
 
 function orca:index_at(x, y) 
@@ -270,15 +269,13 @@ end
 
 function orca:spawn(p)
   local at =  self:index_at(self.x, self.y)
-  self.inf[at] = self.name 
+  self.info[at] = self.name 
   self.locks[at] = { false, false, not self.passive, false }
   
   for k = 1, #p do 
     local x, y, info = self.x + p[k][1], self.y + p[k][2], p[k][3]
-    local lock = self.x < x or self.y < y and true
-    local draw = self.y < y and true 
-    self:lock(x, y, lock, true, false, draw ) 
-    self.inf[self:index_at(x, y)] = p[k][3] 
+    self:lock(x, y, self.x < x or self.y < y and true, true, false, self.y < y and true ) 
+    self.info[self:index_at(x, y)] = p[k][3] 
   end
 end
 
@@ -295,20 +292,12 @@ function orca:parse()
   end
 end
 
+
+
 function orca:operate()
   self.locks = {}    
-  self.inf = {}
-  --self:parse()
-  local b = 1
-  for y = 1, self.h do 
-    for x = 1, self.w do
-      if self:op(x, y) then 
-        pt[b] = { x, y, self.cell[y][x] }
-        b = b + 1
-      end 
-    end 
-  end
-  -- 
+  self.info = {}
+  self:parse()
   for i = 1, #pt do 
     local x, y, g = pt[i][1], pt[i][2], pt[i][3]
     if not self:locked(x, y) then 
@@ -468,6 +457,11 @@ function keyboard.event(typ, code, val)
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
     if menu then 
       norns.key(3, 1) 
+    else
+      if orca:op(x_index, y_index) then
+        local g = orca.up(orca:glyph_at(x_index, y_index))
+        library[g](orca, x_index, y_index)
+      end
     end
   elseif (code == hid.codes.KEY_SPACE) and (val == 1) then
     if clock.playing then 
@@ -477,6 +471,10 @@ function keyboard.event(typ, code, val)
       end
     else clock:start() 
     end
+  elseif ctrl and code == 12 and (val == 1 or val == 2) then
+    params:set('bpm', params:get('bpm') - 10)
+  elseif ctrl and code == 13 and (val == 1 or val == 2) then
+    params:set('bpm', params:get('bpm') + 10)
   else if val == 1 then 
     local keyinput = get_key(code, val, shift) 
     if not ctrl then
@@ -555,7 +553,7 @@ local function draw_cursor(x,y)
 end
 
 local function draw_bar()
-  local text = orca.inf[orca:index_at(x_index, y_index)] or 'empty'
+  local text = orca.info[orca:index_at(x_index, y_index)] or 'empty'
   screen.level(0) screen.rect(0, 56, 128, 8) screen.fill()
   screen.level(9) screen.move(2, 63) 
   screen.font_face(25) screen.font_size(6) screen.text(text) screen.stroke()
