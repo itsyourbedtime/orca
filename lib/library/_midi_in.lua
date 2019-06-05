@@ -3,7 +3,7 @@ local midi_in = function ( self, x, y )
   self.y = y
   self.x = x  
   self.name = 'midi in'
-  self.ports = { {0, 1, 'midi-in', 'output'} }
+  self.ports = { {0, 1, 'midi-in' } }
   self:spawn(self.ports)
   
   local note = self.vars['midi'] or 1

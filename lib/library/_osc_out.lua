@@ -3,9 +3,9 @@ local osc_out = function ( self, x, y )
   self.x = x
   self.y = y
   self.name = 'osc'
-  self.ports = { {1,0, 'osc-path', 'input'} }
+  self.ports = { {1,0, 'osc-path' } }
   
-  local osc_dest = { '192.168.0.102', 4646 } 
+  local osc_dest = { '127.0.0.1', 57120 } -- crone
   local osc_path = { }
   
   for x = x + 2, 35 do self.ports[#self.ports + 1] = { x - self.x, 0, 'osc-path',  'input' }

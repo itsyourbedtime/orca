@@ -9,7 +9,7 @@ local X = function(self, x, y)
   local input = self:glyph_at(self.x + 1, self.y)
   b = b == 0 and 1 or b
   
-  self.ports = { {-1, 0, 'in-x', 'haste'}, {-2, 0, 'in-y', 'haste'}, {1, 0, 'x-val', 'input'}, {a or 0, b or 1, 'x-output', 'output'} }
+  self.ports = { {-1, 0, 'in-x' }, {-2, 0, 'in-y' }, {1, 0, 'x-val' }, {a or 0, b or 1, 'x-output' } }
   self:spawn(self.ports)
   
   if self:op(self.x + 1, self.y) then 

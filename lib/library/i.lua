@@ -3,7 +3,8 @@ local I = function (self, x, y )
   self.y = y
   self.x = x
   self.name = 'increment'
-  self.ports = { {-1, 0 , 'in-a', 'haste'}, {1, 0, 'in-b', 'input'}, {0, 1, 'i-out', 'output'} }
+  self.ports = { {-1, 0 , 'in-a' }, {1, 0, 'in-b' }, {0, 1, 'i-out' } }
+  self:spawn(self.ports)
 
   local a = self:listen(self.x - 1, self.y) or 0
   local b = self:listen(self.x + 1, self.y) or 9
@@ -13,7 +14,6 @@ local I = function (self, x, y )
   local cap = l ~= '.' and l == self.up(l) and true
   local value = cap and self.up(self.chars[val]) or self.chars[val]
 
-  self:spawn(self.ports)
   self:write(0, 1, value)
   
 end

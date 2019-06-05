@@ -3,7 +3,7 @@ local rnote = function ( self, x, y )
   self.y = y
   self.x = x
   self.name = 'r.note'
-  self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-scale', 'input'}, {0, 1, 'r.note-output', 'output'} }
+  self.ports = { {-1, 0, 'in-rate' }, {1, 0, 'in-scale' }, {0, 1, '^-out' } }
   
   local mode = self:listen( self.x - 1, self.y )
   local scale = self:listen( self.x + 1, self.y ) or 47 scale = scale == 0 and 47 or scale

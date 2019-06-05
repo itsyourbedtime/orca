@@ -68,7 +68,7 @@ local timber_param = function ( self, x, y )
   self.y = y
   self.x = x
   self.name = 'param'
-  self.ports = { {1, 0, 'in-sample', 'input'}, {2, 0, helper or 'in-param', 'input'}, {3, 0, helper or 'in-value', 'input'} }
+  self.ports = { {1, 0, 'in-sample'}, {2, 0, helper or 'in-param'}, {3, 0, helper or 'in-value'} }
   self:spawn(self.ports)
   
   local sample = self:listen( self.x + 1, self.y ) or 0

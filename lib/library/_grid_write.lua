@@ -3,7 +3,7 @@ local grid_write = function ( self, x, y )
   self.y = y
   self.x = x
   self.name = 'g.write'
-  self.ports = { {1, 0, 'in-g.col', 'input'}, {2, 0, 'in-g.row', 'input'}, {3, 0, 'in-brightness', 'input'} }
+  self.ports = { {1, 0, 'in-g.col' }, {2, 0, 'in-g.row' }, {3, 0, 'in-brightness' } }
   self:spawn(self.ports)
   
   local row = self:listen( self.x + 1, self.y ) or 0

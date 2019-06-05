@@ -3,7 +3,8 @@ local U  = function (self, x, y )
   self.y = y
   self.x = x
   self.name = 'uclid'
-  self.ports = { {-1, 0, 'in-pulses', 'haste'},  { 1, 0, 'in-steps', 'input'}, {0, 1, 'u-output', 'output'} }
+  self.ports = { {-1, 0, 'in-pulses' },  { 1, 0, 'in-steps' }, {0, 1, 'u-output' } }
+  self:spawn(self.ports)
 
   local pulses = self:listen(self.x - 1, self.y) or 1
   local steps = self:listen(self.x + 1, self.y) or 8
@@ -11,8 +12,8 @@ local U  = function (self, x, y )
   local pattern = self:gen_pattern(pulses, steps)
   local out = pattern[pos] and '*' or '.'
   
-  self:spawn(self.ports)
   self:write(0, 1, out)
+  
 end
 
 return U

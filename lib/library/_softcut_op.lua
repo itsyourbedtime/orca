@@ -3,7 +3,7 @@ local _softcut_op = function ( self, x, y)
   self.y = y
   self.x = x
   self.name = 'softcut'
-  self.ports = { {1, 0, 'in-playhead', 'input'}, {2, 0, 'in-rec', 'input'}, {3, 0, 'in-play', 'input'}, {4, 0, 'in-level', 'input'},  {5, 0, 'in-rate', 'input'}, {6, 0, 'in-position', 'input'} }
+  self.ports = { {1, 0, 'in-playhead' }, {2, 0, 'in-rec' }, {3, 0, 'in-play' }, {4, 0, 'in-level' },  {5, 0, 'in-rate' }, {6, 0, 'in-position' } }
   self:spawn(self.ports)
   
   local playhead = util.clamp(self:listen(self.x + 1, self.y) or 1, 1, self.sc_ops.max )

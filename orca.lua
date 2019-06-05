@@ -146,10 +146,8 @@ function orca:copy_area(a, b, cut)
   for y=b, b + selected_area_y do 
     copy_buffer[y -  b ] = {}
     for x = a, (a + selected_area_x) do
-      if self:inbounds(a + x, b + y) then
-        copy_buffer[y - b ][x - a ] = self.cell[y][x]
-        if cut then self:erase(x, y) end
-      end
+      copy_buffer[y - b ][x - a ] = self.cell[y][x]
+      if cut then self:erase(x, y) end
     end
   end
 end
@@ -158,9 +156,7 @@ function orca:paste_area( a, b)
   if #copy_buffer > 0 then
     for y= 0, selected_area_y do 
       for x = 0, selected_area_x  do
-        if self:inbounds(a + x, b + y) then
-          self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
-        end 
+        self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
       end 
     end
   end
@@ -221,11 +217,14 @@ function orca:op(x, y)
   local c = self.cell[y][x] return (library[self.up(c)] ~= nil) and true 
 end
 
-function orca:neighbor(x, y, n)
+function orca:neighbor(x, y, g)
   for i = 1, 4 do
-    if self.cell[y + hood[i][2]][x + hood[i][1]] == n then
-    self:unlock(x, y) 
-    return true end
+    if not self:inbounds(x + hood[i][1], y + hood[i][2]) then
+      return false
+    elseif self.cell[y + hood[i][2]][x + hood[i][1]] == g then
+      self:unlock(x, y) 
+      return true 
+    end
   end
 end
 
@@ -275,14 +274,11 @@ function orca:spawn(p)
   self.locks[at] = { false, false, not self.passive, false }
   
   for k = 1, #p do 
-    local x, y = self.x + p[k][1], self.y + p[k][2]
-    local info, type = p[k][3], p[k][4]
-    
-      local lock = type ~= 'haste' and true 
-      local draw = type == 'output' and true
-      self:lock(x, y, lock, true, false, draw ) 
-      self.inf[self:index_at(x, y)] = p[k][3] 
-    
+    local x, y, info = self.x + p[k][1], self.y + p[k][2], p[k][3]
+    local lock = self.x < x or self.y < y and true
+    local draw = self.y < y and true 
+    self:lock(x, y, lock, true, false, draw ) 
+    self.inf[self:index_at(x, y)] = p[k][3] 
   end
 end
 
@@ -296,22 +292,33 @@ function orca:parse()
         b = b + 1
       end 
     end 
-  end 
+  end
 end
 
 function orca:operate()
   self.locks = {}    
   self.inf = {}
-  self:parse()
+  --self:parse()
+  local b = 1
+  for y = 1, self.h do 
+    for x = 1, self.w do
+      if self:op(x, y) then 
+        pt[b] = { x, y, self.cell[y][x] }
+        b = b + 1
+      end 
+    end 
+  end
+  -- 
   for i = 1, #pt do 
     local x, y, g = pt[i][1], pt[i][2], pt[i][3]
     if not self:locked(x, y) then 
-      local op =  self.up(g)
+      local op = self.up(g)
       if op == g or self:neighbor(x, y, '*') then 
         library[op](self, x, y)
       end 
     end
   end
+  pt = {}
   self.frame = self.frame + 1 
 end
 
@@ -416,14 +423,14 @@ function keyboard.event(typ, code, val)
     elseif menu then if ctrl then norns.enc(1, -8) else norns.enc(3, shift and -20 or -2) end end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1,orca.w) 
+      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index) 
       else x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
     elseif menu then if ctrl then norns.enc(1, 8) else norns.enc(3, shift and 20 or 2) end end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h) 
-      else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1,orca.h) end
+      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index) 
+      else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1, orca.h) end
       update_offset(x_index, y_index)
     elseif menu then norns.enc(2, shift and 104 or 2) end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
@@ -445,11 +452,10 @@ function keyboard.event(typ, code, val)
   elseif (code == 14 or code == 111) then 
     orca:erase(x_index, y_index)
   elseif code == 58 or code == 56 then -- caps/alt 
-    
   elseif code == 110 then 
     orca:paste_area(x_index, y_index) 
   elseif code == 102 then 
-    x_index, y_index = 1,1 field_offset_x, field_offset_y = 1,1 
+    x_index, y_index, field_offset_x, field_offset_y = 1, 1, 1, 1 
     update_offset(x_index, y_index)
   elseif (code == hid.codes.KEY_ESC and (val == 1 or val == 2)) then 
     selected_area_y, selected_area_x = 1, 1

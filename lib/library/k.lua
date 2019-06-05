@@ -3,20 +3,18 @@ local K = function (self, x, y )
   self.y = y
   self.x = x
   self.name = 'konkat'
-  self.ports = { {-1, 0, 'in-length', 'haste'} }
-  
-  local length = self:listen(self.x - 1, self.y) or 0
+  self.ports = { {-1, 0, 'in-length' } }
+  self:spawn(self.ports)
 
+  local length = self:listen(self.x - 1, self.y) or 0
   for i = 1, length do
-    self.ports[#self.ports + 1] = { i , 0, 'in-var', 'input' }
     local var = self.vars[self:listen(x + i, y) or '']
+    self:lock(self.x + i, self.y, true, true )
     if var then
+      self:lock(self.x + i, self.y + 1, true, true)
       self:write(i,1, var)
-      self.ports[#self.ports + 1] = { i , 1, 'out-var', 'input' }
     end
   end
-
-  self:spawn(self.ports)
   
 end
 

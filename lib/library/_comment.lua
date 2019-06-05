@@ -6,7 +6,7 @@ local comment = function ( self, x, y )
   self.ports = { }
   
   for x = x + 1, self.w do
-    self.ports[#self.ports + 1] = { x - self.x  , 0, 'comment',  'input' }
+    self.ports[#self.ports + 1] = { x - self.x  , 0, 'comment' }
     if self:glyph_at(x, y) == '#' then  break end
   end
   

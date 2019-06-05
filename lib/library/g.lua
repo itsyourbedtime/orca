@@ -3,23 +3,21 @@ local G = function(self, x, y )
   self.y = y
   self.x = x
   self.name = 'generator'
-  self.ports = { {-3, 0 , 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'} }
-  
+  self.ports = { {-3, 0 , 'in-y' }, {-2, 0, 'in-x' }, {-1, 0, 'in-length' } }
+  self:spawn(self.ports)
+
   local a = util.clamp(self:listen(self.x - 2, self.y) or 1, 1, 35)
   local b = util.clamp(self:listen(self.x - 3, self.y) or 1, 1, 35)
   local length = self:listen(self.x - 1, self.y, 0) or 0
   local op = self:listen(self.x + 1, self.y, 0)
-  local offset_x, offset_y = b + self.x - 1, a + self.y 
-
+  local offset_x, offset_y = b + self.x, a + self.y 
+  
   for i = 1, length do
-    self.ports[#self.ports + 1] = { i , 0 , 'g-value ' .. i,  'input' }
-    self.ports[#self.ports + 1] = { b + i - 1, a , 'g-value ' .. i, (not op and i == 1 ) and 'output' or 'haste' }
-    local input = self:glyph_at(self.x + i, self.y)
-    self:write( (b + i) - 1 , a, input)
+    self:lock( self.x + i, self.y, true, true )
+    self:lock( offset_x, offset_y, false, true, false, true)
+    self:write( (b + i) - 1, a, self:glyph_at(self.x + i, self.y))
   end
 
-  self:spawn(self.ports)
-  
 end
 
 

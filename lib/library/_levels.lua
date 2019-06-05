@@ -7,7 +7,7 @@ local levels = function ( self, x, y )
   self.y = y
   self.x = x
   self.name = 'levels'
-  self.ports = { {1, 0, helper or 'in-param', 'input' }, {2, 0, helper or 'in-value', 'input'} }
+  self.ports = { {1, 0, helper or 'in-param'  }, {2, 0, helper or 'in-value' } }
 
   local param = util.clamp( self:listen(self.x + 1, self.y) or 1, 1, #param_ids )
   local val = self:listen( self.x + 2, self.y ) or 0

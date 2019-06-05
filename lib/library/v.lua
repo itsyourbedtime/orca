@@ -3,7 +3,7 @@ local V = function (self, x, y )
   self.y = y
   self.x = x
   self.name = 'variable'
-  self.ports = { {-1, 0, 'in-write', 'haste'}, {1, 0, 'in-read', 'input'} }
+  self.ports = { {-1, 0, 'in-write' }, {1, 0, 'in-read' } }
   
   local a = self:listen(self.x - 1, self.y, 0) 
   local b = self:listen(self.x + 1, self.y, 0)
