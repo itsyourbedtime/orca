@@ -35,14 +35,13 @@ local orca = {
   vars = { },
   cell = { },
   locks = { },
-  inf = { },
+  info = { },
   active_notes = { },
   chars = keycodes.chars,
   notes = { "C", "c", "D", "d", "E", "F", "f", "G", "g", "A", "a", "B" },
   sc_ops = { count = 0, max = 6, pos = { 0, 0, 0, 0, 0, 0 } },
 }
 
--- midi / audio related
 function orca.normalize(n)
   return n == 'e' and 'F' or n == 'b' and 'C' or n
 end
@@ -75,7 +74,6 @@ function orca:note_freq(n)
   return music.note_num_to_freq(n)
 end
   
-  
 function orca:add_note(ch, note, length, mono)
   local id = self:index_at(self.x,self.y)
   if self.active_notes[id] == nil then
@@ -105,8 +103,6 @@ function orca:notes_off(ch)
   end
 end
 
--- save / load
--- 2do test loading project with softcut operators // etc
 function orca.load_project(pth)
   if string.find(pth, 'orca') ~= nil then
     local saved = tab.load(pth)
@@ -138,10 +134,8 @@ function orca.save_project(txt)
   end
 end
 
--- cut / copy / paste
-
 function orca:copy_area(a, b, cut) 
-  copy_buffer = { }
+  copy_buffer = {}
   for y=b, b + selected_area_y do 
     copy_buffer[y -  b ] = {}
     for x = a, (a + selected_area_x) do
@@ -161,7 +155,6 @@ function orca:paste_area( a, b)
   end
 end
 
--- core
 function orca.up(i) 
   return i and string.upper(i) or '.'
 end
@@ -195,7 +188,6 @@ function orca:locked(x, y)
   local p = self.locks[self:index_at(x, y)]
   return p and p[1] or false
 end
-
 
 function orca:erase(x, y) 
   local at = self:index_at(x, y)
@@ -270,7 +262,7 @@ end
 function orca:spawn(p)
   local at =  self:index_at(self.x, self.y)
   self.info[at] = self.name 
-  self.locks[at] = { false, false, not self.passive, false }
+  self.locks[at] = { false, false, true, false }
   
   for k = 1, #p do 
     local x, y, info = self.x + p[k][1], self.y + p[k][2], p[k][3]
@@ -291,8 +283,6 @@ function orca:parse()
     end 
   end
 end
-
-
 
 function orca:operate()
   self.locks = {}    
