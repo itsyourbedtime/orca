@@ -1,12 +1,8 @@
-local Z = function (self, x, y, glyph)
+local Z = function (self, x, y )
 
   self.x = x
   self.y = y
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'zoom'
-  self.info = 'Transitions operand to input.'
   self.ports = { {-1, 0 , 'in-rate' , 'haste'},  {1, 0, 'in-target', 'input'},  {0, 1, 'z-output', 'output'} }
   
   local r = self:listen(self.x - 1, self.y) or 1

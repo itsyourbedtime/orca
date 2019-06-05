@@ -1,12 +1,8 @@
-local O = function(self, x, y, glyph)
+local O = function(self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'offset'
-  self.info = 'Reads a distant operator with offset.'
   self.ports = { {-1, 0, 'in-x', 'haste'}, {-2, 0, 'in-y', 'haste'}, {1, 0, 'o-read', 'haste'}, {0, 1, 'o-output', 'output'} }
   
   local a = util.clamp(self:listen(self.x - 2, self.y) or 1, 1, 35)

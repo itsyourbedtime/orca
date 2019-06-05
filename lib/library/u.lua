@@ -1,12 +1,8 @@
-local U  = function (self, x, y, glyph)
+local U  = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'uclid'
-  self.info = 'Bangs based on the Euclidean pattern'
   self.ports = { {-1, 0, 'in-pulses', 'haste'},  { 1, 0, 'in-steps', 'input'}, {0, 1, 'u-output', 'output'} }
 
   local pulses = self:listen(self.x - 1, self.y) or 1

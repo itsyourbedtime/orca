@@ -1,10 +1,7 @@
-local J = function(self, x, y, glyph)
+local J = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'jumper'
   self.ports = { {0, -1, 'j-input', 'haste'}, {0, 1, 'j-output', 'output'} }
   

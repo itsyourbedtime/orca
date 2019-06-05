@@ -1,10 +1,7 @@
-local A = function ( self, x, y, glyph )
+local A = function ( self, x, y )
   
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'add'
   self.ports = { {-1, 0, 'input-a', 'haste'}, {1, 0, 'input-b', 'input'}, {0, 1, 'add-output', 'output'} }
   

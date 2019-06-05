@@ -2,10 +2,7 @@ local rnote = function ( self, x, y )
   
   self.y = y
   self.x = x
-
-  self.glyph = '^'
   self.name = 'r.note'
-  self.passive = false
   self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-scale', 'input'}, {0, 1, 'r.note-output', 'output'} }
   
   local mode = self:listen( self.x - 1, self.y )
@@ -14,6 +11,7 @@ local rnote = function ( self, x, y )
   local scale_name = get_scale[1]
   local note_array = get_scale[2]
   local out
+  
   if mode then 
     if mode == 0 then
       out = self.notes[note_array[math.random(#note_array)]]

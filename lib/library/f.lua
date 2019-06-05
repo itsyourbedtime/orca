@@ -1,10 +1,7 @@
-local F = function( self, x, y, glyph )
+local F = function( self, x, y )
 
   self.y = y
   self.x = x
-
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'if'
   self.ports = { {-1, 0, 'in-a', 'haste'}, {1, 0, 'in-b', 'input'}, {0, 1, 'f-output', 'output'} }
   
@@ -15,7 +12,6 @@ local F = function( self, x, y, glyph )
 
   self:spawn(self.ports)
   self:write(0, 1, val)
-  
   
 end
 

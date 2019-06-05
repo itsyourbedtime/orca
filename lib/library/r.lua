@@ -1,12 +1,8 @@
-local R = function (self, x, y, glyph)
+local R = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'random'
-  self.info = 'Outputs a random value.'
   self.ports = { {-1, 0, 'in-a', 'haste'}, { 1, 0, 'in-b', 'input'}, {0, 1, 'r-output', 'output'} }
   
   local a = self:listen(self.x - 1, self.y) or 0
@@ -19,7 +15,6 @@ local R = function (self, x, y, glyph)
 
   self:spawn(self.ports)
   self:write(0, 1, value)
-  
   
 end
 

@@ -1,13 +1,8 @@
-local Q = function (self, x, y, glyph)
+local Q = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'query'
-  self.info = 'Reads distant operators with offset.'
-  
   self.ports = { {-3, 0, 'in-y', 'haste'}, {-2, 0, 'in-x', 'haste'}, {-1, 0, 'in-length', 'haste'} }
 
   local b = self:listen(self.x - 3, self.y) or 0

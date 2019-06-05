@@ -1,15 +1,9 @@
-local T = function (self, x, y, glyph)
+local T = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'track'
-  self.info = 'Reads an eastward operator with offset'
-  
-  self.ports = { {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-position', 'haste'}, 
-    {1, 0, 'in-value', 'input'}, {0, 1, 't-output', 'output'} }
+  self.ports = { {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-position', 'haste'},  {1, 0, 'in-value', 'input'}, {0, 1, 't-output', 'output'} }
 
   local length = self:listen(self.x - 1, self.y, 1) or 1
   local position = self:listen(self.x - 2, self.y) or 1

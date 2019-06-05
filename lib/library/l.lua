@@ -1,12 +1,8 @@
-local L = function (self, x, y, glyph)
+local L = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'loop'
-  self.info = 'Loops a number of eastward operators.'
   self.ports = { {-1, 0, 'in-length', 'haste'}, {-2, 0, 'in-rate', 'haste'} }
 
   local length = util.clamp(self:listen( self.x - 1, self.y, 0 ) or 0, 1, self.w - self.x)

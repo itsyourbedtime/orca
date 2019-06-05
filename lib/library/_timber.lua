@@ -2,15 +2,8 @@ local timber = function ( self, x, y )
   
   self.y = y
   self.x = x
-  
-  self.glyph = "'"
   self.name = 'engine'
-  self.passive = false
-
-  self.ports = {
-    {1, 0, 'in-sample', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, 
-    {4, 0, 'in-level', 'input'}, {5, 0, 'in-position', 'input'} }
-
+  self.ports = { {1, 0, 'in-sample', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, {4, 0, 'in-level', 'input'}, {5, 0, 'in-position', 'input'} }
   self:spawn(self.ports)
   
   local sample = self:listen( self.x + 1, self.y ) or 0
@@ -26,11 +19,9 @@ local timber = function ( self, x, y )
   local length = params:get("end_frame_" .. sample)
   local start_pos = util.clamp((( start / 35 ) * 2 ) * length, 0, length )
   
-  
   if self:neighbor(self.x, self.y, '*') then
     params:set("start_frame_" .. sample, start_pos )
     params:set('amp_' .. sample, lev)
-  
     engine.noteOn( sample, sample, self:note_freq(n), 100 )
   end
   

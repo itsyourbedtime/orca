@@ -1,10 +1,7 @@
-local I = function (self, x, y, glyph)
+local I = function (self, x, y )
   
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'increment'
   self.ports = { {-1, 0 , 'in-a', 'haste'}, {1, 0, 'in-b', 'input'}, {0, 1, 'i-out', 'output'} }
 

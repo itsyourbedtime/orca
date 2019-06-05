@@ -1,13 +1,9 @@
 local midi_out = function ( self, x, y )
   
   self.y = y
-  self.x = x  
-  
-  self.glyph = ':'
+  self.x = x
   self.name = 'midi'
-  self.passive = false
   self.ports = { {1, 0, 'in-port', 'input'}, {2, 0, 'in-octave', 'input'}, {3, 0, 'in-note', 'input'}, {4, 0, 'in-velocity', 'input'}, {5, 0, 'in-length', 'input'} }
-  
   self:spawn(self.ports)
   
   local channel = util.clamp( self:listen( self.x + 1, self.y ) or 0, 0, 16 )

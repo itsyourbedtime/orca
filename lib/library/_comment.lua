@@ -2,10 +2,7 @@ local comment = function ( self, x, y )
   
   self.x = x
   self.y = y
-  
-  self.glyph = '#'
   self.name = 'comment'
-  self.passive = true
   self.ports = { }
   
   for x = x + 1, self.w do

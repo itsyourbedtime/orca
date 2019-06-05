@@ -1,10 +1,7 @@
-local C = function ( self, x, y, glyph )
+local C = function ( self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'clock'
   self.ports = { {-1, 0 , 'in-rate', 'haste'},  {1, 0, 'in-mod', 'input'}, {0, 1, 'c-output', 'output'} }
   

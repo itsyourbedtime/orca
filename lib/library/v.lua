@@ -1,12 +1,8 @@
-local V = function (self, x, y, glyph)
+local V = function (self, x, y )
 
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'variable'
-  self.info = 'Reads and writes globally available variable'
   self.ports = { {-1, 0, 'in-write', 'haste'}, {1, 0, 'in-read', 'input'} }
   
   local a = self:listen(self.x - 1, self.y, 0) 
@@ -20,8 +16,12 @@ local V = function (self, x, y, glyph)
   end
 
   self:spawn(self.ports)
-  if b and not a then self:write(0, 1, self.vars[b])
-  elseif a then self.vars[a] = var end
+  
+  if b and not a then 
+    self:write(0, 1, self.vars[b])
+  elseif a then 
+    self.vars[a] = var 
+  end
 
 end
 

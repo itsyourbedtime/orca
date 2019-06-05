@@ -1,10 +1,7 @@
-local B = function ( self, x, y, glyph )
+local B = function ( self, x, y )
   
   self.y = y
   self.x = x
-  
-  self.glyph = glyph
-  self.passive = glyph == string.lower(glyph) and true 
   self.name = 'bounce'
   self.ports = { {-1, 0, 'in-rate', 'haste'}, {1, 0, 'in-to', 'input'},  {0, 1, 'b-out', 'output'} }
   

@@ -2,12 +2,8 @@ local grid_read = function ( self, x, y )
   
   self.y = y
   self.x = x
-  
-  self.glyph = '<'
   self.name = 'g.read'
-  self.passive = false
   self.ports = { {-2, 0, 'in-g.col', 'haste'}, {-1, 0, 'in-g.row', 'haste'}, {0, 1, 'out-g.read', 'output'} }
-  
   self:spawn(self.ports)
   
   local col = self:listen( self.x - 2, self.y )

@@ -1,12 +1,9 @@
-local osc_out = function ( self, x, y, frame, grid )
+local osc_out = function ( self, x, y )
   
   self.x = x
   self.y = y
-  
-  self.glyph = '='
   self.name = 'osc'
-  self.passive = false
-  self.ports = {{1,0, 'osc-path', 'input'}}
+  self.ports = { {1,0, 'osc-path', 'input'} }
   
   local osc_dest = { '192.168.0.102', 4646 } 
   local osc_path = { }
@@ -18,9 +15,11 @@ local osc_out = function ( self, x, y, frame, grid )
   concat_path = values[1] values[1] = nil
   
   self:spawn(self.ports)
+  
   if self:neighbor(self.x, self.y, '*') then
     osc.send(osc_dest, '/' .. concat_path, values)
   end
+  
 end
 
 return osc_out

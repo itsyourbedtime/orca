@@ -308,7 +308,7 @@ function orca:operate()
     if not self:locked(x, y) then 
       local op =  self.up(g)
       if op == g or self:neighbor(x, y, '*') then 
-        library[op](self, x, y , g)
+        library[op](self, x, y)
       end 
     end
   end
