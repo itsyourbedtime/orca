@@ -3,11 +3,11 @@ local midi_in = function ( self, x, y )
   self.y = y
   self.x = x  
   self.name = 'midi in'
-  self.ports = { {0, 1, 'midi-in' } }
+  self.ports = { {1, 0, 'in-ch'},{0, 1, 'key-out' } }
   self:spawn(self.ports)
-  
-  local note = self.vars['midi'] or 1
-  local out =  self.chars[ note % 35] 
+  local ch = self:listen( self.x + 1, self.y ) or 1
+  local note = self.vars.midi[ch] or 1
+  local out = self.notes[ (note % 12 ) + 1]
 
   self:write(0, 1, out )
   

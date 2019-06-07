@@ -26,13 +26,13 @@ local pt = {}
 local w = 64
 local h = 24
 
-local orca = {
+orca = {
   project = 'untitled',
   w = w,
   h = h,
   frame = 0,
   grid = { },
-  vars = { },
+  vars = { midi = {}, midi_cc = {}},
   cell = { },
   locks = { },
   info = { },
@@ -356,7 +356,14 @@ function init()
   -- 
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
-  orca.midi_out_device.event = function(data)  orca.vars['midi'] = midi.to_msg(data).note end
+  orca.midi_out_device.event = function(data) 
+    local m = midi.to_msg(data)
+    if m.type == 'cc' then
+      orca.vars.midi_cc[m.cc] = m.val
+    else
+      orca.vars.midi[m.ch] = m.note 
+    end
+  end
   params:add{ type = "number", id = "midi_out_device", name = "midi out device", min = 1, max = 4, default = 1,
   action = function(value) orca.midi_out_device = midi.connect(value) end }
   --
