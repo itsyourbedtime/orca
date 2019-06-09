@@ -356,11 +356,12 @@ function init()
   -- 
   params:add_separator()
   orca.midi_out_device = midi.connect(1)
-  orca.midi_out_device.event = function(data) 
+  orca.midi_out_device.event = function(data)
+    clock:process_midi(data)
     local m = midi.to_msg(data)
     if m.type == 'cc' then
       orca.vars.midi_cc[m.cc] = m.val
-    else
+    elseif m.type == 'note_on' then
       orca.vars.midi[m.ch] = m.note 
     end
   end
@@ -447,7 +448,7 @@ function keyboard.event(typ, code, val)
     selected_area_y, selected_area_x = 1, 1
     map = fale
     if shift then 
-      norns.menu.set_status(not menu)
+      norns.menu.toggle(not menu)
     elseif menu and not shift then 
       norns.key(2, 1) 
     end

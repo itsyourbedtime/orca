@@ -10,10 +10,7 @@ local timber = function ( self, x, y )
   local octave = util.clamp( self:listen( self.x + 2, self.y ) or 3, 0, 8 )
   local level = self:listen( self.x + 4, self.y ) or 28
   local start = self:listen( self.x + 5, self.y ) or 0
-  local l = self:glyph_at(self.x + 3, self.y) ~= '.' and self:glyph_at(self.x + 3, self.y) or 'C'
-  local note_in = self:listen( self.x + 3, self.y ) or 0
-  local note = self.chars[note_in]
-  if l == string.upper(l) then note = string.upper(note) end
+  local note = self:glyph_at(self.x + 3, self.y) or 'C'
   local transposed = self:transpose( note, octave )
   local n, oct, lev = transposed[1], transposed[4], (( level / 35 ) * 100 ) - 84
   local length = params:get("end_frame_" .. sample)

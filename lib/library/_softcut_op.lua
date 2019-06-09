@@ -25,7 +25,7 @@ local _softcut_op = function ( self, x, y)
   softcut.level( playhead, level )
   
   if self:glyph_at(self.x + 2, self.x)  == '*' then
-    self:write(self.x + 2, self.y, '.')
+    self:write( 2, 0, '.')
     softcut.buffer_clear_region( 0, 35 )
   end
     

@@ -9,7 +9,6 @@ local G = function(self, x, y )
   local a = util.clamp(self:listen(self.x - 2, self.y) or 1, 1, 35)
   local b = util.clamp(self:listen(self.x - 3, self.y) or 1, 1, 35)
   local length = self:listen(self.x - 1, self.y, 0) or 0
-  local op = self:listen(self.x + 1, self.y, 0)
   local offset_x, offset_y = b + self.x, a + self.y 
   
   for i = 1, length do
