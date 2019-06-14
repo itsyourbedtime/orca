@@ -52,10 +52,9 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 - `<` **g.read**(*x* *y*): Reads specific coordinates. If value > 6 outputs bang.
 - `:` **midi**(*channel* octave note velocity length): Sends a MIDI note.
 - `%` **mono**(*channel* octave note velocity length): Sends monophonic MIDI note.
-- `&` **midi in**: Outputs midi note
+- `&` **midi in**(*channel*): Outputs midi note
+- `^` **cc in**(*cc*): Outputs midi cc value
 - `!` **cc**(*channel* knob value): Sends MIDI control change.
 - `=` **OSC** (*path*;x;y..): Locks each consecutive eastwardly ports. `;` is delimeter for values
-- `^` **r.note**(mode scale): Outputs random note within scale. 
+- `$` **r.note**(mode scale): Outputs random note within scale. 
 - `?` **levels**(*param* value): Sets selected volume level on bang
-
-

@@ -7,7 +7,7 @@ local X = function(self, x, y)
   self:spawn(self.ports)
   local a = self:listen(self.x - 2, self.y) or 0
   local b = util.clamp(self:listen(self.x - 1, self.y) or 1, 1, 35)
-  self:unlock(self.x + a, self.y + b, false, true, false, true) 
+  self:lock(self.x + a, self.y + b, false, true, false, true) 
   self:write(a, b, self:glyph_at(self.x + 1, self.y))
 
 end
