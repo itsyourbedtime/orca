@@ -19,7 +19,7 @@ local timber = function ( self, x, y )
   if self:neighbor(self.x, self.y, '*') then
     params:set("start_frame_" .. sample, start_pos )
     params:set('amp_' .. sample, lev)
-    engine.noteOn( sample, self:note_freq(n), 100, sample )
+    engine.noteOn( sample, self:note_freq(n), 1, sample )
   end
   
 end
