@@ -7,11 +7,9 @@ function unrequire(name)
 end
 
 unrequire("timber/lib/timber_engine")
-
-
+local Timber = include("timber/lib/timber_engine")
 engine.name = "Timber"
 
-local Timber = require "timber/lib/timber_engine"
 
 function orca_engine.load_folder(file, add)
   
@@ -55,9 +53,11 @@ end
 
 function orca_engine.init()
   -- timbers
+
   params:add_trigger('load_f','+ Load Folder')
   params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
   if file ~= "cancel" then orca_engine.load_folder(file, add) end end) end)
+
   Timber.options.PLAY_MODE_BUFFER_DEFAULT = 3
   Timber.options.PLAY_MODE_STREAMING_DEFAULT = 3
   params:add_separator()
@@ -70,7 +70,7 @@ function orca_engine.init()
     }
     params:add_separator()
     Timber.add_sample_params(i, true, extra_params)
-    params:set('play_mode_' .. i, 4)
+    --params:set('play_mode_' .. i, 4)
     --params:set('amp_env_sustain_' .. i, 0)
   end
   -- softcut 

@@ -407,19 +407,19 @@ function keyboard.event(typ, code, val)
       if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.w) 
       else x_index = util.clamp(x_index - (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
-    elseif menu then if ctrl then norns.enc(1, -8) else norns.enc(3, shift and -20 or -2) end end
+    elseif menu then if ctrl then _norns.enc(1, -8) else _norns.enc(3, shift and -20 or -2) end end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if not menu then
       if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index) 
       else x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
-    elseif menu then if ctrl then norns.enc(1, 8) else norns.enc(3, shift and 20 or 2) end end
+    elseif menu then if ctrl then _norns.enc(1, 8) else _norns.enc(3, shift and 20 or 2) end end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if not menu then
       if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index) 
       else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1, orca.h) end
       update_offset(x_index, y_index)
-    elseif menu then norns.enc(2, shift and 104 or 2) end
+    elseif menu then _norns.enc(2, shift and 104 or 2) end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
     if not menu then
       if shift then 
@@ -429,7 +429,7 @@ function keyboard.event(typ, code, val)
       end
       update_offset(x_index, y_index)
     elseif menu then 
-      norns.enc(2, shift and -104 or -2) 
+      _norns.enc(2, shift and -104 or -2) 
     end
   elseif code == 56 then
     alt = (val == 1 or val == 2 ) and true or false
@@ -450,11 +450,11 @@ function keyboard.event(typ, code, val)
     if shift then 
       norns.menu.toggle(not menu)
     elseif menu and not shift then 
-      norns.key(2, 1) 
+      _norns.key(2, 1) 
     end
   elseif (code == hid.codes.KEY_ENTER and val == 1) then
     if menu then 
-      norns.key(3, 1) 
+      _norns.key(3, 1) 
     else
       if orca:op(x_index, y_index) then
         local g = orca.up(orca:glyph_at(x_index, y_index))
