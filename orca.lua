@@ -404,26 +404,26 @@ function keyboard.event(typ, code, val)
     ctrl = (val == 1 or val == 2) and true
   elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.w) print('x' .. selected_area_x)
+      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.w)
       else x_index = util.clamp(x_index - (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
     elseif menu then if ctrl then _norns.enc(1, -8) else _norns.enc(3, shift and -20 or -2) end end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index) print('x' .. selected_area_x)
+      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index)
       else x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
     elseif menu then if ctrl then _norns.enc(1, 8) else _norns.enc(3, shift and 20 or 2) end end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index) print('y' .. selected_area_y)
+      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index)
       else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1, orca.h) end
       update_offset(x_index, y_index)
     elseif menu then _norns.enc(2, shift and 104 or 2) end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
     if not menu then
       if shift then 
-        selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.h) print('y' .. selected_area_y)
+        selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.h)
       else 
         y_index = util.clamp(y_index - (ctrl and 9 or 1) , 1, orca.h) 
       end
