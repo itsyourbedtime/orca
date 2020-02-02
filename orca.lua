@@ -1,5 +1,5 @@
 -- ORCA
--- v0.9.9.9 @its_your_bedtime
+-- v1.0 @its_your_bedtime
 -- llllllll.co/t/orca
 
 local tab = require 'tabutil'
