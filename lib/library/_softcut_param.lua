@@ -21,17 +21,17 @@ local softcut_param = function ( self, x, y )
   if self:neighbor(self.x, self.y, '*') then
     if param == 1 then
       if val == 0 then
-      norns.audio.level_adc_cut(0)
-      norns.audio.level_eng_cut(0)
+      audio.level_adc_cut(0)
+      audio.level_eng_cut(0)
       elseif val == 1 then
-        norns.audio.level_adc_cut(1)
-        norns.audio.level_eng_cut(0)
+        audio.level_adc_cut(1)
+        audio.level_eng_cut(0)
       elseif val == 2 then
-        norns.audio.level_adc_cut(0)
-        norns.audio.level_eng_cut(1)
+        audio.level_adc_cut(0)
+        audio.level_eng_cut(1)
       elseif val == 3 then
-        norns.audio.level_adc_cut(1)
-        norns.audio.level_eng_cut(1)
+        audio.level_adc_cut(1)
+        audio.level_eng_cut(1)
       end
     elseif param == 2 then
       softcut[param_ids[param]](playhead, value % 3)

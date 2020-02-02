@@ -94,7 +94,7 @@ function orca:notes_off(ch)
   local id = self:index_at(self.x,self.y)
   if self.active_notes[id] ~= nil then
     for k, v in pairs(self.active_notes[id]) do
-      local note, length = self.active_notes[id][k][1], self.active_notes[id][k][2]
+      local note, length = self.active_notes[id][k][1], util.clamp(self.active_notes[id][k][2], 1, 16)
       if self.frame % length  == 0 then 
         self.midi_out_device:note_off(note, nil, ch)
         self.active_notes[id][k] = nil
@@ -136,10 +136,10 @@ end
 
 function orca:copy_area(a, b, cut) 
   copy_buffer = {}
-  for y=b, b + selected_area_y do 
-    copy_buffer[y -  b ] = {}
-    for x = a, (a + selected_area_x) do
-      copy_buffer[y - b ][x - a ] = self.cell[y][x]
+  for y=b, (b + selected_area_y) - 1 do 
+    copy_buffer[(y -  b)+1] = {}
+    for x = a, (a + selected_area_x) - 1 do
+      copy_buffer[(y - b)+1][(x - a)+1 ] = self.cell[y][x]
       if cut then self:erase(x, y) end
     end
   end
@@ -147,9 +147,9 @@ end
 
 function orca:paste_area( a, b)
   if #copy_buffer > 0 then
-    for y= 0, selected_area_y do 
-      for x = 0, selected_area_x  do
-        self.cell[b + y][a + x] = copy_buffer[y][x] or '.' 
+    for y= 1, #copy_buffer  do 
+      for x = 1,  #copy_buffer[y]  do
+        self.cell[(b + y) - 1][(a + x)  - 1] = copy_buffer[y][x] or '.' 
       end 
     end
   end
@@ -404,26 +404,26 @@ function keyboard.event(typ, code, val)
     ctrl = (val == 1 or val == 2) and true
   elseif (code == hid.codes.KEY_LEFT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.w) 
+      if shift then selected_area_x = util.clamp(selected_area_x -  (ctrl and 9 or 1) ,1,orca.w) print('x' .. selected_area_x)
       else x_index = util.clamp(x_index - (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
     elseif menu then if ctrl then _norns.enc(1, -8) else _norns.enc(3, shift and -20 or -2) end end
   elseif (code == hid.codes.KEY_RIGHT) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index) 
+      if shift then selected_area_x = util.clamp(selected_area_x + (ctrl and 9 or 1), 1, orca.w - x_index) print('x' .. selected_area_x)
       else x_index = util.clamp(x_index + (ctrl and 9 or 1), 1,orca.w) end
       update_offset(x_index, y_index)
     elseif menu then if ctrl then _norns.enc(1, 8) else _norns.enc(3, shift and 20 or 2) end end
   elseif (code == hid.codes.KEY_DOWN) and (val == 1 or val == 2) then
     if not menu then
-      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index) 
+      if shift then selected_area_y = util.clamp(selected_area_y + (ctrl and 9 or 1), 1,orca.h - y_index) print('y' .. selected_area_y)
       else y_index = util.clamp(y_index + (ctrl and 9 or 1), 1, orca.h) end
       update_offset(x_index, y_index)
     elseif menu then _norns.enc(2, shift and 104 or 2) end
   elseif (code == hid.codes.KEY_UP) and (val == 1 or val == 2) then
     if not menu then
       if shift then 
-        selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.h) 
+        selected_area_y = util.clamp(selected_area_y - (ctrl and 9 or 1), 1,orca.h) print('y' .. selected_area_y)
       else 
         y_index = util.clamp(y_index - (ctrl and 9 or 1) , 1, orca.h) 
       end
