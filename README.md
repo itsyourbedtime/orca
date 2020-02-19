@@ -1,4 +1,4 @@
-![orca_norns|690x231,100%](https://llllllll.co/uploads/default/original/3X/e/e/ee7a2a1460ac4c0a54c8a0b067b7e7d9c35f23fd.png) 
+![orca_norns|690x231,100%](https://llllllll.co/uploads/default/original/3X/e/e/ee7a2a1460ac4c0a54c8a0b067b7e7d9c35f23fd.png)
 
 [Orca](https://100r.co/pages/orca.html) is a visual programming language, designed to create procedural sequencers on the fly.
 
@@ -44,17 +44,21 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 
 ## IO / Norns operators
 
+<!--
+Only 1 Engine supported at a time, so Timber is deactivated in favor of PolyPerc
 - `'` **timber engine**(*sample* octave note level position): Triggers sample player.
 - `"` **timber param**(*sample* *param* value): Sets timber param on bang.
-- `/` **softcut**(*playhead* *rec* *play* level rate position) 
+-->
+- `/` **softcut**(*playhead* *rec* *play* level rate position)
 - `\` **softcut param**(*playhead* *param* value): Sets softcut param on bang
 - `>` **g.write**(*x* *y* value): Sets grid led on bang.
 - `<` **g.read**(*x* *y*): Reads specific coordinates. If value > 6 outputs bang.
 - `:` **midi**(*channel* octave note velocity length): Sends a MIDI note.
+- `|` **polyperc**(*octave* *note* release cutoff amp pw gain): Plays a PolyPerc note.
 - `%` **mono**(*channel* octave note velocity length): Sends monophonic MIDI note.
 - `&` **midi in**(*channel*): Outputs midi note
 - `^` **cc in**(*cc*): Outputs midi cc value
 - `!` **cc**(*channel* knob value): Sends MIDI control change.
 - `=` **OSC** (*path*;x;y..): Locks each consecutive eastwardly ports. `;` is delimeter for values
-- `$` **r.note**(mode scale): Outputs random note within scale. 
+- `$` **r.note**(mode scale): Outputs random note within scale.
 - `?` **levels**(*param* value): Sets selected volume level on bang

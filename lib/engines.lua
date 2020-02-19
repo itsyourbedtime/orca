@@ -6,13 +6,16 @@ function unrequire(name)
   _G[name] = nil
 end
 
-unrequire("timber/lib/timber_engine")
-local Timber = include("timber/lib/timber_engine")
-engine.name = "Timber"
+-- Multiple engines aren't supported... yet
+-- https://llllllll.co/t/orca/22492/148
+engine.name = "PolyPerc"
+-- unrequire("timber/lib/timber_engine")
+-- local Timber = include("timber/lib/timber_engine")
+-- engine.name = "Timber"
 
 
 function orca_engine.load_folder(file, add)
-  
+  --[[
   local sample_id = 0
   if add then
     for i = NUM_SAMPLES - 1, 0, -1 do
@@ -22,13 +25,13 @@ function orca_engine.load_folder(file, add)
       end
     end
   end
-  
+
   Timber.clear_samples(sample_id, NUM_SAMPLES - 1)
-  
+
   local split_at = string.match(file, "^.*()/")
   local folder = string.sub(file, 1, split_at)
   file = string.sub(file, split_at + 1)
-  
+
   local found = false
   for k, v in ipairs(Timber.FileSelect.list) do
     if v == file then found = true end
@@ -48,12 +51,15 @@ function orca_engine.load_folder(file, add)
       end
     end
   end
+  --]]
 end
 
 
 function orca_engine.init()
-  -- timbers
+  -- polyperc
 
+  -- timber
+  --[[
   params:add_trigger('load_f','+ Load Folder')
   params:set_action('load_f', function() Timber.FileSelect.enter(_path.audio, function(file)
   if file ~= "cancel" then orca_engine.load_folder(file, add) end end) end)
@@ -73,7 +79,8 @@ function orca_engine.init()
     --params:set('play_mode_' .. i, 4)
     --params:set('amp_env_sustain_' .. i, 0)
   end
-  -- softcut 
+  --]]
+  -- softcut
   softcut.reset()
   audio.level_cut(1)
   audio.level_adc_cut(1)
@@ -104,7 +111,7 @@ function orca_engine.init()
     softcut.filter_rq(i, 0)
   end
 
-  
+
 end
 
 return orca_engine
