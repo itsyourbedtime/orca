@@ -14,7 +14,7 @@
 -- sequencers on the fly. 
 --
 -- v1.0 @its_your_bedtime
--- v1.1 @frederickk (PolyPerc)
+-- v1.2 @frederickk (PolyPerc + Import)
 --
 -- llllllll.co/t/orca
 --
@@ -30,6 +30,7 @@ local keycodes = include("lib/keycodes")
 local transpose_table = include("lib/transpose")
 local library = include( "lib/library" )
 local engines = include( "lib/engines" )
+local json = include( "lib/JSON" )
 local keyboard = hid.connect( )
 local g = grid.connect( )
 local string = string
@@ -131,10 +132,49 @@ function orca.load_project(pth)
       orca.cell = saved[4]
       softcut.buffer_read_mono(norns.state.data .. saved[1] .. '_buffer.aif', 0, 0, 35, 1, 1)
       params:read(norns.state.data .. saved[1] ..".pset")
-      print ('loaded ' .. norns.state.data .. saved[1] .. '_buffer.aif')
+      print('loaded ' .. norns.state.data .. saved[1] .. '_buffer.aif')
     else
       print("no data")
     end
+  end
+end
+
+function orca.import(pth) 
+   local filename = pth:match("^.+/(.+)$")
+   local name = ''
+
+  if string.find(pth, 'json') ~= nil then
+    name = string.gsub( filename, ".json", "" )
+    local json_file = io.open( norns.state.data .. name .. ".json", "rb" )
+    if json_file then
+      local json_file_str = json_file:read "*a"
+      json_file:close()
+      local json = json:decode( json_file_str )
+      local l = { json[1], json[2], json[3], json[4] }
+      tab.save( l, norns.state.data .. json[1] .."_import.orca" )
+      print ("imported '" .. norns.state.data .. name .. ".json' as '" .. norns.state.data .. json[1] .."_import.orca'" )
+    end
+  elseif string.find(pth, 'txt') ~= nil then
+    name = string.gsub( filename, ".txt", "")
+    local txt_file = io.open( norns.state.data .. name .. ".txt", "rb" )
+    if txt_file then
+      cell = {}
+      for line in io.lines( pth ) do
+        chars = {}
+        for i = 1, #line do
+          chars[i] = line:sub(i, i)
+        end
+        cell[#cell + 1] = chars
+      end
+
+      local l = { name, #cell[1], #cell, cell }
+      tab.save( l, norns.state.data .. name .."_import.orca" )
+      print ("imported '" .. norns.state.data .. name .. ".txt' as '" .. norns.state.data .. name .."_import.orca'" )
+    end
+  end
+  
+  if util.file_exists( norns.state.data .. name .."_import.orca" ) then
+    orca.load_project( norns.state.data .. name .."_import.orca" )
   end
 end
 
@@ -148,6 +188,30 @@ function orca.save_project(txt)
     print ('saved ' .. full_path .. '_buffer.aif')
   else
     print("save cancel")
+  end
+end
+
+function orca.export(txt) 
+  if txt then
+    local l = { txt, orca.w, orca.h, orca.cell }
+    local full_path = norns.state.data .. txt
+    local json = json:encode_pretty( l ) 
+    local json_file = io.open( full_path ..".json", "w+" )
+    io.output( json_file )
+    io.write( json )
+    io.close( json_file )
+    print( "exported JSON " .. full_path .. '.json' )
+    
+    local txt_file = io.open( full_path ..".txt", "w+" )
+    io.output( txt_file )
+    for i = 1, #orca.cell do
+      for j = 1, #orca.cell[i] do
+        io.write( orca.cell[i][j] )
+      end
+      io.write( '\n' )
+    end
+    io.close( txt_file )
+    print( "exported TXT " .. full_path .. '.txt' )
   end
 end
 
@@ -361,6 +425,10 @@ function init()
   params:set_action('save_p', function(x) textentry.enter(orca.save_project,  orca.project) end)
   params:add_trigger('load_p', "> Load project" )
   params:set_action('load_p', function(x) fileselect.enter(norns.state.data, orca.load_project) end)
+  params:add_trigger('export_p', "« Export txt" )
+  params:set_action('export_p', function(x) textentry.enter(orca.export,  orca.project) end)
+  params:add_trigger('import_p', "» Import txt" )
+  params:set_action('import_p', function(x) fileselect.enter(norns.state.data, orca.import) end)
   params:add_trigger('new', "+ New" )
   params:set_action('new', function(x) init() end)
   params:add_separator()

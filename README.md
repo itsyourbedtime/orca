@@ -2,14 +2,18 @@
 
 [Orca](https://100r.co/pages/orca.html) is a visual programming language, designed to create procedural sequencers on the fly.
 
+Currently [mutlitple engines are not supported](https://llllllll.co/t/orca/22492/154). This version of Orca, replaces the [Timber engine](https://llllllll.co/t/timber/) with the [PolyPerc engine](https://llllllll.co/t/awake/) (from Awake).
+
+
 ### Requirements
 
-[Timber engine](https://llllllll.co/t/timber/)
+[PolyPerc engine](https://llllllll.co/t/awake/)
 
 
 ### Documentation
 
 Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators)
+
 
 ## Operators
 

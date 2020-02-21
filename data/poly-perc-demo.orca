@@ -1,7 +1,7 @@
 return {
 -- Table: {1}
 {
-   "PolyPerc-Demo",
+   "poly-perc-demo",
    64,
    24,
    {2},
