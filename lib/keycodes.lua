@@ -1,113 +1,50 @@
 -- keyboard map class
-
 local keycodes = {}
-keycodes.chars = {[0] = '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
-keycodes.num = { ['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true }  
-  
-keycodes.base36 = {
-  ['0'] = 0, 
-  ['1'] = 1, 
-  ['2'] = 2, 
-  ['3'] = 3, 
-  ['4'] = 4,
-  ['5'] = 5, 
-  ['6'] = 6, 
-  ['7'] = 7,
-  ['8'] = 8, 
-  ['9'] = 9, 
-  ['a'] = 10, 
-  ['b'] = 11,
-  ['c'] = 12, 
-  ['d'] = 13,
-  ['e'] = 14, 
-  ['f'] = 15,
-  ['g'] = 16, 
-  ['h'] = 17,
-  ['i'] = 18, 
-  ['j'] = 19,
-  ['k'] = 20, 
-  ['l'] = 21, 
-  ['m'] = 22, 
-  ['n'] = 23, 
-  ['o'] = 24, 
-  ['p'] = 25, 
-  ['q'] = 26, 
-  ['r'] = 27, 
-  ['s'] = 28, 
-  ['t'] = 29, 
-  ['u'] = 30, 
-  ['v'] = 31, 
-  ['w'] = 32, 
-  ['x'] = 33, 
-  ['y'] = 34, 
-  ['z'] = 35 }
 
-local transpose_table = {
-  ['A'] = 'A0',
-  ['a'] = 'a0',
-  ['B'] = 'B0',
-  ['C'] = 'C0',
-  ['c'] = 'c0',
-  ['D'] = 'D0',
-  ['d'] = 'd0',
-  ['E'] = 'E0',
-  ['F'] = 'F0',
-  ['f'] = 'f0',
-  ['G'] = 'G0',
-  ['g'] = 'g0',
-  ['H'] = 'A0',
-  ['h'] = 'a0',
-  ['I'] = 'B0',
-  ['J'] = 'C1',
-  ['j'] = 'c1',
-  ['K'] = 'D1',
-  ['k'] = 'd1',
-  ['L'] = 'E1',
-  ['M'] = 'F1',
-  ['m'] = 'f1',
-  ['N'] = 'G1',
-  ['n'] = 'g1',
-  ['O'] = 'A1',
-  ['o'] = 'a1',
-  ['P'] = 'B1',
-  ['Q'] = 'C2',
-  ['q'] = 'c2',
-  ['R'] = 'D2',
-  ['r'] = 'd2',
-  ['S'] = 'E2',
-  ['T'] = 'F2',
-  ['t'] = 'f2',
-  ['U'] = 'G2',
-  ['u'] = 'g2',
-  ['V'] = 'A2',
-  ['v'] = 'a2',
-  ['W'] = 'B2',
-  ['X'] = 'C3',
-  ['x'] = 'c3',
-  ['Y'] = 'D3',
-  ['y'] = 'd3',
-  ['Z'] = 'E3',
-  ['e'] = 'e0',
-  ['l'] = 'e1',
-  ['s'] = 'e2',
-  ['z'] = 'e3',
-  ['b'] = 'b0',
-  ['i'] = 'b0',
-  ['p'] = 'b1',
-  ['w'] = 'b2',
-  ['0'] = 'C3',
-  ['1'] = 'D3',
-  ['2'] = 'E3',
-  ['3'] = 'F3',
-  ['4'] = 'G3',
-  ['5'] = 'A3',
-  ['6'] = 'B3',
-  ['7'] = 'C4',
-  ['8'] = 'D4',
-  ['9'] = 'E4',
+keycodes.chars = {[0] = "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
+
+keycodes.num = { ["0"] = true, ["1"] = true, ["2"] = true, ["3"] = true, ["4"] = true, ["5"] = true, ["6"] = true, ["7"] = true, ["8"] = true, ["9"] = true }
+
+keycodes.base36 = {
+  ["0"] = 0,
+  ["1"] = 1,
+  ["2"] = 2,
+  ["3"] = 3,
+  ["4"] = 4,
+  ["5"] = 5,
+  ["6"] = 6,
+  ["7"] = 7,
+  ["8"] = 8,
+  ["9"] = 9,
+  ["a"] = 10,
+  ["b"] = 11,
+  ["c"] = 12,
+  ["d"] = 13,
+  ["e"] = 14,
+  ["f"] = 15,
+  ["g"] = 16,
+  ["h"] = 17,
+  ["i"] = 18,
+  ["j"] = 19,
+  ["k"] = 20,
+  ["l"] = 21,
+  ["m"] = 22,
+  ["n"] = 23,
+  ["o"] = 24,
+  ["p"] = 25,
+  ["q"] = 26,
+  ["r"] = 27,
+  ["s"] = 28,
+  ["t"] = 29,
+  ["u"] = 30,
+  ["v"] = 31,
+  ["w"] = 32,
+  ["x"] = 33,
+  ["y"] = 34,
+  ["z"] = 35,
 }
 
-keycodes.keys = { 
+keycodes.keys = {
   [hid.codes.KEY_1] = "1",
   [hid.codes.KEY_2] = "2",
   [hid.codes.KEY_3] = "3",
@@ -177,9 +114,9 @@ keycodes.keys = {
   [hid.codes.KEY_KPSLASH] = "Slash",
   [hid.codes.KEY_102ND] = "102ND",
   [hid.codes.KEY_TAB] = "  ",
-
 }
-keycodes.shifts = { 
+
+keycodes.shifts = {
   [hid.codes.KEY_1] = "!",
   [hid.codes.KEY_2] = "@",
   [hid.codes.KEY_3] = "#",
@@ -203,7 +140,7 @@ keycodes.shifts = {
   [hid.codes.KEY_GRAVE] = "~",
 }
 
-keycodes.cmds = { 
+keycodes.cmds = {
   [hid.codes.KEY_ESC] = "ESC",
   [hid.codes.KEY_LEFTSHIFT] = "Left Shift",
   [hid.codes.KEY_RIGHTSHIFT] = "Right Shift",
@@ -217,7 +154,6 @@ keycodes.cmds = {
   [hid.codes.KEY_CAPSLOCK] = "Capslock",
   [hid.codes.KEY_NUMLOCK] = "Numlock",
   [hid.codes.KEY_SCROLLLOCK] = "Scroll Lock",
-
   [hid.codes.KEY_SYSRQ] = "SYSRQ",
   [hid.codes.KEY_HOME] = "Home",
   [hid.codes.KEY_UP] = "Up",
@@ -231,8 +167,7 @@ keycodes.cmds = {
   [hid.codes.KEY_PAUSE] = "Pause",
   [hid.codes.KEY_LEFTMETA] = "Left Meta",
   [hid.codes.KEY_RIGHTMETA] = "Right Meta",
-  [hid.codes.KEY_COMPOSE] = "Compose"
+  [hid.codes.KEY_COMPOSE] = "Compose",
 }
-
 
 return keycodes
