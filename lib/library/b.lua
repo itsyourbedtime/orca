@@ -1,19 +1,19 @@
-local B = function ( self, x, y )
-  
+local B = function(self, x, y)
   self.y = y
   self.x = x
-  self.name = 'bounce'
-  self.ports = { {-1, 0, 'in-rate' }, {1, 0, 'in-to' },  {0, 1, 'b-out' } }
+  self.name = "subtract"
+  self.ports = { {-1, 0, "in-a"}, {1, 0, "in-b"}, {0, 1, "subtract-out"} }
   self:spawn(self.ports)
 
-  local to = self:listen( self.x + 1, self.y ) or 1
-  local rate = self:listen( self.x - 1, self.y ) or 1
-  to, rate = to == 0 and 1 or to, rate == 0 and 1 or rate
-  local key = math.floor( self.frame / rate ) % ( to * 2 )
-  local val = key <= to and key or to - ( key - to )
-  
-  self:write(0, 1, self.chars[val])
-  
+  local b = self:listen(self.x - 1, self.y) or 0
+  local a = self:listen(self.x + 1, self.y) or 0
+  local l = self:glyph_at(self.x + 1, self.y)
+  local cap = l ~= "." and l == self.up(l) and true
+  local diff  = self.chars[math.abs(b - a) % 36]
+
+  diff = diff == "0" and "." or (cap and self.up(diff) or diff)
+
+  self:write(0, 1, diff)
 end
 
 return B
