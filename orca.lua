@@ -13,7 +13,7 @@
 -- create procedural
 -- sequencers on the fly.
 --
--- v1.4.6
+-- v1.4.7
 --
 -- K1 + E1  Select operator
 -- K1 + E2  Select value
@@ -31,10 +31,11 @@
 -- @j-flee
 -- @coollerue
 -- @linusschrab
+-- @kkempes
 -- @frederickk
 --
 
-local VERSION = "1.4.6"
+local VERSION = "1.4.7"
 
 local euclid = require "er"
 local fileselect = require "fileselect"
@@ -49,19 +50,20 @@ local keycodes = include("lib/keycodes")
 local library = include("lib/library")
 local transpose_table = include("lib/transpose")
 
-local OPS_LIST = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "$", "?", "/", "\\", "|", "-", ":", "%", "!", "&", "^", "~", "]", "}", "`", ">", "<", "=", "*", "#"}
+local OPS_LIST = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "$", "?", "/", "\\", "|", "-", ":", "%", "!", "&", "^", "~", "]", "}", "`", ">", "<", "(", "=", "*", "#"}
 local VAL_LIST = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
 
 local update_id
 local running = true
 local keyboard = hid.connect()
 local g = grid.connect()
+local arc = arc.connect()
 local val_index, ops_index, notes_index = 1, 1, 1
 local key_pressed = {0, 0, 0}
 local string = string
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
-local cell_input = nil
+local cell_input = "."
 local bar = true
 local help, map, shift, alt, ctrl, enc_active = false
 local hood = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
@@ -78,6 +80,7 @@ local orca = {
   h = h,
   frame = 0,
   grid = {},
+  arc = {0, 0, 0, 0},
   vars = {
     midi = {},
     midi_cc = {},
@@ -463,6 +466,59 @@ function g.redraw()
   g:refresh()
 end
 
+--- arc
+function orca.arc_delta(enc)
+  if enc == 1 then
+    return grid.arc[1]
+  elseif enc == 2 then
+    return grid.arc[2]
+  elseif enc == 3 then
+    return grid.arc[3]
+  elseif enc == 4 then
+    return grid.arc[4]
+  end
+end
+
+function arc.delta(enc, offset)
+  if enc == 1 then
+    grid.arc[1] = (offset + grid.arc[1]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[1] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[1], 15)
+    arc:refresh()
+  elseif enc == 2 then
+    grid.arc[2] = (offset + grid.arc[2]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[2] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[2], 15)
+    arc:refresh()
+  elseif enc == 3 then
+    grid.arc[3] = (offset + grid.arc[3]) % 35
+    for i= 0, 63 do
+      if i ~= grid.arc[3] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[3], 15)
+    arc:refresh()
+  elseif enc == 4 then
+    grid.arc[4] = (offset + grid.arc[4]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[4] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[4], 15)
+    arc:refresh()
+  end
+end
+
 function orca:init_field(w, h)
   self.w = w
   self.h = h
@@ -603,6 +659,12 @@ function init()
       orca.vars.midi[m.ch] = m.note
     end
   end
+
+  arc:all(0);
+  for i = 1, 4 do
+    arc:led(i, 1, 15)
+  end
+  arc:refresh();
 
   add_params()
   install_tutorials()

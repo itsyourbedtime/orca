@@ -113,6 +113,7 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 - `` ` `` [**crow w/syn**(octave note level)](#crow):
 - `>` **g.write**(*x* *y* value): Sets grid led on bang.
 - `<` **g.read**(*x* *y*): Reads specific coordinates. If value > 6 outputs bang.
+- `(` **arc.read**(*enc*): Reads Arc encoder value
 - `=` **OSC** (*path*;x;y..): Locks each consecutive eastwardly ports. `;` is delimeter for values.
 
 
@@ -446,7 +447,7 @@ $ sftp we@norns.local
 $ put ./<filename>.orca /home/we/dust/data/orca/<filename>.orca
 ```
 
---
+---
 ## Contributing
 
 If you're a developer interested in contributing features or fixes, checkout the [contributing](./CONTRIBUTING.md) documentation.
