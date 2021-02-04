@@ -9,7 +9,7 @@
 ---
 ## Engines
 
-For the Norns version of Orac different synth engines available to choose from. Synth engines on Norns use the same operators `|` for playing a note with the synth and `-` for setting a synth's params. The following demos are designed to show-off functionality and capability of each engine.
+For the Norns version of Orca different synth engines available to choose from. Synth engines on Norns use the same operators `|` for playing a note with the synth and `-` for setting a synth's params. The following demos are designed to show-off functionality and capability of each engine.
 
 ### [synth-demo](./engines/synth-demo.orca)
 

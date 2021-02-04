@@ -14,7 +14,6 @@ local C = function(self, x, y)
   local val = (math.floor(self.frame / rate) % mod) + 1
 
   self:write(0, 1, self.chars[val])
-
 end
 
 return C

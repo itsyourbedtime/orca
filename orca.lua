@@ -13,18 +13,7 @@
 -- create procedural
 -- sequencers on the fly.
 --
--- v1.4.5
---
--- @its_your_bedtime
--- @neauoire
--- @robbiecloset
--- @j-flee
--- @coollerue
--- @linusschrab
--- @frederickk
---
--- llllllll.co/t/orca
---
+-- v1.4.7
 --
 -- K1 + E1  Select operator
 -- K1 + E2  Select value
@@ -33,8 +22,20 @@
 -- K2  Clear character
 -- K3  Toggle play/stop
 --
+--
+-- llllllll.co/t/orca
+--
+-- @its_your_bedtime
+-- @neauoire
+-- @robbiecloset
+-- @j-flee
+-- @coollerue
+-- @linusschrab
+-- @kkempes
+-- @frederickk
+--
 
-local VERSION = "1.4.5"
+local VERSION = "1.4.7"
 
 local euclid = require "er"
 local fileselect = require "fileselect"
@@ -49,20 +50,22 @@ local keycodes = include("lib/keycodes")
 local library = include("lib/library")
 local transpose_table = include("lib/transpose")
 
-local OPS_LIST = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "$", "?", "/", "\\", "|", "-", ":", "%", "!", "&", "^", "~", "]", "}", "`", ">", "<", "=", "*", "#"}
+local OPS_LIST = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "$", "?", "/", "\\", "|", "-", ":", "%", "!", "&", "^", "~", "]", "}", "`", ">", "<", "(", "=", "*", "#"}
 local VAL_LIST = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
 
 local update_id
 local running = true
 local keyboard = hid.connect()
 local g = grid.connect()
+local arc = arc.connect()
 local val_index, ops_index, notes_index = 1, 1, 1
 local key_pressed = {0, 0, 0}
 local string = string
 local x_index, y_index, field_offset_x, field_offset_y = 1, 1, 0, 0
 local selected_area_y, selected_area_x, bounds_x, bounds_y = 1, 1, 25, 8
+local cell_input = "."
 local bar = true
-local help, map, shift, alt, ctrl = false
+local help, map, shift, alt, ctrl, enc_active = false
 local hood = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 local dot_density = 7
 local copy_buffer = {}
@@ -77,6 +80,7 @@ local orca = {
   h = h,
   frame = 0,
   grid = {},
+  arc = {0, 0, 0, 0},
   vars = {
     midi = {},
     midi_cc = {},
@@ -202,7 +206,7 @@ function orca.load_project(pth)
       local json = json:decode(json_file_str)
       local l = {json[1], json[2], json[3], json[4]}
       tab.save(l, norns.state.data .. json[1] .. "_import.orca")
-      print ("imported '" .. norns.state.data .. name .. ".json' as '" .. norns.state.data .. json[1] .. "_import.orca'")
+      print("imported '" .. norns.state.data .. name .. ".json' as '" .. norns.state.data .. json[1] .. "_import.orca'")
     end
   elseif ext == ".txt" then
     name = string.gsub(filename, ".txt", "")
@@ -218,7 +222,7 @@ function orca.load_project(pth)
 
       local l = {name, #cell[1], #cell, cell}
       tab.save(l, norns.state.data .. name .. "_import.orca")
-      print ("imported '" .. norns.state.data .. name .. ".txt' as '" .. norns.state.data .. name .. "_import.orca'")
+      print("imported '" .. norns.state.data .. name .. ".txt' as '" .. norns.state.data .. name .. "_import.orca'")
     end
   else
     print("Error: no file found at " .. pth)
@@ -239,7 +243,7 @@ function orca.save_project(txt)
     softcut.buffer_write_mono(full_path .. "_buffer.aif", 0, 35, 1)
     params:write(full_path .. ".pset")
     orca.state:set("project", full_path .. ".orca")
-    print ("saved " .. full_path .. "_buffer.aif")
+    print("saved " .. full_path .. "_buffer.aif")
   else
     print("save canceled")
   end
@@ -462,6 +466,59 @@ function g.redraw()
   g:refresh()
 end
 
+--- arc
+function orca.arc_delta(enc)
+  if enc == 1 then
+    return grid.arc[1]
+  elseif enc == 2 then
+    return grid.arc[2]
+  elseif enc == 3 then
+    return grid.arc[3]
+  elseif enc == 4 then
+    return grid.arc[4]
+  end
+end
+
+function arc.delta(enc, offset)
+  if enc == 1 then
+    grid.arc[1] = (offset + grid.arc[1]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[1] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[1], 15)
+    arc:refresh()
+  elseif enc == 2 then
+    grid.arc[2] = (offset + grid.arc[2]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[2] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[2], 15)
+    arc:refresh()
+  elseif enc == 3 then
+    grid.arc[3] = (offset + grid.arc[3]) % 35
+    for i= 0, 63 do
+      if i ~= grid.arc[3] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[3], 15)
+    arc:refresh()
+  elseif enc == 4 then
+    grid.arc[4] = (offset + grid.arc[4]) % 35
+    for i = 0, 63 do
+      if i ~= grid.arc[4] then
+        arc:led(enc, i, 0)
+      end
+    end
+    arc:led(enc, grid.arc[4], 15)
+    arc:refresh()
+  end
+end
+
 function orca:init_field(w, h)
   self.w = w
   self.h = h
@@ -501,9 +558,6 @@ local function add_params()
   -- params:add_number("clock_tempo")
 
   orca.state:add_text("project")
-  orca.state:set_action("project", function(val)
-      print("project", val)
-    end)
   orca.state:hide("project")
 
   params:add_separator("LOAD/SAVE")
@@ -541,11 +595,8 @@ local function add_params()
   -- load saved params
   params:read()
   orca.state:read(norns.state.data .. "orca-state.pset")
-  print(orca.state:list())
 
-  -- load last saved project
   if orca.state:get("project") ~= "" then
-    print("FOO")
     print(orca.state:get("project"))
     orca.load_project(orca.state:get("project"))
   end
@@ -608,6 +659,12 @@ function init()
       orca.vars.midi[m.ch] = m.note
     end
   end
+
+  arc:all(0);
+  for i = 1, 4 do
+    arc:led(i, 1, 15)
+  end
+  arc:refresh();
 
   add_params()
   install_tutorials()
@@ -732,6 +789,7 @@ function keyboard.event(typ, code, val)
         if orca.cell[y_index][x_index] == "/" then
           orca.sc_ops.count = util.clamp(orca.sc_ops.count - 1, 1, 6)
         end
+      cell_input = keyinput
       orca.cell[y_index][x_index] = keyinput
       elseif ctrl then
         if code == 45 then
@@ -801,7 +859,7 @@ end
 local function draw_cursor(x, y)
   local x_pos, y_pos = ((x * 5) - 5), ((y * 8) - 8)
   local x_index, y_index = x + field_offset_x, y + field_offset_y
-  local cell = orca.cell[y_index][x_index]
+  local cell = cell_input
 
   screen.level(cell == "." and 2 or 15)
   screen.rect(x_pos, y_pos, 5, 8)
@@ -896,8 +954,16 @@ end
 function key(n, is_pressed)
   key_pressed[n] = is_pressed
 
-  if n == 2 and is_pressed == 1 then
+  if n == 1 and is_pressed == 0 then
+    -- TODO(frederickk): On 1st click set current char to value.
+    if enc_active == true and cell_input then
+      orca.cell[y_index][x_index] = cell_input
+      cell_input = "."
+      enc_active = false
+    end
+  elseif n == 2 and is_pressed == 1 then
     orca:erase(x_index, y_index)
+    cell_input = "."
   elseif n == 3 and is_pressed == 1 then
     if running then
       clock.transport.stop()
@@ -909,21 +975,20 @@ end
 
 function enc(n, delta)
   if key_pressed[1] == 1 then
+    enc_active = true
+
     if n == 1 then
       ops_index = util.clamp((ops_index + delta) % (#OPS_LIST + 1), 1, #OPS_LIST + 1)
-      orca.cell[y_index][x_index] = OPS_LIST[ops_index]
+      cell_input = OPS_LIST[ops_index]
     end
     if n == 2 then
       val_index = util.clamp((val_index + delta) % (#VAL_LIST + 1), 1, #VAL_LIST + 1)
-      orca.cell[y_index][x_index] = VAL_LIST[val_index]
+      cell_input = VAL_LIST[val_index]
     end
     if n == 3 then
       notes_index = util.clamp((notes_index + delta) % (#orca.notes + 1), 1, #orca.notes + 1)
-      orca.cell[y_index][x_index] = orca.notes[notes_index]
+      cell_input = orca.notes[notes_index]
     end
-
-  -- elseif key_pressed[2] == 1 then
-    -- TODO(frederickk): implement select mode
   else
     if n == 2 then
       x_index = util.clamp(x_index + delta, 1, orca.w)
