@@ -11,10 +11,9 @@ local C = function(self, x, y)
   mod = mod == 0 and 1 or mod
   rate = rate == 0 and 1 or rate
 
-  local val = (math.floor(self.frame / rate) % mod)
+  local val = (math.floor(self.frame / rate) % mod) + 1
 
   self:write(0, 1, self.chars[val])
-
 end
 
 return C
