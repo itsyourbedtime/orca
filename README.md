@@ -461,8 +461,3 @@ There are 2 main branches used for maintaining quality of experieece.
 
 - [Primary](https://github.com/frederickk/orca/tree/primary) is the stable branch and also the branch thatis pulled in by users through [Maiden](https://monome.org/docs/norns/maiden/).
 - [Dev](https://github.com/frederickk/orca/tree/dev) is the "bleeding edge" branch and should only be used by those that are helping debug, contributing, or those that like to live dangerously.
-
-```bash
-$ sftp we@norns.local
-$ put ./<filename>.orca /home/we/dust/data/orca/<filename>.orca
-```
