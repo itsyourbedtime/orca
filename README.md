@@ -257,14 +257,36 @@ There are 4 different engine supported by Orca [FM7](https://llllllll.co/t/fm7-n
 - *note*
   - values: `A`–`G`
 - *sample*
-  - values: `0`: 0, `z`: 35
+  - values: `0`: 1, `z`: 36
 - level
-  - values: `0`: 0.0, `z`: 1.0
+  - values: `0`: -48db, `z`: 16db
 - position
   - values: `0`: start of sample `z`: end of sample
 
+Note, Timber only supports samples that are maximum: **10 seconds mono** and **5 seconds stereo**, as stated in the [Timber source code](https://github.com/markwheeler/timber/blob/master/lib/Engine_Timber.sc#L563-L565):
 
-### SYNTH PARAM
+```
+If file is over 5 secs stereo or 10 secs mono (at 48kHz) then prepare it for streaming instead.
+This makes for max buffer memory usage of 500MB which seems to work out.
+Streaming has fairly limited options for playback (no looping etc).
+```
+
+By reducing the sample rate you can use longer samples, because there's a direct relationship between mono/stereo, sample rate, and length of sample.
+
+**Stereo**
+- Max 5 seconds stereo @ 44100 sample rate
+- Max 10 seconds stereo @ 22050 sample rate
+- Max 20 seconds stereo @ 11025 sample rate
+- and so on...
+
+**Mono**
+- Max 10 seconds mono @ 44100 sample rate
+- Max 20 seconds mono @ 22050 sample rate
+- Max 40 seconds mono @ 11025 sample rate
+- and so on...
+
+
+### SYNTH PARAMS
 
 Each synth engine has numerous settings to modulate its sound profile. The **SYNTH PARAM** operator `-` are (*param* *value*) (except for `FM7` see below) these 2 params are always required (along with a bang) to modulate a given parameter.
 
@@ -431,11 +453,11 @@ This Norns port of Orca is capable of loading and exporting Orca `.txt` files. T
 
 **Note change the file extension for files downloaded from Patchstorage to `.txt`**. Upload the file to your Norns using [SSH](https://monome.org/docs/norns/maiden/#ssh) or FTP and use "`> Load project`" in the params menu to load a `.txt` file.
 
-Conversely, you can also use this [online coverter](https://codepen.io/frederickk/full/YzXGmJO) for either `.txt` files or even copying from other Orca's such as the [web version](https://hundredrabbits.github.io/Orca/). This converter will import/export `.txt`, `.json`. or `.orca` (Norns) filetypes, which can then be uploaded to your Norns via [SSH](https://monome.org/docs/norns/maiden/#ssh)/FTP.
+Conversely, you can also use this [online coverter](https://frederickk.github.io/txt-json-orca/) for either `.txt` files or even copying from other Orca's such as the [web version](https://hundredrabbits.github.io/Orca/) or [orca.wtf](https://orca.wtf/). This converter will import/export `.txt`, `.json`. or `.orca` (Norns) filetypes, which can then be uploaded to your Norns via [SSH](https://monome.org/docs/norns/maiden/#ssh)/FTP.
 
 ![Convert Orca to/from .txt, .json, .orca,100%](./.assets/orca-convert.png)
 
-Cut and paste the following into the [online coverter](https://codepen.io/frederickk/full/YzXGmJO) to see how it works.
+Cut and paste the following into the [online coverter](https://frederickk.github.io/txt-json-orca/) to see how it works.
 
 ```
 ..Cc............
