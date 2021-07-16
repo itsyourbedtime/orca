@@ -108,15 +108,17 @@ function engine_timber.run(octave, note, cls)
   local sample = cls:listen(cls.x + 3, cls.y) or 0
   local level = cls:listen(cls.x + 4, cls.y) or 28
   local start = cls:listen(cls.x + 5, cls.y) or 0
-  local n, oct, lev = transposed[1], transposed[4], ((level / 35) * 100) - 84
+  local n, oct, lev = transposed[1], transposed[4], util.linlin(0, 35, -48, 16, level)
   local length = params:get("end_frame_" .. sample)
-  local start_pos = util.clamp(((start / 35) * 2) * length, 0, length)
+  local start_pos = util.clamp((start / 35) * length, 0, length)
 
   if cls:neighbor(cls.x, cls.y, "*") and note ~= "." and note ~= "" then
     -- TODO(frederickk): Determine why file I/O occurs intermittently.
+    -- TODO(frederickk): Determine why using "params:set" wasn't actually
+    -- setting Timber params for level and position.
     cls:try_catch_(function()
-        params:set("start_frame_" .. sample, start_pos, 1)
-        params:set("amp_" .. sample, lev, 1)
+        engine.amp(sample, lev)
+        engine.startFrame(sample, start_pos)
       end,
       function(e)
         print("Timber warning:", e)

@@ -1,8 +1,8 @@
 local arc_read = function ( self, x, y )
   self.y = y
   self.x = x
-  self.name = "arc.read"
-  self.ports = { {-1, 0, "in-arc.enc"}, {0, 1, "out-arc.read" } }
+  self.name = "a.read"
+  self.ports = { {-1, 0, "in-arc.enc"}, {0, 1, "out-a.read" } }
   self:spawn(self.ports)
 
   local selected = self:listen(self.x - 1, self.y)
