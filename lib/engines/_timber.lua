@@ -112,8 +112,6 @@ function engine_timber.run(octave, note, cls)
   local length = params:get("end_frame_" .. sample)
   local start_pos = util.clamp((start / 35) * length, 0, length)
 
-  print("[orca]",  start_pos, length)
-
   if cls:neighbor(cls.x, cls.y, "*") and note ~= "." and note ~= "" then
     -- TODO(frederickk): Determine why file I/O occurs intermittently.
     -- TODO(frederickk): Determine why using "params:set" wasn't actually

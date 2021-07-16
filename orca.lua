@@ -13,7 +13,7 @@
 -- create procedural
 -- sequencers on the fly.
 --
--- v1.4.8
+-- v1.5.0
 --
 -- K1 + E1  Select operator
 -- K1 + E2  Select value
@@ -35,7 +35,7 @@
 -- @frederickk
 --
 
-local VERSION = "1.4.8"
+local VERSION = "1.5.0"
 
 local euclid = require "er"
 local fileselect = require "fileselect"
@@ -112,7 +112,7 @@ function orca:transpose(n, o)
     local octave = util.clamp(self.normalize(string.sub(trans, 2)) + o, 0, 8)
     local value = tab.key(self.notes, note)
     local id = math.ceil(util.clamp((octave * 12) + value, 0, 127) - 1)
-    
+
     return {id, value, note, octave, music.note_num_to_name(id)}
   end
 
@@ -315,7 +315,7 @@ end
 
 function orca:listen(x, y)
   local l = string.lower(self:glyph_at(x, y))
-  
+
   return l ~= "." and keycodes.base36[l] or false
 end
 
@@ -329,7 +329,7 @@ end
 
 function orca:locked(x, y)
   local p = self.locks[self:index_at(x, y)]
-  
+
   return p and p[1] or false
 end
 
@@ -350,7 +350,7 @@ end
 
 function orca:op(x, y)
   local c = self.cell[y][x]
-  
+
   return (library[self.up(c)] ~= nil) and true
 end
 
