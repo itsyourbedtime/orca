@@ -48,11 +48,11 @@ Orca for Norns supports 4 different engines, but in order for them to work they 
 
 ## Install
 
-Orca for Norns is available for install within [Maiden](http://norns.local/). Update the `Community` feed and then scroll down the list to Orca to `Install`.
+Orca for Norns is available for install within [Maiden](http://norns.local/). Update the `Community` feed and then scroll down to Orca and `Install`.
 
 ![Norns Maiden update Community feed](./.assets/orca-maiden.png)
 
-If you're looking to develop checkout the documentation for [Contributing](#contributing).
+If you're looking to contribute with code checkout the documentation for [Contributing](#contributing).
 
 - `<tab>` **Info bar**: Toggles info bar visibility
 - `<esc>` **Unfocus**: Removes selection focus
@@ -118,7 +118,7 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 - `` ` `` [**crow w/syn**(octave note level)](#-crow-wsyn):
 - `>` [**g.write**(*x* *y* value)](#-gwrite): Sets Grid LED on bang.
 - `<` [**g.read**(*x* *y*)](#-gread): Reads specific coordinates. If value > 6 outputs bang.
-- `(` [**A.READ**(*enc*)](#-aread): Reads Arc encoder value
+- `(` [**a.read**(*enc*)](#-aread): Reads Arc encoder value
 - `=` [**OSC** (*path*;x;y..)](#-osc): Locks each consecutive eastwardly ports. `;` is delimeter for values.
 
 
@@ -129,7 +129,7 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 | `<tab>`        | Info bar        | Toggles info bar visibility |
 | `<esc>`        | Unfocus         | Removes selection focus |
 | `<space>`      | Play/Stop       | Toggles play state, stop kills all notes. |
-| `cmd/ctrl + >` | Adjust BP       | Increments BPM + 10. |
+| `cmd/ctrl + >` | Adjust BPM      | Increments BPM + 10. |
 | `cmd/ctrl + <` | Adjust BPM      | Decrements BPM - 10. |
 
 
@@ -451,21 +451,21 @@ When this engine is seleted the **SYNTH PARAM** operator `-` takes up to 3 input
 
 The **MIDI** operator `:` takes up to 5 inputs (*`channel`* `octave` `note` `velocity` `length`).
 
-See [Root Orca's Midi documentation](https://github.com/hundredrabbits/Orca#midi)
+See [Orca's Midi documentation](https://github.com/hundredrabbits/Orca#midi)
 
 
 ### `%` MIDI MONO
 
 The **MONO** operator `%` takes up to 5 inputs (*`channel`* `octave` `note` `velocity` `length`).
 
-See [Root Orca's Midi Mono documentation](https://github.com/hundredrabbits/Orca#midi-mono)
+See [Orca's Midi Mono documentation](https://github.com/hundredrabbits/Orca#midi-mono)
 
 
 ### `!` MIDI CC
 
 The **CC** operator `!` takes 3 inputs (*`channel`* `knob` `value`).
 
-See [Root Orca's Midi CC documentation](https://github.com/hundredrabbits/Orca#midi-cc)
+See [Orca's Midi CC documentation](https://github.com/hundredrabbits/Orca#midi-cc)
 
 
 ### `&` MIDI IN
@@ -583,9 +583,9 @@ $ put ./<filename>.orca /home/we/dust/data/orca/<filename>.orca
 
 If you're a developer interested in contributing features or fixes, checkout the [contributing](./CONTRIBUTING.md) documentation.
 
-There are 2 main branches used for maintaining quality of experieece.
+There are 2 main branches used for maintaining quality of experience.
 
-- [Primary](https://github.com/frederickk/orca/tree/primary) is the stable branch and also the branch thatis pulled in by users through [Maiden](https://monome.org/docs/norns/maiden/).
+- [Primary](https://github.com/frederickk/orca/tree/primary) is the stable branch and also the branch that is pulled into the master branch referenced by [Maiden](https://monome.org/docs/norns/maiden/).
 - [Dev](https://github.com/frederickk/orca/tree/dev) is the "bleeding edge" branch and should only be used by those that are helping debug, contributing, or those that like to live dangerously.
 
 ```bash
