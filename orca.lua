@@ -476,52 +476,52 @@ end
 --- arc
 function orca.arc_delta(enc)
   if enc == 1 then
-    return grid.arc[1]
+    return orca.arc[1]
   elseif enc == 2 then
-    return grid.arc[2]
+    return orca.arc[2]
   elseif enc == 3 then
-    return grid.arc[3]
+    return orca.arc[3]
   elseif enc == 4 then
-    return grid.arc[4]
+    return orca.arc[4]
   end
 end
 
 function arc.delta(enc, offset)
   if enc == 1 then
-    grid.arc[1] = (offset + grid.arc[1]) % 35
+    orca.arc[1] = (offset + orca.arc[1]) % 35
     for i = 0, 63 do
-      if i ~= grid.arc[1] then
+      if i ~= orca.arc[1] then
         arc:led(enc, i, 0)
       end
     end
-    arc:led(enc, grid.arc[1], 15)
+    arc:led(enc, orca.arc[1], 15)
     arc:refresh()
   elseif enc == 2 then
-    grid.arc[2] = (offset + grid.arc[2]) % 35
+    orca.arc[2] = (offset + orca.arc[2]) % 35
     for i = 0, 63 do
-      if i ~= grid.arc[2] then
+      if i ~= orca.arc[2] then
         arc:led(enc, i, 0)
       end
     end
-    arc:led(enc, grid.arc[2], 15)
+    arc:led(enc, orca.arc[2], 15)
     arc:refresh()
   elseif enc == 3 then
-    grid.arc[3] = (offset + grid.arc[3]) % 35
+    orca.arc[3] = (offset + orca.arc[3]) % 35
     for i= 0, 63 do
-      if i ~= grid.arc[3] then
+      if i ~= orca.arc[3] then
         arc:led(enc, i, 0)
       end
     end
-    arc:led(enc, grid.arc[3], 15)
+    arc:led(enc, orca.arc[3], 15)
     arc:refresh()
   elseif enc == 4 then
-    grid.arc[4] = (offset + grid.arc[4]) % 35
+    orca.arc[4] = (offset + orca.arc[4]) % 35
     for i = 0, 63 do
-      if i ~= grid.arc[4] then
+      if i ~= orca.arc[4] then
         arc:led(enc, i, 0)
       end
     end
-    arc:led(enc, grid.arc[4], 15)
+    arc:led(enc, orca.arc[4], 15)
     arc:refresh()
   end
 end
