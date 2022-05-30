@@ -214,7 +214,7 @@ The **SOFTCUT** operator `/` takes up to 6 inputs (*`playhead`* *`rec`* *`play`*
 This operator receives a MIDI note from a MIDI controller, based on the channel value (default is channel 1).
 
 - *`playhead`*
-  - values: `0`: beginning of buffer, `z`: length of buffer.
+  - values: `0` - `6`: target playhead number
 - *`rec`*
   - values: `0`: disables [recording](https://monome.org/docs/norns/api/modules/softcut.html#rec)/overdub; `1`–`z`: [recording level](https://monome.org/docs/norns/api/modules/softcut.html#rec_level) and [amount of overdub preserve](https://monome.org/docs/norns/api/modules/softcut.html#pre_level)
 - *`play`*
@@ -232,7 +232,7 @@ This operator receives a MIDI note from a MIDI controller, based on the channel 
 A subset of [Softcut's params](https://monome.org/docs/norns/api/modules/softcut.html) are availabe with the **SOFTCUT PARAMS** operator `\` (*`playhead`* *`param`* *`value`*). These 3 params are always required (along with a bang) to modulate a given parameter.
 
 - *`playhead`*
-  - values: `0`: beginning of buffer, `z`: length of buffer.
+  - values: `0` - `6`: target playhead number
 
 - `1`: Source
   - values: `0`: 0 ADC level, 0 Softcut engine level; `1`: 1 ADC level, 0 Softcut engine level; `2`: 0 ADC level, 1 Softcut engine level; `3`: 1 ADC level, 1 Softcut engine level;
