@@ -4,6 +4,7 @@ local fm7 = include("lib/engines/_fm7")
 local passersby = include("lib/engines/_passersby")
 local polyperc = include("lib/engines/_polyperc")
 local timber = include("lib/engines/_timber")
+local macroB = include("lib/engines/_macroB")
 
 engine.name = "Timber"
 
@@ -12,7 +13,7 @@ local NUM_SAMPLES = 2
 
 local engines = {
   change_init = false,
-  engine_list = {"FM7", "Passersby", "PolyPerc", "Timber"},
+  engine_list = {"FM7", "Passersby", "PolyPerc", "Timber","MacroB"},
   self = nil,
 }
 
@@ -147,6 +148,7 @@ function engines.get_synth()
   elseif string.lower(engine.name) == "passersby" then return passersby
   elseif string.lower(engine.name) == "polyperc" then return polyperc
   elseif string.lower(engine.name) == "timber" then return timber
+  elseif string.lower(engine.name) == "macrob" then return macroB
   end
 end
 
@@ -158,6 +160,7 @@ function engines.init(self)
   audio.level_cut(1)
   audio.level_adc_cut(1)
   audio.level_eng_cut(1)
+  audio.level_tape_cut(1)
 
   for i = 1, 6 do
     softcut.level(i,1)
