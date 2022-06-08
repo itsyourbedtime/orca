@@ -5,6 +5,7 @@ local passersby = include("lib/engines/_passersby")
 local polyperc = include("lib/engines/_polyperc")
 local timber = include("lib/engines/_timber")
 local macroB = include("lib/engines/_macroB")
+local macroP = include("lib/engines/_macroP")
 
 engine.name = "Timber"
 
@@ -13,7 +14,7 @@ local NUM_SAMPLES = 2
 
 local engines = {
   change_init = false,
-  engine_list = {"FM7", "Passersby", "PolyPerc", "Timber","MacroB"},
+  engine_list = {"FM7", "Passersby", "PolyPerc", "Timber","MacroB","MacroP"},
   self = nil,
 }
 
@@ -149,6 +150,7 @@ function engines.get_synth()
   elseif string.lower(engine.name) == "polyperc" then return polyperc
   elseif string.lower(engine.name) == "timber" then return timber
   elseif string.lower(engine.name) == "macrob" then return macroB
+  elseif string.lower(engine.name) == "macrop" then return macroP
   end
 end
 
