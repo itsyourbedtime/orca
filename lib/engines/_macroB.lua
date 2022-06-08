@@ -4,11 +4,11 @@ local engine_macroB = {
     "octave",
     "note",
     "vel",
-    -- "trig", -- needed?
     "timbre",
     "color"
   },
   param_ids = {
+    "model",
     "model",
     "resamp",
     "decim",
@@ -21,6 +21,7 @@ local engine_macroB = {
   },
   param_names = {
     "Model",
+    "Model+",
     "Resamp",
     "Decim",
     "Bits",
@@ -30,16 +31,27 @@ local engine_macroB = {
     "Sustain",
     "Release"
   },
+  param_display_value = nil,
   ports = {}
 }
 
 local prev_transposed
+local all_models = {"CSAW","/\\/|-_-_","/|/|-_-_","FOLD","_|_|_|_|_","-_-_SUB","/|/|SUB","SYN-_-_","SYN/|","/|/|x3","-_-_x3","/\\x3","SIx3","RING","/|/|/|/|","/|/|_|_|_","TOY*","ZLPF","ZPKF","ZBPF","ZHPF","VOSM","VOWL","VFOF","HARM","FM","FBFM","WTFM","PLUK","BOWD","BLOW","FLUTE","BELL","DRUM","KICK","CYMB","SNAR","WTBL","WMAP","WLIN","WTx4","NOIS","TWNQ","CLKN","CLOU","PRTC","QPSK","????"}
 
-local function model(index)
+local function model_set_1(index)
   index = index or 1
-  local items = {"CSAW","/\\/|-_-_","/|/|-_-_","FOLD","_|_|_|_|_","-_-_SUB","/|/|SUB","SYN-_-_","SYN/|","/|/|x3","-_-_x3","/\\x3","SIx3","RING","/|/|/|/|","/|/|_|_|_","TOY*","ZLPF","ZPKF","ZBPF","ZHPF","VOSM","VOWL","VFOF","HARM","FM","FBFM","WTFM","PLUK","BOWD","BLOW","FLUTE","BELL","DRUM","KICK","CYMB","SNAR","WTBL","WMAP","WLIN","WTx4","NOIS","TWNQ","CLKN","CLOU","PRTC","QPSK","????"}
-  -- TODO figure out best way to support > 36 options
-  return index % #items
+  return util.clamp(index,1,35) - 1
+end
+
+local function model_set_2(index)
+  index = index or 1
+  -- NOT WORKING:
+  -- local items = table.unpack(all_models,34,#all_models)
+  -- print("models 2 len " .. #items .. " of " .. #all_models)
+  -- return 34 + util.clamp(index, 1, #items)
+  -- ALTERNATE:
+  -- I'd rather do this programmatically, but table.unpack(all_models,34) is returning a len 4 table
+  return 34 + util.clamp(index, 1, 14) - 1
 end
 
 local function resamp(num)
@@ -118,16 +130,19 @@ function engine_macroB.param(cls)
   local param = util.clamp(cls:listen(cls.x + 1, cls.y) or 1, 1, #engine_macroB.param_ids - 1)
   local val = cls:listen(cls.x + 2, cls.y) or 0
   local val_norm = (val / 35) or 0
-  local num = (param == 0 or param == 1) and model(val) -- model
-            or param == 2 and resamp(val_norm) -- resamp
-            or param == 3 and decim(val)  -- decim
-            or param == 4 and bits(val)  -- bits
-            or param == 5 and ws(val) -- ws
-            or param == 6 and attack(val_norm) -- ampAtk
-            or param == 7 and decay(val_norm) -- ampDec
-            or param == 8 and sustain(val_norm) -- ampSys
-            or param == 9 and release(val_norm) -- ampRel
+  local num = (param == 0 or param == 1) and model_set_1(val) -- model, first 36
+            or param == 2 and model_set_2(val) -- model, > 36
+            or param == 3 and resamp(val_norm) -- resamp
+            or param == 4 and decim(val)  -- decim
+            or param == 5 and bits(val)  -- bits
+            or param == 6 and ws(val) -- ws
+            or param == 7 and attack(val_norm) -- ampAtk
+            or param == 8 and decay(val_norm) -- ampDec
+            or param == 9 and sustain(val_norm) -- ampSys
+            or param == 10 and release(val_norm) -- ampRel
             or val_norm
+
+  engine_macroB.param_display_value = ((param == 0 or param == 1 or param == 2) and all_models[num+1]) or nil
 
   local id = engine_macroB.param_ids[param]
 
@@ -138,6 +153,10 @@ function engine_macroB.param(cls)
       engine.commands[id].func(num)
     end
   end
+end
+
+function engine_macroB.param_value()
+
 end
 
 return engine_macroB
