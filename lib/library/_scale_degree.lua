@@ -9,7 +9,7 @@ local scale_degree = function(self, x, y)
   local in_degree = self:listen(self.x + 2, self.y) or 1
   local root = self:glyph_at(self.x + 3, self.y) or "C"
 
-  local transposed = self:transpose(root, 0)
+  local transposed = self:transpose(root, 0) or 1
   local get_scale = self:get_scale(scale, transposed[1] + 1)
   local scale_name = get_scale[1]
   local note_array = get_scale[2]
