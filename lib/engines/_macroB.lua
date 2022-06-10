@@ -3,13 +3,13 @@ local engine_macroB = {
   input_ids = {
     "octave",
     "note",
-    "vel",
-    "timbre",
-    "color"
+    "vel"
   },
   param_ids = {
     "model",
     "model",
+    "timbre",
+    "color",
     "resamp",
     "decim",
     "bits",
@@ -22,6 +22,8 @@ local engine_macroB = {
   param_names = {
     "Model",
     "Model+",
+    "Timbre",
+    "Color",
     "Resamp",
     "Decim",
     "Bits",
@@ -55,7 +57,7 @@ local function model_set_2(index)
 end
 
 local function resamp(num)
-  return util.linexp(0, 1, 0.01, 1, num) or  0.01
+  return util.linlin(0, 1, 0, 1, num) or  0.01
 end
 
 local function decim(num)
@@ -73,23 +75,23 @@ local function bits(num)
 end
 
 local function ws(num)
-  return util.linexp(0, 1, 0.01, 1, num) or  0.01
+  return util.linlin(0, 1, 0, 1, num) or  0.01
 end
 
 local function attack(num)
-  return util.linexp(0, 1, 0.01, 1, num) or  0.01
+  return util.linlin(0, 1, 0, 1, num) or  0.01
 end
 
 local function decay(num)
-  return util.linexp(0, 1, 0.01, 1, num) or  0.01
+  return util.linlin(0, 1, 0, 1, num) or  0.01
 end
 
 local function sustain(num)
-  return util.linexp(0, 1, 0.01, 1, num) or 1
+  return util.linlin(0, 1, 0, 1, num) or 1
 end
 
 local function release(num)
-  return util.linexp(0, 1, 0.01, 1, num) or 1
+  return util.linlin(0, 1, 0, 1, num) or 1
 end
 
 
@@ -109,13 +111,9 @@ end
 function engine_macroB.run(octave, note, cls)
   local transposed = cls:transpose(note, octave)
   local vel = cls:listen(cls.x + 3, cls.y) or 100
-  local timbre = (cls:listen(cls.x + 4, cls.y) or 0) / 35 or 0
-  local color = (cls:listen(cls.x + 5, cls.y) or 0) / 35 or 0
 
   if cls:neighbor(cls.x, cls.y, "*") and note ~= "." and note ~= "" then
     engine.noteOn(transposed[1], vel)
-    engine.timbre(timbre)
-    engine.color(color)
     prev_transposed = transposed
   else
     if prev_transposed ~= nil then
@@ -132,15 +130,15 @@ function engine_macroB.param(cls)
   local val_norm = (val / 35) or 0
   local num = (param == 0 or param == 1) and model_set_1(val) -- model, first 36
             or param == 2 and model_set_2(val) -- model, > 36
-            or param == 3 and resamp(val_norm) -- resamp
-            or param == 4 and decim(val)  -- decim
-            or param == 5 and bits(val)  -- bits
-            or param == 6 and ws(val) -- ws
-            or param == 7 and attack(val_norm) -- ampAtk
-            or param == 8 and decay(val_norm) -- ampDec
-            or param == 9 and sustain(val_norm) -- ampSys
-            or param == 10 and release(val_norm) -- ampRel
-            or val_norm
+            or param == 5 and resamp(val_norm) -- resamp
+            or param == 6 and decim(val)  -- decim
+            or param == 7 and bits(val)  -- bits
+            or param == 8 and ws(val) -- ws
+            or param == 9 and attack(val_norm) -- ampAtk
+            or param == 10 and decay(val_norm) -- ampDec
+            or param == 11 and sustain(val_norm) -- ampSys
+            or param == 12 and release(val_norm) -- ampRel
+            or val_norm or 0
 
   engine_macroB.param_display_value = ((param == 0 or param == 1 or param == 2) and all_models[num+1]) or nil
 
