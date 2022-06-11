@@ -334,6 +334,28 @@ However, By reducing the sample rate you can use longer clips with the `position
 - and so on...
 </details>
 
+#### MacroB
+
+A port of the Mutable Instruments "Braids" macro oscillator via the mi-eng library. When this engine is selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (Midi scale) with a velocity of 255. The synthesis model is set via the param operator.
+
+- *`octave`*
+  - values: `0`-`7`
+- *`note`*
+  - values: `A`–`G`
+- `velocity`
+  - values: `0`: 0, `z`: 125
+
+#### MacroP
+
+A port of the Mutable Instruments "Plaits" macro oscillator via the mi-eng library. When this engine is selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (Midi scale) with a velocity of 255. The synthesis model, called "engine" for Plaits, is set via the param operator.
+
+
+- *`octave`*
+  - values: `0`-`7`
+- *`note`*
+  - values: `A`–`G`
+- `velocity`
+  - values: `0`: 0, `z`: 125
 
 ### `-` SYNTH PARAMS
 
@@ -453,6 +475,110 @@ When this engine is seleted the **SYNTH PARAM** operator `-` takes up to 3 input
 - `y`: Start frame
 - `z`: End frame
 
+
+#### MacroB
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-21` sets the "Model " to `"Kick"`.
+- `1`: Model (first 35)
+- `2`: Model (remaining)
+- `3`: Timbre
+- `4`: Color
+- `5`: Resamp
+- `6`: Decim
+- `7`: Bits
+- `8`: WS
+- `9`: Attack
+- `a`: Decay
+- `b`: Sustain
+- `c`: Release
+
+The available Braids "Synthesis Models" are provided via two sets of params. Param 1:
+
+- `1`: CSAW
+- `2`: Morph
+- `3`: Saw Square
+- `4`: Sine Triangle
+- `5`: Buzz
+- `6`: Square Sub
+- `7`: Saw Sub
+- `8`: Square Sync
+- `9`: Saw Sync
+- `a`: Triple Saw
+- `b`: Triple Square
+- `c`: Triple Triangle
+- `d`: Triple Sine
+- `e`: Triple Ring Mod
+- `f`: Saw Swarm
+- `g`: Saw Comb
+- `h`: Toy
+- `i`: Digital Filter Lp
+- `j`: Digital Filter Pk
+- `k`: Digital Filter Bp
+- `l`: Digital Filter Hp
+- `m`: Vosim
+- `n`: Vowel
+- `o`: Vowel Fof
+- `p`: Harmonics
+- `q`: Fm
+- `r`: Feedback Fm
+- `s`: Chaotic Feedback Fm
+- `t`: Plucked
+- `u`: Bowed
+- `v`: Blown
+- `w`: Fluted
+- `x`: Struck Bell
+- `y`: Struck Drum
+
+The additional models are availale via param 2 (kick included in this set to make beats easier):
+
+- `1`: Kick
+- `2`: Cymbal
+- `3`: Snare
+- `4`: Wavetables
+- `5`: Wave Map
+- `6`: Wave Line
+- `7`: Wave Paraphonic
+- `8`: Filtered Noise
+- `9`: Twin Peaks Noise
+- `a`: Clocked Noise
+- `b`: Granular Cloud
+- `c`: Particle Noise
+- `d`: Digital Modulation
+- `e`: "Question Mark"
+
+#### MacroP
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-16` sets the "Synthesis Engine" to `"wavetable"`. 
+
+- `1`: Engine (different from the norns engine, internal to the MacroP norns engine)
+- `2`: Harmonics
+- `3`: Timbre
+- `4`: Morph
+- `5`: Level
+- `6`: FM Mod
+- `7`: Timbre Mod
+- `8`: Morph Mod
+- `9`: Decay
+- `a`: LPG Colour
+
+The available Plaits synthesis engines are:
+
+- `1`: virtual analog
+- `2`: waveshaping
+- `3`: fm
+- `4`: grain
+- `5`: additive
+- `6`: wavetable
+- `7`: chord
+- `8`: speech
+- `9`: swarm
+- `a`: noise
+- `b`: particle
+- `c`: string
+- `d`: modal
+- `e`: bass drum
+- `f`: snare drum
+- `g`: hi hat
 
 ### `:` MIDI
 
