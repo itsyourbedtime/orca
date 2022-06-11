@@ -334,21 +334,9 @@ However, By reducing the sample rate you can use longer clips with the `position
 - and so on...
 </details>
 
-#### MacroB
+#### MacroB, MacroP, ModalE, ResonateR, and TextureC
 
-A port of the Mutable Instruments "Braids" macro oscillator via the mi-eng library. When this engine is selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (Midi scale) with a velocity of 255. The synthesis model is set via the param operator.
-
-- *`octave`*
-  - values: `0`-`7`
-- *`note`*
-  - values: `A`–`G`
-- `velocity`
-  - values: `0`: 0, `z`: 125
-
-#### MacroP
-
-A port of the Mutable Instruments "Plaits" macro oscillator via the mi-eng library. When this engine is selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (Midi scale) with a velocity of 255. The synthesis model, called "engine" for Plaits, is set via the param operator.
-
+ Engines implementing ports of the Mutable Instruments Braids, Plaits, Elements, Rings, and Clouds sysnthesis code to Supercollider and Norns. All are provided by the required [MI-Engines](https://llllllll.co/t/mi-engines/32338) library. The run op for these synths handles only pitch and velocity, all other parameters are controlled via the synth_param operator `-`. When one of these engines are selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (MIDI Scale) with a velocity of 255.
 
 - *`octave`*
   - values: `0`-`7`
@@ -479,6 +467,7 @@ When this engine is seleted the **SYNTH PARAM** operator `-` takes up to 3 input
 #### MacroB
 
 When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-21` sets the "Model " to `"Kick"`.
+
 - `1`: Model (first 35)
 - `2`: Model (remaining)
 - `3`: Timbre
@@ -579,6 +568,86 @@ The available Plaits synthesis engines are:
 - `e`: bass drum
 - `f`: snare drum
 - `g`: hi hat
+
+#### ModalE
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: "Strength",
+- `2`: "Contour",
+- `3`: "Bow Level",
+- `4`: "Blow Level",
+- `5`: "Strike Level",
+- `6`: "Flow",
+- `7`: "Mallet",
+- `8`: "Bow Timb",
+- `9`: "Blow Timb",
+- `a`: "Strike Timb",
+- `b`: "Geom",
+- `c`: "Bright",
+- `d`: "Damp",
+- `e`: "Pos",
+- `f`: "Space",
+- `g`: "Model",
+- `h`: "Mul",
+- `i`: "Add"
+
+#### ResonateR
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: Model (`1 - 6`)
+- `2`: Struct
+- `3`: Bright
+- `4`: Damp
+- `5`: Position
+- `6`: Poly (`1 - n`)
+- `7`: Intern Exciter
+- `8`: Bypass (`0 - 1`)
+- `9`: Easter Egg (`1 - 6`)
+
+Available models are:
+
+- `1`: "Modal Resonator"
+- `2`: "Sympathetic String"
+- `3`: "Mod/Inharm String"
+- `4`: "2-Op Fm Voice"
+- `5`: "Sympth Str Quant"
+- `6`: "String And Reverb"
+
+Easter egg modes are:
+
+- `1`: FX Formant
+- `2`: FX Chorus
+- `3`: FX Reverb
+- `4`: FX Formant
+- `5`: FX Ensemble
+- `6`: FX Reverb
+
+#### TextureC
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: Mode (`1-4`)
+- `2`: Position
+- `3`: Size
+- `4`: Density
+- `5`: Texture
+- `6`: Dry/Wet
+- `7`: In Gain
+- `8`: Spread
+- `9`: Reverb
+- `a`: Feedback
+- `b`: Freeze
+- `c`: Lofi
+- `d`: Trigger (`0-1`, not really implemented yet)
+
+Available modes are:
+
+- `1`: Granular
+- `2`: Stretch
+- `3`: Looping_Delay
+- `4`: Spectral
 
 ### `:` MIDI
 
