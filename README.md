@@ -193,7 +193,7 @@ This operator generates a scale based on the given mode (default is Dorian) and 
 
 The **SCALE.DEGREE** operator `'` takes 4 inputs(*`scale`*, *`octave`*, *`degree`*, *`root-note`*).
 
-This operator generates uses the same scale logic as the R.NOTE operator, but generates a specific octave/note pair based on an octave, scale degree, and root note for the scale. For example: given a major scale (`1`), and octave of 3, a degree of 2, and a root note of `C`, the operator will output `3D`. Note that degrees are 1 indexed, following the Lua convention, but they will increment the octave when the degree is greater than the number of notes in the scale. In the above example, a degree of `10` would produce `4E`.
+This operator uses the same scale logic as the R.NOTE operator, but generates a specific octave/note pair based on an octave, scale degree, and root note for the scale. For example: given a major scale (`1`), and octave of 3, a degree of 2, and a root note of `C`, the operator will output `3D`. Note that degrees are 1 indexed, following the Lua convention, but they will increment the octave when the degree is greater than the number of notes in the scale. In the above example, a degree of `10` would produce `4E`.
 
 ### `?` LEVELS
 
