@@ -4,15 +4,20 @@ local fm7 = include("lib/engines/_fm7")
 local passersby = include("lib/engines/_passersby")
 local polyperc = include("lib/engines/_polyperc")
 local timber = include("lib/engines/_timber")
+local macroB = include("lib/engines/_macroB")
+local macroP = include("lib/engines/_macroP")
+local modalE = include("lib/engines/_modalE")
+local resonateR = include("lib/engines/_resonateR")
+local textureC = include("lib/engines/_textureC")
 
-engine.name = "Timber"
+engine.name = "MacroP"
 
 --- Softcut only supports max. 2 mono samples
 local NUM_SAMPLES = 2
 
 local engines = {
   change_init = false,
-  engine_list = {"FM7", "Passersby", "PolyPerc", "Timber"},
+  engine_list = {"FM7", "Passersby", "PolyPerc", "MacroB", "MacroP", "ModalE","ResonateR","TextureC", "Timber"},
   self = nil,
 }
 
@@ -147,6 +152,11 @@ function engines.get_synth()
   elseif string.lower(engine.name) == "passersby" then return passersby
   elseif string.lower(engine.name) == "polyperc" then return polyperc
   elseif string.lower(engine.name) == "timber" then return timber
+  elseif string.lower(engine.name) == "macrob" then return macroB
+  elseif string.lower(engine.name) == "macrop" then return macroP
+  elseif string.lower(engine.name) == "modale" then return modalE
+  elseif string.lower(engine.name) == "resonater" then return resonateR
+  elseif string.lower(engine.name) == "texturec" then return textureC
   end
 end
 
@@ -158,12 +168,13 @@ function engines.init(self)
   audio.level_cut(1)
   audio.level_adc_cut(1)
   audio.level_eng_cut(1)
+  audio.level_tape_cut(1)
 
   for i = 1, 6 do
     softcut.level(i,1)
     softcut.level_input_cut(1, i, 1.0)
     softcut.level_input_cut(2, i, 1.0)
-    softcut.pan(i, 0.5)
+    softcut.pan(i, 0)
     softcut.play(i, 0)
     softcut.rate(i, 1)
     softcut.loop_start(i, 0)

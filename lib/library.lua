@@ -2,6 +2,7 @@ local ops = {}
 ops["*"] = include("lib/library/_bang")
 ops["#"] = include("lib/library/_comment")
 ops["$"] = include("lib/library/_rnote")
+ops["'"] = include("lib/library/_scale_degree")
 ops["?"] = include("lib/library/_levels")
 ops["/"] = include("lib/library/_softcut_op")
 ops["\\"] = include("lib/library/_softcut_param")

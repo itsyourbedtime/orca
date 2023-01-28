@@ -11,7 +11,7 @@ local synth_param = function(self, x, y)
 
     local param = util.clamp(self:listen(self.x + 1, self.y) or 1, 1, #engine_synth.param_ids)
 
-    self.ports = { {1, 0, engine_synth.param_names[param] or "in-param", "input"}, {2, 0, "in-value", "input"} }
+    self.ports = { {1, 0, engine_synth.param_names[param] or "in-param", "input"}, {2, 0, engine_synth.param_display_value or "in-value", "input"} }
     if engine_synth.ports then
       for i = 1, #engine_synth.ports do
         self.ports[2 + i] = {2 + i, 0, "in-" .. engine_synth.ports[i], "input"}

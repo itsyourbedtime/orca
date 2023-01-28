@@ -102,6 +102,7 @@ Please refer to original [docs](https://github.com/hundredrabbits/Orca#operators
 #### Operators
 
 - `$` [**r.note**(scale-mode note)](#-rnote): Outputs random note within scale.
+- `'` [**scale.degree**(*scale* octave degree root-note)](#-scale-degree): Outputs octave and note for a scale degree.
 - `?` [**levels**(*param* value)](#-levels): Sets selected volume level on bang.
 - `/` [**softcut**(*playhead* *rec* *play* level rate position)](#-softcut).
 - `\` [**softcut param**(*playhead* *param* value)](#-softcut-params): Sets softcut param on bang.
@@ -187,6 +188,12 @@ This operator generates a scale based on the given mode (default is Dorian) and 
 - `y`: Persian
 - `z`: East Indian Purvi
 
+
+### `'` SCALE.DEGREE
+
+The **SCALE.DEGREE** operator `'` takes 4 inputs(*`scale`*, *`octave`*, *`degree`*, *`root-note`*).
+
+This operator uses the same scale logic as the R.NOTE operator, but generates a specific octave/note pair based on an octave, scale degree, and root note for the scale. For example: given a major scale (`1`), and octave of 3, a degree of 2, and a root note of `C`, the operator will output `3D`. Note that degrees are 1 indexed, following the Lua convention, but they will increment the octave when the degree is greater than the number of notes in the scale. In the above example, a degree of `10` would produce `4E`.
 
 ### `?` LEVELS
 
@@ -327,6 +334,16 @@ However, By reducing the sample rate you can use longer clips with the `position
 - and so on...
 </details>
 
+#### MacroB, MacroP, ModalE, ResonateR, and TextureC
+
+ Engines implementing ports of the Mutable Instruments Braids, Plaits, Elements, Rings, and Clouds sysnthesis code to Supercollider and Norns. All are provided by the required [MI-Engines](https://llllllll.co/t/mi-engines/32338) library. The run op for these synths handles only pitch and velocity, all other parameters are controlled via the synth_param operator `-`. When one of these engines are selected, the **SYNTH** operator `|` takes up to 3 different inputs (*`octave`*, *`note`*, velocity). For example `|4Cz` will play a C at the 4th octave (MIDI Scale) with a velocity of 255.
+
+- *`octave`*
+  - values: `0`-`7`
+- *`note`*
+  - values: `A`–`G`
+- `velocity`
+  - values: `0`: 0, `z`: 125
 
 ### `-` SYNTH PARAMS
 
@@ -446,6 +463,191 @@ When this engine is seleted the **SYNTH PARAM** operator `-` takes up to 3 input
 - `y`: Start frame
 - `z`: End frame
 
+
+#### MacroB
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-21` sets the "Model " to `"Kick"`.
+
+- `1`: Model (first 35)
+- `2`: Model (remaining)
+- `3`: Timbre
+- `4`: Color
+- `5`: Resamp
+- `6`: Decim
+- `7`: Bits
+- `8`: WS
+- `9`: Attack
+- `a`: Decay
+- `b`: Sustain
+- `c`: Release
+
+The available Braids "Synthesis Models" are provided via two sets of params. Param 1:
+
+- `1`: CSAW
+- `2`: Morph
+- `3`: Saw Square
+- `4`: Sine Triangle
+- `5`: Buzz
+- `6`: Square Sub
+- `7`: Saw Sub
+- `8`: Square Sync
+- `9`: Saw Sync
+- `a`: Triple Saw
+- `b`: Triple Square
+- `c`: Triple Triangle
+- `d`: Triple Sine
+- `e`: Triple Ring Mod
+- `f`: Saw Swarm
+- `g`: Saw Comb
+- `h`: Toy
+- `i`: Digital Filter Lp
+- `j`: Digital Filter Pk
+- `k`: Digital Filter Bp
+- `l`: Digital Filter Hp
+- `m`: Vosim
+- `n`: Vowel
+- `o`: Vowel Fof
+- `p`: Harmonics
+- `q`: Fm
+- `r`: Feedback Fm
+- `s`: Chaotic Feedback Fm
+- `t`: Plucked
+- `u`: Bowed
+- `v`: Blown
+- `w`: Fluted
+- `x`: Struck Bell
+- `y`: Struck Drum
+
+The additional models are availale via param 2 (kick included in this set to make beats easier):
+
+- `1`: Kick
+- `2`: Cymbal
+- `3`: Snare
+- `4`: Wavetables
+- `5`: Wave Map
+- `6`: Wave Line
+- `7`: Wave Paraphonic
+- `8`: Filtered Noise
+- `9`: Twin Peaks Noise
+- `a`: Clocked Noise
+- `b`: Granular Cloud
+- `c`: Particle Noise
+- `d`: Digital Modulation
+- `e`: "Question Mark"
+
+#### MacroP
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-16` sets the "Synthesis Engine" to `"wavetable"`. 
+
+- `1`: Engine (different from the norns engine, internal to the MacroP norns engine)
+- `2`: Harmonics
+- `3`: Timbre
+- `4`: Morph
+- `5`: Level
+- `6`: FM Mod
+- `7`: Timbre Mod
+- `8`: Morph Mod
+- `9`: Decay
+- `a`: LPG Colour
+
+The available Plaits synthesis engines are:
+
+- `1`: virtual analog
+- `2`: waveshaping
+- `3`: fm
+- `4`: grain
+- `5`: additive
+- `6`: wavetable
+- `7`: chord
+- `8`: speech
+- `9`: swarm
+- `a`: noise
+- `b`: particle
+- `c`: string
+- `d`: modal
+- `e`: bass drum
+- `f`: snare drum
+- `g`: hi hat
+
+#### ModalE
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: "Strength",
+- `2`: "Contour",
+- `3`: "Bow Level",
+- `4`: "Blow Level",
+- `5`: "Strike Level",
+- `6`: "Flow",
+- `7`: "Mallet",
+- `8`: "Bow Timb",
+- `9`: "Blow Timb",
+- `a`: "Strike Timb",
+- `b`: "Geom",
+- `c`: "Bright",
+- `d`: "Damp",
+- `e`: "Pos",
+- `f`: "Space",
+- `g`: "Model",
+- `h`: "Mul",
+- `i`: "Add"
+
+#### ResonateR
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: Model (`1 - 6`)
+- `2`: Struct
+- `3`: Bright
+- `4`: Damp
+- `5`: Position
+- `6`: Poly (`1 - n`)
+- `7`: Intern Exciter
+- `8`: Bypass (`0 - 1`)
+- `9`: Easter Egg (`1 - 6`)
+
+Available models are:
+
+- `1`: "Modal Resonator"
+- `2`: "Sympathetic String"
+- `3`: "Mod/Inharm String"
+- `4`: "2-Op Fm Voice"
+- `5`: "Sympth Str Quant"
+- `6`: "String And Reverb"
+
+Easter egg modes are:
+
+- `1`: FX Formant
+- `2`: FX Chorus
+- `3`: FX Reverb
+- `4`: FX Formant
+- `5`: FX Ensemble
+- `6`: FX Reverb
+
+#### TextureC
+
+When this engine is selected the **SYNTH PARAM** operator `-` takes up to 2 inputs (*`param`* *`value`*). For example `-1z` sets the "Strength" to `1.0`. All params map `0 - z` to `0.0 - 1.0` unless otherwise noted.
+
+- `1`: Mode (`1-4`)
+- `2`: Position
+- `3`: Size
+- `4`: Density
+- `5`: Texture
+- `6`: Dry/Wet
+- `7`: In Gain
+- `8`: Spread
+- `9`: Reverb
+- `a`: Feedback
+- `b`: Freeze
+- `c`: Lofi
+- `d`: Trigger (`0-1`, not really implemented yet)
+
+Available modes are:
+
+- `1`: Granular
+- `2`: Stretch
+- `3`: Looping_Delay
+- `4`: Spectral
 
 ### `:` MIDI
 
